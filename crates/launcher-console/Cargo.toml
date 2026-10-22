@@ -1,0 +1,17 @@
+[package]
+name = "launcher-console"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+launcher-core = { path = "../launcher-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tempfile = { workspace = true }
+dirs = { workspace = true }
+
