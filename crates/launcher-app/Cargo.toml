@@ -1,0 +1,30 @@
+[package]
+name = "launcher-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "kame-house-launcher"
+path = "src/main.rs"
+
+[dependencies]
+launcher-core = { path = "../launcher-core" }
+launcher-steam = { path = "../launcher-steam" }
+launcher-achievements = { path = "../launcher-achievements" }
+launcher-sunshine = { path = "../launcher-sunshine" }
+launcher-console = { path = "../launcher-console" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true }
+dirs = { workspace = true }
+tempfile = { workspace = true }
+parking_lot = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+
