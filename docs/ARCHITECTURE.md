@@ -67,7 +67,9 @@ flowchart TD
 ### `launcher-steam`
 - **Binary VDF Engine (`vdf.rs`):** Recursive parser and atomic serializer for Valve's binary Data Format (`shortcuts.vdf`).
 - **Deterministic Shortcut AppID:** CRC32 32-bit hash calculation:
-  $$\text{id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
+  ```text
+  shortcut_id = (CRC32(exe + AppName) | 0x80000000)
+  ```
 - **Grid Artwork Manager (`grid.rs`):** Positions covers, heroes, logos, wide banners, and icons into Steam's `grid/` folder.
 - **CDP WebSocket Bridge (`cdp.rs`):** Async Chrome DevTools Protocol client connecting to Steam CEF on port `8080` to attach to `SharedJSContext` and trigger native achievement notifications.
 

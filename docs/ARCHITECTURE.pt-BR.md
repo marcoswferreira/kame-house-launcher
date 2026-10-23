@@ -63,7 +63,9 @@ flowchart TD
 ### `launcher-steam`
 - **Manipulador Binário de VDF (`vdf.rs`):** Parser recursivo do formato Valve Data Format binário e encoder atômico para `shortcuts.vdf`.
 - **Cálculo de Shortcut AppID:** Hash determinístico de 32 bits:
-  $$\text{id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
+  ```text
+  shortcut_id = (CRC32(exe + AppName) | 0x80000000)
+  ```
 - **Gerenciador de Artes do Grid (`grid.rs`):** Sincronização de capas, heroes, logos, imagens wide e ícones na pasta da Steam.
 - **Bridge CDP WebSocket (`cdp.rs`):** Conexão assíncrona ao Chrome DevTools Protocol da Steam em `127.0.0.1:8080` com anexo ao `SharedJSContext` para envio de notificações nativas de conquistas.
 

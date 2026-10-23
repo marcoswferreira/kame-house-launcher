@@ -107,7 +107,9 @@ Engineered to remove desktop operating system friction:
 ### 4. Steam Ecosystem Interoperability
 - **Atomic Binary VDF Manipulation:** The `launcher-steam` crate parses and serializes Valve's binary format without corrupting existing shortcuts.
 - **Deterministic Steam AppID Hashing:** Computes the 32-bit CRC32 shortcut identifier with bit 31 set:
-  $$\text{shortcut\_id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
+  ```text
+  shortcut_id = (CRC32(exe + AppName) | 0x80000000)
+  ```
 - **Grid Artwork Management:** Places custom vertical posters (`p.png`), hero banners (`_hero.png`), transparent logos (`_logo.png`), wide capsules (`.png`), and executable icons (`_icon.ico`) into `userdata/<account>/config/grid`.
 
 ### 5. Native Steam Achievement Relay

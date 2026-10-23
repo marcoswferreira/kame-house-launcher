@@ -26,7 +26,9 @@ Implement this functionality across two specialized crates:
 ### 1. Pure Rust Binary VDF Engine (`shortcuts.vdf`)
 - Recursive parser for binary Valve Data Format (`0x00` object, `0x01` string, `0x02` int32, `0x03` float32, `0x07` int64, `0x08` end marker).
 - Deterministic 32-bit CRC32 Shortcut AppID generation:
-  $$\text{shortcut\_id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
+  ```text
+  shortcut_id = (CRC32(exe + AppName) | 0x80000000)
+  ```
 - Atomic file writes (`tempfile` + `rename`) to protect against sudden power loss.
 - Artwork placement into Steam's grid folder:
   - Vertical cover: `<shortcut_id>p.png`

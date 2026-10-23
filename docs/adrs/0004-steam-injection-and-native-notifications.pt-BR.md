@@ -23,7 +23,9 @@ Implementamos essa funcionalidade dividida em duas crates especializadas:
 Implementado em Rust puro:
 - Parser recursivo para o formato Valve Data Format binário (tipos: `0x00` objeto, `0x01` string null-terminated, `0x02` int32 LE, `0x03` float32, `0x06` int64, `0x08` terminador).
 - Cálculo idêntico ao da Steam para o Shortcut AppID de 32 bits:
-  $$\text{shortcut\_id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000) \pmod{2^{32}}$$
+  ```text
+  shortcut_id = (CRC32(exe + AppName) | 0x80000000)
+  ```
 - Gravação atômica (`tempfile` + `rename`) com backup automático para proteger contra interrupções abruptas de energia.
 - Sincronização automática das artes para o diretório `userdata/<SteamID>/config/grid/`:
   - Capa: `<shortcut_id>p.png`

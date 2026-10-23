@@ -104,7 +104,9 @@ Projetada para eliminar as fricções de um sistema operacional de desktop tradi
 ### 4. Interoperabilidade com Steam
 - **Manipulação Binária Atômica de VDF:** O módulo `launcher-steam` codifica e decodifica o formato proprietário `shortcuts.vdf` da Valve sem corromper atalhos já existentes.
 - **Cálculo de AppID da Steam:** Gera o hash CRC32 com o bit 31 habilitado:
-  $$\text{shortcut\_id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
+  ```text
+  shortcut_id = (CRC32(exe + AppName) | 0x80000000)
+  ```
 - **Gestão de Artes do Grid:** Posiciona capas verticais (`p.png`), banners horizontais (`_hero.png`), logos transparentes (`_logo.png`), wide (`.png`) e ícones executáveis (`_icon.ico`) na pasta `userdata/<ID>/config/grid`.
 
 ### 5. Conquistas com Notificação Nativa
