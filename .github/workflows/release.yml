@@ -19,12 +19,12 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            binary_name: kame-house-launcher
-            archive_name: kame-house-launcher-linux-x86_64.tar.gz
+            binary_name: steam-companion
+            archive_name: steam-companion-linux-x86_64.tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary_name: kame-house-launcher.exe
-            archive_name: kame-house-launcher-windows-x86_64.zip
+            binary_name: steam-companion.exe
+            archive_name: steam-companion-windows-x86_64.zip
     steps:
       - name: Enable Long Paths on Windows
         if: runner.os == 'Windows'

@@ -283,6 +283,47 @@ mod tests {
         let mut resp7 = [0u8; 512];
         let n7 = client7.read(&mut resp7).await.unwrap();
         assert!(String::from_utf8_lossy(&resp7[..n7]).contains("minimized_to_tray"));
+
+        // 7. Test Steam path get/post routes
+        let (mut client8, server8) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server8, svc_clone).await;
+        });
+        client8
+            .write_all(b"GET /api/steam/path HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut resp8 = [0u8; 512];
+        let n8 = client8.read(&mut resp8).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp8[..n8]).contains("200 OK"));
+
+        let (mut client9, server9) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server9, svc_clone).await;
+        });
+        client9
+            .write_all(b"POST /api/steam/path HTTP/1.1\r\n\r\n{\"path\":\"/custom/shortcuts.vdf\"}")
+            .await
+            .unwrap();
+        let mut resp9 = [0u8; 512];
+        let n9 = client9.read(&mut resp9).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp9[..n9]).contains("200 OK"));
+
+        // 8. Test delete game route
+        let (mut client10, server10) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server10, svc_clone).await;
+        });
+        client10
+            .write_all(b"POST /api/games/delete HTTP/1.1\r\n\r\n{\"id\":\"nonexistent\"}")
+            .await
+            .unwrap();
+        let mut resp10 = [0u8; 512];
+        let n10 = client10.read(&mut resp10).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp10[..n10]).contains("not_found"));
     }
 
     #[test]
@@ -301,6 +342,13 @@ mod tests {
         let games = svc.list_games();
         assert_eq!(games.len(), 1);
         assert_eq!(games[0].title, "Metroid Fusion");
+
+        // Testar remove_game
+        assert!(svc.remove_game(&game1.id));
+        assert_eq!(svc.list_games().len(), 0);
+        assert!(!svc.remove_game("fake_id"));
+
+        svc.add_game(game1.clone());
 
         // Testar prepare launch com o comportamento padrão (HideAndRestoreFullscreen)
         let (launched, state_before) = svc

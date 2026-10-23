@@ -445,4 +445,67 @@ mod tests {
         safe_write_shortcuts_vdf(&target, new_data).unwrap();
         assert_eq!(fs::read(&target).unwrap(), new_data);
     }
+
+    #[test]
+    fn test_resolve_steam_shortcuts_path() {
+        assert!(resolve_steam_shortcuts_path("").is_none());
+        assert!(resolve_steam_shortcuts_path("   ").is_none());
+
+        let temp = tempdir().unwrap();
+        // 1. Direct file
+        let direct_file = temp.path().join("my_shortcuts.vdf");
+        fs::write(&direct_file, b"test").unwrap();
+        let resolved = resolve_steam_shortcuts_path(direct_file.to_str().unwrap()).unwrap();
+        assert_eq!(resolved, direct_file);
+
+        // 2. Account folder
+        let account_dir = temp.path().join("12345678");
+        let config_dir = account_dir.join("config");
+        fs::create_dir_all(&config_dir).unwrap();
+        let vdf_file = config_dir.join("shortcuts.vdf");
+        fs::write(&vdf_file, b"test").unwrap();
+        let resolved2 = resolve_steam_shortcuts_path(account_dir.to_str().unwrap()).unwrap();
+        assert_eq!(resolved2, vdf_file);
+
+        // 3. Userdata directory
+        let userdata = temp.path().join("userdata");
+        fs::create_dir_all(userdata.join("87654321").join("config")).unwrap();
+        fs::write(
+            userdata
+                .join("87654321")
+                .join("config")
+                .join("shortcuts.vdf"),
+            b"test",
+        )
+        .unwrap();
+        let resolved3 = resolve_steam_shortcuts_path(userdata.to_str().unwrap()).unwrap();
+        assert!(resolved3.to_string_lossy().contains("shortcuts.vdf"));
+
+        // 4. Steam root with userdata
+        let steam_root = temp.path().join("SteamRoot");
+        fs::create_dir_all(steam_root.join("userdata").join("111111").join("config")).unwrap();
+        fs::write(
+            steam_root
+                .join("userdata")
+                .join("111111")
+                .join("config")
+                .join("shortcuts.vdf"),
+            b"test",
+        )
+        .unwrap();
+        let resolved4 = resolve_steam_shortcuts_path(steam_root.to_str().unwrap()).unwrap();
+        assert!(resolved4.to_string_lossy().contains("shortcuts.vdf"));
+
+        // 5. Fallback directory
+        let other_dir = temp.path().join("other");
+        fs::create_dir_all(&other_dir).unwrap();
+        let resolved5 = resolve_steam_shortcuts_path(other_dir.to_str().unwrap()).unwrap();
+        assert_eq!(resolved5, other_dir.join("shortcuts.vdf"));
+    }
+
+    #[test]
+    fn test_is_steam_running_returns_boolean() {
+        let _ = is_steam_running();
+        let _ = find_all_steam_shortcuts_candidates();
+    }
 }
