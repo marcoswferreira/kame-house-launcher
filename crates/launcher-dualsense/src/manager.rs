@@ -309,27 +309,35 @@ mod tests {
         );
 
         // Test physical button edge detection
-        let mut input_press = DualSenseInputState::default();
-        input_press.mic_mute = true;
+        let input_press = DualSenseInputState {
+            mic_mute: true,
+            ..Default::default()
+        };
         let event = manager.update_input_state(input_press);
         assert_eq!(event, Some(true)); // Toggled to muted
         assert!(manager.get_status().await.mic_muted);
 
         // While held down, should not trigger again
-        let mut input_hold = DualSenseInputState::default();
-        input_hold.mic_mute = true;
+        let input_hold = DualSenseInputState {
+            mic_mute: true,
+            ..Default::default()
+        };
         let event_hold = manager.update_input_state(input_hold);
         assert_eq!(event_hold, None);
 
         // Released
-        let mut input_release = DualSenseInputState::default();
-        input_release.mic_mute = false;
+        let input_release = DualSenseInputState {
+            mic_mute: false,
+            ..Default::default()
+        };
         let event_rel = manager.update_input_state(input_release);
         assert_eq!(event_rel, None);
 
         // Press again -> unmutes
-        let mut input_press2 = DualSenseInputState::default();
-        input_press2.mic_mute = true;
+        let input_press2 = DualSenseInputState {
+            mic_mute: true,
+            ..Default::default()
+        };
         let event2 = manager.update_input_state(input_press2);
         assert_eq!(event2, Some(false)); // Toggled to unmuted
         assert!(!manager.get_status().await.mic_muted);
