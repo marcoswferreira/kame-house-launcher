@@ -1,4 +1,4 @@
-use launcher_core::models::LaunchBehavior;
+use launcher_core::models::{Language, LaunchBehavior};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -25,6 +25,9 @@ impl TvResolution {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConsoleSettings {
+    /// Active language (Default: English, switchable to Portuguese)
+    #[serde(default)]
+    pub language: Language,
     /// Comportamento de inicialização de jogos:
     /// Oculta e restaura com foco imediato (padrão) ou Mantém aberto
     pub launch_behavior: LaunchBehavior,
@@ -53,6 +56,7 @@ pub struct ConsoleSettings {
 impl Default for ConsoleSettings {
     fn default() -> Self {
         Self {
+            language: Language::En,
             launch_behavior: LaunchBehavior::HideAndRestoreFullscreen,
             autostart: true,
             shell_mode: false,

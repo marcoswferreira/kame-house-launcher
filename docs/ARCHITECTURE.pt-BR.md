@@ -89,6 +89,8 @@ flowchart TD
 - **Ações de Energia (`power.rs`):** Comandos nativos para Suspender, Hibernar, Reiniciar e Desligar via controle.
 
 ### `launcher-app`
-- **Serviço Central (`service.rs`):** `LauncherService` agregando estado, persistência de catálogo e chamadas IPC.
+- **Serviço Central (`service.rs`):** `LauncherService` agregando estado, persistência de catálogo, configurações e chamadas IPC.
+- **Mecanismo de Internacionalização (`i18n.rs`):** Dicionário bilíngue com padrão em inglês (`en`) e suporte integral a português (`pt-BR`).
+- **Comandos e Flags de CLI (`cli.rs`):** Parser de linha de comando com suporte a `--lang`, `--set-lang`, `status`, `scan`, `export-steam`, `sync-sunshine` e `set-mode`.
 - **Binário Executável (`main.rs`):** Ponto de entrada com logging estruturado via `tracing-subscriber`.
 

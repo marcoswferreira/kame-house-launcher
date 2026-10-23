@@ -158,6 +158,26 @@ Ou diretamente pelo binário compilado:
 ./target/release/kame-house-launcher
 ```
 
+### 5. CLI e Internacionalização (i18n)
+O aplicativo possui o **Inglês (`en`) como padrão** e suporte completo nativo a **Português (`pt-BR`)**. Você pode alternar o idioma sob demanda por comando ou persistir sua preferência permanentemente:
+
+```bash
+# Exibir status no idioma padrão (Inglês)
+./target/release/kame-house-launcher status
+
+# Salvar Português do Brasil como idioma preferencial (persistido em settings.json)
+./target/release/kame-house-launcher --set-lang pt-br
+
+# Executar temporariamente em Português sem alterar as configurações globais
+./target/release/kame-house-launcher -l pt-br status
+
+# Retornar o idioma padrão para Inglês
+./target/release/kame-house-launcher --set-lang en
+
+# Exibir os comandos e ajuda da CLI em Português
+./target/release/kame-house-launcher -l pt-br --help
+```
+
 ---
 
 ## 🧪 Testes e Cobertura de Código
@@ -168,9 +188,9 @@ O projeto foi construído sob rigorosos padrões de testabilidade e possui cober
 ```bash
 cargo test --workspace
 ```
-Todos os 30 testes unitários e de integração devem passar com sucesso:
+Todos os 34 testes unitários e de integração devem passar com sucesso:
 ```text
-test result: ok. 30 passed; 0 failed; 0 ignored; finished in 0.25s
+test result: ok. 34 passed; 0 failed; 0 ignored; finished in 0.25s
 ```
 
 ### Gerar Relatório de Cobertura de Código

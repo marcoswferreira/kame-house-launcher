@@ -1,6 +1,6 @@
 use launcher_achievements::AchievementManager;
 use launcher_console::{ConsoleSettings, LaunchSupervisor, WindowState};
-use launcher_core::models::Game;
+use launcher_core::models::{Game, Language};
 use launcher_core::scanner::scan_roots_parallel;
 use launcher_steam::vdf::{encode_binary_vdf, parse_binary_vdf, upsert_shortcut, SteamShortcut};
 use launcher_sunshine::{sync_games_to_apps_json, SunshineClient};
@@ -132,6 +132,15 @@ impl LauncherService {
 
     pub fn update_console_settings(&self, new_settings: ConsoleSettings) {
         *self.settings.write() = new_settings;
+        let _ = self.save_state();
+    }
+
+    pub fn language(&self) -> Language {
+        self.settings.read().language
+    }
+
+    pub fn set_language(&self, lang: Language) {
+        self.settings.write().language = lang;
         let _ = self.save_state();
     }
 

@@ -92,5 +92,7 @@ flowchart TD
 - **Power Management (`power.rs`):** Controller-mapped Sleep, Hibernate, Restart, and Shutdown commands.
 
 ### `launcher-app`
-- **Central Coordinator (`service.rs`):** `LauncherService` aggregating state, game catalog persistence, and IPC calls.
+- **Central Coordinator (`service.rs`):** `LauncherService` aggregating state, game catalog persistence, settings, and IPC calls.
+- **Internationalization Engine (`i18n.rs`):** Bilingual dictionary with English default (`en`) and complete Portuguese (`pt-BR`) support.
+- **CLI Commands & Flags (`cli.rs`):** Command-line parser supporting `--lang`, `--set-lang`, `status`, `scan`, `export-steam`, `sync-sunshine`, and `set-mode`.
 - **Application Binary (`main.rs`):** CLI entrypoint with structured logging via `tracing-subscriber`.

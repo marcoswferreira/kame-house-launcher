@@ -3,6 +3,42 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum Language {
+    /// English (Default)
+    #[default]
+    #[serde(rename = "en", alias = "en-US", alias = "en_US", alias = "en-GB")]
+    En,
+    /// Portuguese (Brazil)
+    #[serde(rename = "pt-BR", alias = "pt", alias = "pt_BR", alias = "pt-br")]
+    PtBr,
+}
+
+impl Language {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Language::En => "en",
+            Language::PtBr => "pt-BR",
+        }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            Language::En => "English",
+            Language::PtBr => "Português (Brasil)",
+        }
+    }
+
+    pub fn parse_flexible(s: &str) -> Option<Self> {
+        let s_lower = s.trim().to_lowercase().replace('_', "-");
+        match s_lower.as_str() {
+            "en" | "en-us" | "en-gb" | "english" => Some(Language::En),
+            "pt" | "pt-br" | "ptbr" | "portugues" | "portuguese" => Some(Language::PtBr),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum LaunchBehavior {
     /// Oculta/minimiza o launcher ao iniciar o jogo e restaura em tela cheia com foco imediato ao fechar (Padrão Console)

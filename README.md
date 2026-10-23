@@ -161,6 +161,26 @@ Or directly via the compiled binary:
 ./target/release/kame-house-launcher
 ```
 
+### 5. CLI & Internationalization (i18n)
+The application defaults to English (`en`) and provides full support for Portuguese (`pt-BR`). You can switch languages temporarily per command or persist your preference permanently:
+
+```bash
+# Print status in English (default)
+./target/release/kame-house-launcher status
+
+# Switch preferred language to Brazilian Portuguese (persisted in settings.json)
+./target/release/kame-house-launcher --set-lang pt-br
+
+# Temporary run override in Portuguese without changing default config
+./target/release/kame-house-launcher -l pt-br status
+
+# Switch preferred language back to English
+./target/release/kame-house-launcher --set-lang en
+
+# View CLI commands & help in Portuguese
+./target/release/kame-house-launcher -l pt-br --help
+```
+
 ---
 
 ## 🧪 Testing and Code Coverage
@@ -171,9 +191,9 @@ The project enforces test-driven reliability and maintains over 80% code coverag
 ```bash
 cargo test --workspace
 ```
-All 30 unit and integration tests should pass:
+All 34 unit and integration tests should pass:
 ```text
-test result: ok. 30 passed; 0 failed; 0 ignored; finished in 0.25s
+test result: ok. 34 passed; 0 failed; 0 ignored; finished in 0.25s
 ```
 
 ### Measure Code Coverage
