@@ -89,3 +89,4 @@ flowchart TD
 ### `launcher-app`
 - **Serviço Central (`service.rs`):** `LauncherService` agregando estado, persistência de catálogo e chamadas IPC.
 - **Binário Executável (`main.rs`):** Ponto de entrada com logging estruturado via `tracing-subscriber`.
+

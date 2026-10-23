@@ -79,3 +79,4 @@ Pressionando o botão de guia (Home / Xbox / PS) ou selecionando o ícone de ene
 
 ### 5.2 Wake-on-LAN (WoL) para Moonlight
 Permite configurar e validar a placa de rede do computador para permitir que clientes Moonlight em televisores, celulares ou portáteis acordem o computador remotamente pela rede local (Magic Packet).
+

@@ -99,3 +99,4 @@ Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](ht
    - Qual problema ou necessidade a alteração resolve.
    - Como foi testado.
    - Impacto na performance ou nos subsistemas relacionados.
+

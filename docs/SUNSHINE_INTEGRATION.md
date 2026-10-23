@@ -96,3 +96,4 @@ cargo test -p launcher-sunshine
 
 ### Créditos e Licença
 Conforme a licença **GPL-3.0**, todos os créditos do projeto Sunshine pertencem à organização **LizardByte e aos Sunshine Contributors**. O Kame House Launcher não reivindica direitos autorais sobre a infraestrutura do Sunshine, apenas a estende como plano de controle nativo.
+

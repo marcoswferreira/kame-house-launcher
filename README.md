@@ -212,3 +212,4 @@ Contribuições são muito bem-vindas! Consulte o arquivo [`CONTRIBUTING.md`](CO
 ## 📄 Licença
 
 Este projeto é software livre licenciado sob os termos da **GNU General Public License v3.0** (GPL-3.0-or-later). Consulte o arquivo [LICENSE](LICENSE) para obter a íntegra da licença.
+
