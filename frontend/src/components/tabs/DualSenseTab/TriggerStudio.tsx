@@ -40,7 +40,9 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
         newEffect = { mode: 'off' };
         break;
     }
-    setTriggers((prev) => ({ ...prev, [side]: newEffect }));
+    const updated: DualTriggerConfig = { ...triggers, [side]: newEffect };
+    setTriggers(updated);
+    onApply(updated);
   };
 
   const renderEffectControls = (side: 'left' | 'right') => {

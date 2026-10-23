@@ -12,7 +12,7 @@ import { EmulationStudio } from './EmulationStudio';
 import { UdpServerStudio } from './UdpServerStudio';
 import { GameProfilesStudio } from './GameProfilesStudio';
 import { ControllerTester } from './ControllerTester';
-import { webHidController } from '../../../utils/dualsenseHardware';
+import { webHidController, WebHidDualSenseController } from '../../../utils/dualsenseHardware';
 
 type SubTab = 'tester' | 'triggers' | 'lighting' | 'emulation' | 'udp' | 'profiles';
 
@@ -25,6 +25,33 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('tester');
   const [status, setStatus] = useState<DualSenseStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isWebHidConnected, setIsWebHidConnected] = useState(webHidController.isConnected());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIsWebHidConnected(webHidController.isConnected());
+    }, 800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleConnectWebHid = async () => {
+    const ok = await webHidController.connect();
+    setIsWebHidConnected(ok);
+    if (ok) {
+      onShowToast?.(t('toast_webhid_connected'));
+      if (status) {
+        await webHidController.sendReport(status.triggers, status.lighting);
+      }
+    } else {
+      onShowToast?.(t('toast_webhid_failed'));
+    }
+  };
+
+  const handleDisconnectWebHid = async () => {
+    await webHidController.disconnect();
+    setIsWebHidConnected(false);
+    onShowToast?.(t('toast_webhid_disconnected'));
+  };
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -217,6 +244,15 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
         </div>
 
         <div className="master-bar-right">
+          {WebHidDualSenseController.isSupported() && (
+            <button
+              className={`deck-btn ${isWebHidConnected ? 'primary' : 'secondary'}`}
+              onClick={isWebHidConnected ? handleDisconnectWebHid : handleConnectWebHid}
+              title={isWebHidConnected ? t('dualsense_disconnect_webhid') : t('dualsense_connect_webhid')}
+            >
+              {isWebHidConnected ? '⚡ WebHID [ATIVO]' : '⚡ Conectar WebHID'}
+            </button>
+          )}
           <button
             className={`deck-btn ${currentStatus.mic_muted ? 'danger' : 'secondary'}`}
             onClick={handleToggleMic}

@@ -151,53 +151,17 @@ impl OutputReportBuilder {
         let mut report = [0u8; USB_OUTPUT_REPORT_SIZE];
         report[0] = 0x02; // Report ID
 
-        // Flag 1: Enable rumble, triggers, leds
+        // valid_flag0: Enable compatible rumble (0x01 | 0x02), triggers (0x04 | 0x08)
         report[1] = 0xFF;
 
-        // Flag 2: Triggers effects configuration enable (0x01 | 0x04)
-        report[2] = 0x15;
+        // valid_flag1: Enable mic mute led (0x01), power save (0x02), lightbar (0x04), player leds (0x10)
+        report[2] = 0x1F;
 
         // Rumble motors
         report[3] = self.light_rumble;
         report[4] = self.heavy_rumble;
 
-        // Mic LED
-        report[8] = self.mic_led.to_byte();
-
-        // Right Trigger effect (11 bytes starting at index 10)
-        let rt = self.triggers.right.compile_payload();
-        report[10..21].copy_from_slice(&rt);
-
-        // Left Trigger effect (11 bytes starting at index 21)
-        let lt = self.triggers.left.compile_payload();
-        report[21..32].copy_from_slice(&lt);
-
-        // Player LEDs
-        report[43] = self.player_led.to_bitmask();
-
-        // Lightbar RGB
-        report[44] = self.lightbar_color.r;
-        report[45] = self.lightbar_color.g;
-        report[46] = self.lightbar_color.b;
-
-        report
-    }
-
-    /// Builds a 78-byte Bluetooth Output Report (Report ID 0x31) with CRC32
-    pub fn build_bluetooth(&self) -> [u8; BT_OUTPUT_REPORT_SIZE] {
-        let mut report = [0u8; BT_OUTPUT_REPORT_SIZE];
-        report[0] = 0x31; // Report ID
-        report[1] = 0x02; // BT Report Flags (0x02 | 0x10)
-
-        // Flag 1 & 2 shifted by 1 byte relative to USB
-        report[2] = 0xFF;
-        report[3] = 0x15;
-
-        // Rumble
-        report[4] = self.light_rumble;
-        report[5] = self.heavy_rumble;
-
-        // Mic LED
+        // Mic LED (0=off, 1=solid amber, 2=pulse)
         report[9] = self.mic_led.to_byte();
 
         // Right Trigger effect (11 bytes starting at index 11)
@@ -208,6 +172,12 @@ impl OutputReportBuilder {
         let lt = self.triggers.left.compile_payload();
         report[22..33].copy_from_slice(&lt);
 
+        // valid_flag2: Enable lightbar setup
+        report[39] = 0x02;
+
+        // lightbar setup: 0x01 = light on
+        report[42] = 0x01;
+
         // Player LEDs
         report[44] = self.player_led.to_bitmask();
 
@@ -215,6 +185,51 @@ impl OutputReportBuilder {
         report[45] = self.lightbar_color.r;
         report[46] = self.lightbar_color.g;
         report[47] = self.lightbar_color.b;
+
+        report
+    }
+
+    /// Builds a 78-byte Bluetooth Output Report (Report ID 0x31) with CRC32
+    pub fn build_bluetooth(&self) -> [u8; BT_OUTPUT_REPORT_SIZE] {
+        let mut report = [0u8; BT_OUTPUT_REPORT_SIZE];
+        report[0] = 0x31; // Report ID
+        report[1] = 0x02; // BT Report Flags (0x02)
+        report[2] = 0x10; // BT Tag
+
+        // valid_flag0: Enable rumble and triggers (offset 3)
+        report[3] = 0xFF;
+
+        // valid_flag1: Enable mic led, lightbar, player leds (offset 4)
+        report[4] = 0x1F;
+
+        // Rumble
+        report[5] = self.light_rumble;
+        report[6] = self.heavy_rumble;
+
+        // Mic LED (common[8] is at index 3 + 8 = 11)
+        report[11] = self.mic_led.to_byte();
+
+        // Right Trigger effect (common[10] is at index 3 + 10 = 13)
+        let rt = self.triggers.right.compile_payload();
+        report[13..24].copy_from_slice(&rt);
+
+        // Left Trigger effect (common[21] is at index 3 + 21 = 24)
+        let lt = self.triggers.left.compile_payload();
+        report[24..35].copy_from_slice(&lt);
+
+        // valid_flag2: Enable lightbar setup (common[38] is at index 3 + 38 = 41)
+        report[41] = 0x02;
+
+        // lightbar setup: 0x01 = light on (common[41] is at index 3 + 41 = 44)
+        report[44] = 0x01;
+
+        // Player LEDs (common[43] is at index 3 + 43 = 46)
+        report[46] = self.player_led.to_bitmask();
+
+        // Lightbar RGB (common[44..47] is at index 3 + 44 = 47..50)
+        report[47] = self.lightbar_color.r;
+        report[48] = self.lightbar_color.g;
+        report[49] = self.lightbar_color.b;
 
         // Calculate CRC32 for Sony BT HID
         let mut hasher = Hasher::new();
@@ -389,20 +404,21 @@ mod tests {
         let usb = builder.build_usb();
         assert_eq!(usb[0], 0x02);
         assert_eq!(usb[1], 0xFF);
-        assert_eq!(usb[8], 0x01);
-        assert_eq!(usb[43], 0x0A);
-        assert_eq!(usb[44], 255);
-        assert_eq!(usb[45], 0);
+        assert_eq!(usb[9], 0x01);
+        assert_eq!(usb[39], 0x02);
+        assert_eq!(usb[44], 0x0A);
+        assert_eq!(usb[45], 255);
         assert_eq!(usb[46], 0);
+        assert_eq!(usb[47], 0);
 
-        assert_eq!(usb[10], 0x02);
-        assert_eq!(usb[11], 2);
-        assert_eq!(usb[12], 6);
-        assert_eq!(usb[13], 7);
+        assert_eq!(usb[11], 0x25); // Weapon mode is 0x25
+        assert_eq!(usb[12], 2);
+        assert_eq!(usb[13], 6);
+        assert_eq!(usb[14], 7);
 
-        assert_eq!(usb[21], 0x01);
-        assert_eq!(usb[22], 1);
-        assert_eq!(usb[23], 5);
+        assert_eq!(usb[22], 0x21); // Feedback mode is 0x21
+        assert_eq!(usb[23], 1);
+        assert_eq!(usb[24], 5);
     }
 
     #[test]
@@ -414,8 +430,9 @@ mod tests {
         let bt = builder.build_bluetooth();
         assert_eq!(bt[0], 0x31);
         assert_eq!(bt[1], 0x02);
-        assert_eq!(bt[44], 0x04);
-        assert_eq!(bt[46], 255);
+        assert_eq!(bt[41], 0x02);
+        assert_eq!(bt[46], 0x04);
+        assert_eq!(bt[48], 255);
 
         let crc = LittleEndian::read_u32(&bt[74..78]);
         assert_ne!(crc, 0);

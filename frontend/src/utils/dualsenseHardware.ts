@@ -85,7 +85,18 @@ export interface WebHidDevice {
   }>;
   open(): Promise<void>;
   close(): Promise<void>;
-  sendReport(reportId: number, data: BufferSource): Promise<void>;
+  sendReport(reportId: number, data: Uint8Array): Promise<void>;
+}
+
+function calculateCrc32(data: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data[i];
+    for (let j = 0; j < 8; j++) {
+      crc = (crc >>> 1) ^ (-(crc & 1) & 0xedb88320);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 export class WebHidDualSenseController {
@@ -144,6 +155,127 @@ export class WebHidDualSenseController {
     }
   }
 
+  public buildUsbPayload(
+    triggers: DualTriggerConfig,
+    lighting: LightingConfig,
+    rumbleHeavy = 0,
+    rumbleLight = 0
+  ): Uint8Array {
+    const payload = new Uint8Array(63);
+    payload[0] = 0xff; // valid_flag0: enable rumble, triggers
+    payload[1] = 0x1f; // valid_flag1: enable mic led, power save, lightbar, player leds
+    payload[2] = rumbleLight;
+    payload[3] = rumbleHeavy;
+
+    // Mic LED
+    payload[8] = lighting.mic_led === 'solid' ? 0x01 : lighting.mic_led === 'pulse' ? 0x02 : 0x00;
+
+    // Right Trigger (offset 10 in 63-byte payload, corresponding to offset 11 in 64-byte report)
+    const rightBytes = compileTriggerBytes(triggers.right);
+    payload.set(rightBytes, 10);
+
+    // Left Trigger (offset 21 in 63-byte payload, corresponding to offset 22 in 64-byte report)
+    const leftBytes = compileTriggerBytes(triggers.left);
+    payload.set(leftBytes, 21);
+
+    // valid_flag2: DS_OUTPUT_VALID_FLAG2_LIGHTBAR_SETUP_CONTROL_ENABLE
+    payload[38] = 0x02;
+
+    // lightbar_setup: 0x01 = light on
+    payload[41] = 0x01;
+
+    // player_leds
+    switch (lighting.player_led) {
+      case 'player1': payload[43] = 0x04; break;
+      case 'player2': payload[43] = 0x0a; break;
+      case 'player3': payload[43] = 0x15; break;
+      case 'player4': payload[43] = 0x1b; break;
+      case 'all':     payload[43] = 0x1f; break;
+      default:        payload[43] = 0x00; break;
+    }
+
+    // RGB Lightbar
+    const color =
+      lighting.lightbar.mode === 'static' || lighting.lightbar.mode === 'breathing'
+        ? lighting.lightbar.color
+        : { r: 0, g: 68, b: 204 };
+
+    payload[44] = color.r;
+    payload[45] = color.g;
+    payload[46] = color.b;
+
+    return payload;
+  }
+
+  public buildBluetoothPayload(
+    triggers: DualTriggerConfig,
+    lighting: LightingConfig,
+    rumbleHeavy = 0,
+    rumbleLight = 0
+  ): Uint8Array {
+    const payload = new Uint8Array(77);
+    payload[0] = 0x02; // BT Report flags
+    payload[1] = 0x10; // BT Tag
+
+    // common starts at index 2 of 77-byte BT payload
+    payload[2] = 0xff; // valid_flag0
+    payload[3] = 0x1f; // valid_flag1
+    payload[4] = rumbleLight;
+    payload[5] = rumbleHeavy;
+
+    // Mic LED
+    payload[10] = lighting.mic_led === 'solid' ? 0x01 : lighting.mic_led === 'pulse' ? 0x02 : 0x00;
+
+    // Right Trigger (offset 2 + 10 = 12)
+    const rightBytes = compileTriggerBytes(triggers.right);
+    payload.set(rightBytes, 12);
+
+    // Left Trigger (offset 2 + 21 = 23)
+    const leftBytes = compileTriggerBytes(triggers.left);
+    payload.set(leftBytes, 23);
+
+    // valid_flag2 (offset 2 + 38 = 40)
+    payload[40] = 0x02;
+
+    // lightbar_setup (offset 2 + 41 = 43)
+    payload[43] = 0x01;
+
+    // player_leds (offset 2 + 43 = 45)
+    switch (lighting.player_led) {
+      case 'player1': payload[45] = 0x04; break;
+      case 'player2': payload[45] = 0x0a; break;
+      case 'player3': payload[45] = 0x15; break;
+      case 'player4': payload[45] = 0x1b; break;
+      case 'all':     payload[45] = 0x1f; break;
+      default:        payload[45] = 0x00; break;
+    }
+
+    // RGB Lightbar (offset 2 + 44 = 46..48)
+    const color =
+      lighting.lightbar.mode === 'static' || lighting.lightbar.mode === 'breathing'
+        ? lighting.lightbar.color
+        : { r: 0, g: 68, b: 204 };
+
+    payload[46] = color.r;
+    payload[47] = color.g;
+    payload[48] = color.b;
+
+    // Calculate CRC32 over [0xA2, 0x31, ...payload[0..73]]
+    const crcBuf = new Uint8Array(75);
+    crcBuf[0] = 0xa2;
+    crcBuf[1] = 0x31;
+    crcBuf.set(payload.subarray(0, 73), 2);
+    const checksum = calculateCrc32(crcBuf);
+
+    // Write Little-Endian CRC32 into payload[73..77]
+    payload[73] = checksum & 0xff;
+    payload[74] = (checksum >>> 8) & 0xff;
+    payload[75] = (checksum >>> 16) & 0xff;
+    payload[76] = (checksum >>> 24) & 0xff;
+
+    return payload;
+  }
+
   public async sendReport(
     triggers: DualTriggerConfig,
     lighting: LightingConfig,
@@ -153,57 +285,22 @@ export class WebHidDualSenseController {
     if (!this.device || !this.device.opened) return;
 
     try {
-      // 63 bytes payload for report ID 0x02 (USB)
-      const payload = new Uint8Array(63);
-      payload[0] = 0xff; // flags 1
-      payload[1] = 0x15; // flags 2
-      payload[2] = rumbleLight;
-      payload[3] = rumbleHeavy;
-
-      // Mic LED
-      payload[7] = lighting.mic_led === 'solid' ? 0x01 : lighting.mic_led === 'pulse' ? 0x02 : 0x00;
-
-      // Triggers (Right trigger at offset 9, Left trigger at offset 20)
-      const rightBytes = compileTriggerBytes(triggers.right);
-      const leftBytes = compileTriggerBytes(triggers.left);
-      payload.set(rightBytes, 9);
-      payload.set(leftBytes, 20);
-
-      // Player LED bitmask
-      switch (lighting.player_led) {
-        case 'player1':
-          payload[42] = 0x04;
-          break;
-        case 'player2':
-          payload[42] = 0x0a;
-          break;
-        case 'player3':
-          payload[42] = 0x15;
-          break;
-        case 'player4':
-          payload[42] = 0x1b;
-          break;
-        case 'all':
-          payload[42] = 0x1f;
-          break;
-        default:
-          payload[42] = 0x00;
+      if (this.isBluetooth) {
+        const payload = this.buildBluetoothPayload(triggers, lighting, rumbleHeavy, rumbleLight);
+        await this.device.sendReport(0x31, payload);
+      } else {
+        const payload = this.buildUsbPayload(triggers, lighting, rumbleHeavy, rumbleLight);
+        try {
+          await this.device.sendReport(0x02, payload);
+        } catch (usbErr) {
+          console.debug('USB report failed, retrying Bluetooth report format:', usbErr);
+          const btPayload = this.buildBluetoothPayload(triggers, lighting, rumbleHeavy, rumbleLight);
+          await this.device.sendReport(0x31, btPayload);
+          this.isBluetooth = true;
+        }
       }
-
-      // RGB Lightbar
-      const color =
-        lighting.lightbar.mode === 'static' || lighting.lightbar.mode === 'breathing'
-          ? lighting.lightbar.color
-          : { r: 0, g: 68, b: 204 };
-
-      payload[43] = color.r;
-      payload[44] = color.g;
-      payload[45] = color.b;
-
-      const reportId = this.isBluetooth ? 0x31 : 0x02;
-      await this.device.sendReport(reportId, payload);
     } catch (e) {
-      console.debug('WebHID sendReport failed:', e);
+      console.warn('WebHID sendReport failed:', e);
     }
   }
 

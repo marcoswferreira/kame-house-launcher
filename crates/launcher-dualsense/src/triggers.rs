@@ -71,7 +71,7 @@ impl TriggerEffect {
                 start_position,
                 force,
             } => {
-                bytes[0] = 0x01;
+                bytes[0] = 0x21;
                 bytes[1] = (*start_position).min(9);
                 bytes[2] = (*force).min(8);
             }
@@ -80,7 +80,7 @@ impl TriggerEffect {
                 end_position,
                 force,
             } => {
-                bytes[0] = 0x02;
+                bytes[0] = 0x25;
                 bytes[1] = (*start_position).min(9);
                 bytes[2] = (*end_position).min(9);
                 bytes[3] = (*force).min(8);
@@ -173,7 +173,7 @@ mod tests {
             force: 7,
         };
         let payload = effect.compile_payload();
-        assert_eq!(payload[0], 0x01);
+        assert_eq!(payload[0], 0x21);
         assert_eq!(payload[1], 2);
         assert_eq!(payload[2], 7);
         assert_eq!(&payload[3..], &[0, 0, 0, 0, 0, 0, 0, 0]);
@@ -187,7 +187,7 @@ mod tests {
             force: 8,
         };
         let payload = effect.compile_payload();
-        assert_eq!(payload[0], 0x02);
+        assert_eq!(payload[0], 0x25);
         assert_eq!(payload[1], 1);
         assert_eq!(payload[2], 6);
         assert_eq!(payload[3], 8);

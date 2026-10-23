@@ -33,10 +33,12 @@ export const LightingStudio: React.FC<Props> = ({ lighting: initialLighting, onA
   const hexString = `#${activeColor.r.toString(16).padStart(2, '0')}${activeColor.g.toString(16).padStart(2, '0')}${activeColor.b.toString(16).padStart(2, '0')}`;
 
   const setStaticColor = (color: RgbColor) => {
-    setLighting((prev) => ({
-      ...prev,
+    const updated: LightingConfig = {
+      ...lighting,
       lightbar: { mode: 'static', color },
-    }));
+    };
+    setLighting(updated);
+    onApply(updated);
   };
 
   return (
@@ -93,17 +95,20 @@ export const LightingStudio: React.FC<Props> = ({ lighting: initialLighting, onA
               value={lighting.lightbar.mode}
               onChange={(e) => {
                 const mode = e.target.value;
+                let updated: LightingConfig = { ...lighting };
                 if (mode === 'rainbow') {
-                  setLighting((prev) => ({ ...prev, lightbar: { mode: 'rainbow', speed: 1.0 } }));
+                  updated = { ...lighting, lightbar: { mode: 'rainbow', speed: 1.0 } };
                 } else if (mode === 'battery_level') {
-                  setLighting((prev) => ({ ...prev, lightbar: { mode: 'battery_level' } }));
+                  updated = { ...lighting, lightbar: { mode: 'battery_level' } };
                 } else if (mode === 'breathing') {
-                  setLighting((prev) => ({ ...prev, lightbar: { mode: 'breathing', color: activeColor, speed: 1.0 } }));
+                  updated = { ...lighting, lightbar: { mode: 'breathing', color: activeColor, speed: 1.0 } };
                 } else if (mode === 'off') {
-                  setLighting((prev) => ({ ...prev, lightbar: { mode: 'off' } }));
+                  updated = { ...lighting, lightbar: { mode: 'off' } };
                 } else {
-                  setLighting((prev) => ({ ...prev, lightbar: { mode: 'static', color: activeColor } }));
+                  updated = { ...lighting, lightbar: { mode: 'static', color: activeColor } };
                 }
+                setLighting(updated);
+                onApply(updated);
               }}
             >
               <option value="static">{t('dualsense_led_mode_static')}</option>
@@ -149,12 +154,14 @@ export const LightingStudio: React.FC<Props> = ({ lighting: initialLighting, onA
             <select
               className="deck-select"
               value={lighting.player_led}
-              onChange={(e) =>
-                setLighting((prev) => ({
-                  ...prev,
+              onChange={(e) => {
+                const updated: LightingConfig = {
+                  ...lighting,
                   player_led: e.target.value as PlayerLed,
-                }))
-              }
+                };
+                setLighting(updated);
+                onApply(updated);
+              }}
             >
               <option value="player1">{t('dualsense_player_1')}</option>
               <option value="player2">{t('dualsense_player_2')}</option>
@@ -170,12 +177,14 @@ export const LightingStudio: React.FC<Props> = ({ lighting: initialLighting, onA
             <select
               className="deck-select"
               value={lighting.mic_led}
-              onChange={(e) =>
-                setLighting((prev) => ({
-                  ...prev,
+              onChange={(e) => {
+                const updated: LightingConfig = {
+                  ...lighting,
                   mic_led: e.target.value as MicLed,
-                }))
-              }
+                };
+                setLighting(updated);
+                onApply(updated);
+              }}
             >
               <option value="off">{t('dualsense_mic_off')}</option>
               <option value="solid">{t('dualsense_mic_solid')}</option>
