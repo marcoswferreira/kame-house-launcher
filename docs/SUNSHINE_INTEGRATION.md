@@ -1,56 +1,60 @@
-# Integração Headless com o Sunshine 📡🎮
+# Headless Sunshine Streaming Integration 📡🎮
 
-Este documento descreve como o **Kame House Launcher** estende o [Sunshine](https://github.com/LizardByte/Sunshine) como um serviço de streaming headless de alto desempenho, substituindo a interface web convencional por uma experiência integrada e nativa no launcher.
+This document describes how **Kame House Launcher** extends [Sunshine](https://github.com/LizardByte/Sunshine) as a high-performance headless streaming service, replacing the default browser-based configuration with an integrated controller-first experience.
 
----
-
-## 1. Filosofia de Integração: Extensão sem Apropriação
-
-O Sunshine é a referência mundial em captura de tela de ultra-baixa latência e codificação de vídeo em tempo real (NVENC, AMF, QuickSync, VAAPI, software). O Kame House Launcher adota os seguintes princípios:
-1. **Zero Modificação no Motor C++:** Toda a infraestrutura de codificação de áudio/vídeo, RTSP e emulação de entrada permanece 100% sob responsabilidade do código upstream do Sunshine.
-2. **Submódulo Git e Rastreamento Upstream:** O Sunshine é mantido como submódulo oficial apontando para o repositório oficial da organização LizardByte, possibilitando atualizações contínuas de versão.
-3. **Substituição da Camada de Apresentação:** O frontend web legado do Sunshine (que exigia abrir navegadores e aceitar avisos de certificados SSL) é substituído pela nossa interface integrada orientada a controle.
+<p align="center">
+  <b>English</b> · <a href="SUNSHINE_INTEGRATION.pt-BR.md">Português (Brasil)</a>
+</p>
 
 ---
 
-## 2. Comunicação via API REST HTTPS Local
+## 1. Integration Philosophy: Extension Without Appropriation
 
-O Sunshine expõe internamente uma API REST na porta `47990` (`confighttp.cpp`). A crate `launcher-sunshine` interage diretamente com esses endpoints:
+Sunshine is the premier open-source solution for ultra-low latency desktop capture and real-time hardware video encoding (NVENC, AMD AMF, Intel QuickSync, VAAPI, software). Kame House Launcher adheres to the following principles:
+1. **Zero Modifications to Core C++ Engine:** All video/audio encoding, RTSP packetization, and input driver emulation remain 100% maintained by Sunshine's upstream code.
+2. **Git Submodule & Upstream Tracking:** Sunshine is tracked as an official Git submodule pointing to the LizardByte repository, enabling clean, continuous updates.
+3. **Frontend Replacement:** Sunshine's legacy web UI (which required opening desktop browsers and bypassing self-signed SSL warnings) is bypassed in favor of our native, controller-driven UI.
 
-### 2.1 Principais Endpoints Consumidos
+---
 
-| Endpoint | Método | Descrição | Uso no Launcher |
+## 2. Local REST HTTPS API Communication
+
+Sunshine exposes a local REST API on port `47990` (`confighttp.cpp`). The `launcher-sunshine` crate interacts with these endpoints directly:
+
+### 2.1 Key Consumed Endpoints
+
+| Endpoint | Method | Description | Role in Launcher |
 | :--- | :---: | :--- | :--- |
-| `/api/csrf-token` | `GET` | Recupera o token CSRF da sessão | Autenticação para requisições seguras |
-| `/api/pin` | `POST` | Envia o PIN de 4 dígitos digitado pelo usuário | Pareamento instantâneo do Moonlight na tela |
-| `/api/config` | `GET`/`POST` | Lê e aplica alterações de configuração | Ajustes de encoders, taxa de quadros e portas |
-| `/api/apps` | `GET`/`POST` | Gerencia os aplicativos transmitidos | Sincronização do catálogo de jogos |
-| `/api/apps/close` | `POST` | Encerra a transmissão do aplicativo atual | Interrupção segura de sessões ativas |
-| `/api/restart` | `POST` | Reinicia o daemon de streaming | Aplicação a quente de mudanças de hardware |
-| `/api/logs` | `GET` | Recupera as últimas mensagens de log | Monitoramento e diagnóstico de conexão |
+| `/api/csrf-token` | `GET` | Retrieves the session CSRF token | Authentication for state-mutating requests |
+| `/api/pin` | `POST` | Submits the 4-digit PIN entered by the user | Instant Moonlight client pairing on-screen |
+| `/api/config` | `GET`/`POST` | Reads and applies streaming configuration | Adjusts encoders, bitrates, resolutions, ports |
+| `/api/apps` | `GET`/`POST` | Manages streamed applications | Synchronizes scanned game library |
+| `/api/apps/close` | `POST` | Terminates the active streaming app | Graceful session termination |
+| `/api/restart` | `POST` | Restarts the streaming daemon | Hot-reloads configuration changes |
+| `/api/logs` | `GET` | Retrieves recent daemon logs | Real-time connection diagnostics |
 
 ---
 
-## 3. Fluxo de Pareamento de Clientes Moonlight
+## 3. Moonlight Pairing Workflow
 
-1. O usuário abre o aplicativo **Moonlight** em uma TV da sala, Steam Deck, portátil ou smartphone e seleciona "Add Host".
-2. O Moonlight gera um **código PIN de 4 dígitos** na tela remota.
-3. No mesmo instante, o Kame House Launcher detecta o pedido ou exibe o botão **"Parear Dispositivo Moonlight"** na aba Sunshine.
-4. O usuário digita o PIN de 4 dígitos diretamente no popup do launcher usando o controle ou o teclado virtual.
-5. O `launcher-sunshine` envia o payload:
+1. The user opens the **Moonlight** client on a living room TV, Steam Deck, or mobile device and selects "Add Host".
+2. Moonlight displays a **4-digit PIN** on the remote screen.
+3. Simultaneously, Kame House Launcher detects the incoming connection request or provides the **"Pair Moonlight Device"** button in the Sunshine tab.
+4. The user types the 4-digit PIN directly into the launcher's dialog using their gamepad or virtual keyboard.
+5. The `launcher-sunshine` crate sends the payload:
    ```json
    {
      "pin": "1234",
      "name": "Kame House Launcher"
    }
    ```
-6. O Sunshine valida o handshake criptográfico e autoriza o cliente Moonlight imediatamente, sem abrir qualquer navegador externo.
+6. Sunshine validates the cryptographic handshake and approves the Moonlight client immediately—without ever opening a web browser.
 
 ---
 
-## 4. Sincronização de Jogos para o `apps.json`
+## 4. Game Catalog Sync (`apps.json`)
 
-O `launcher-sunshine` mantém o arquivo `apps.json` sincronizado com a biblioteca de jogos do launcher:
+The `launcher-sunshine` crate keeps Sunshine's `apps.json` synchronized with the launcher's game catalog:
 
 ```json
 {
@@ -76,24 +80,23 @@ O `launcher-sunshine` mantém o arquivo `apps.json` sincronizado com a bibliotec
 }
 ```
 
-Dessa forma, ao abrir o Moonlight na TV da sala, o usuário pode escolher:
-- Iniciar diretamente a experiência completa do **Kame House Launcher em tela cheia**; OU
-- Lançar títulos específicos individualmente a partir do menu do Moonlight.
+This enables users streaming from their living room TV to choose:
+- Launch directly into the full **Kame House Launcher Big Picture experience**; OR
+- Launch individual games straight from Moonlight's grid.
 
 ---
 
-## 5. Rastreamento Upstream e Atualizações
+## 5. Upstream Tracking & Updates
 
-Para manter o Sunshine sempre atualizado com as últimas melhorias de infraestrutura e correções de segurança lançadas pelo LizardByte:
+To keep Sunshine up to date with upstream improvements and security patches:
 
 ```bash
-# Atualizar o submódulo do Sunshine para a versão upstream mais recente
+# Update the Sunshine submodule to the latest upstream release
 git submodule update --remote --merge Sunshine
 
-# Compilar e validar a integração
+# Run integration tests
 cargo test -p launcher-sunshine
 ```
 
-### Créditos e Licença
-Conforme a licença **GPL-3.0**, todos os créditos do projeto Sunshine pertencem à organização **LizardByte e aos Sunshine Contributors**. O Kame House Launcher não reivindica direitos autorais sobre a infraestrutura do Sunshine, apenas a estende como plano de controle nativo.
-
+### Credits & Licensing
+Under the terms of the **GPL-3.0** license, all copyright for Sunshine belongs to **LizardByte & Sunshine Contributors**. Kame House Launcher claims no ownership over Sunshine's capture engine, extending it strictly as an autonomous headless daemon.

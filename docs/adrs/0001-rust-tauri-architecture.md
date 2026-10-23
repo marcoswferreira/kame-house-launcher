@@ -1,59 +1,58 @@
-# ADR 0001: Arquitetura do Launcher em Rust e Tauri v2
+# ADR 0001: Rust Workspace and Tauri v2 Architecture
 
-- **Status:** Proposto (Aceito para Planejamento)
-- **Data:** 2026-10-22
-- **Decisores:** Time de Desenvolvimento / Engenharia
+- **Status:** Accepted
+- **Date:** 2026-10-22
+- **Deciders:** Engineering Team
 
-## Contexto e Declaração do Problema
+<p align="center">
+  <b>English</b> · <a href="0001-rust-tauri-architecture.pt-BR.md">Português (Brasil)</a>
+</p>
 
-O Kame House Launcher foi concebido como uma central de jogos de alto desempenho para transformar computadores comuns em consoles de sala de estar (Living Room Console PC).
+## Context and Problem Statement
 
-Os requisitos técnicos fundamentais são:
-1. Uma base de código sólida em **Rust**, com arquitetura modular, tipagem estrita, performance nativa e segurança de memória.
-2. Alta performance em operações de baixo nível: varredura e hashing multi-thread de milhares de ROMs/ISOs, parsing de binários proprietários (Valve VDF, ISO9660, PARAM.SFO, PE executáveis), inspeção de discos e chamadas ao sistema operacional com footprint de memória residual ínfimo (<60MB de RAM).
-3. Uma interface de usuário de 10 pés ("10-foot UI") fluida a 60/120fps, com navegação total via gamepad/controle, feedback sonoro e renderização de artes visuais em alta resolução.
-4. Fácil integração e incorporação do plano de controle do Sunshine e da sessão de configuração "Console Mode".
+Kame House Launcher is conceived as a high-performance game launcher and central control system designed to transform everyday PCs into living-room gaming consoles.
 
-## Opções Consideradas
+The core technical requirements are:
+1. A solid codebase in **Rust**, with strict modularity, strong typing, native performance, and memory safety.
+2. High-performance low-level operations: multi-threaded traversal and hashing of thousands of ROMs/ISOs, parsing proprietary binary formats (Valve VDF, ISO9660, PARAM.SFO, PE executables), direct disc inspection, and OS-level system calls with a minimal background memory footprint (<60MB RAM).
+3. A fluid 60/120fps 10-foot user interface with complete gamepad navigation, subtle tactile audio cues, and high-resolution artwork rendering.
+4. Clean integration and embedding of the Sunshine streaming control plane and the "Console Mode" suite.
 
-1. **Opção 1: Workspace Rust Modular + Tauri v2 (Recomendada)**
-   - Backend 100% Rust distribuído em crates especializadas.
-   - Frontend em WebView nativo (WebKit/WebView2 via Tauri v2), aproveitando tecnologias web modernas (TypeScript/Tailwind) para a interface de 10 pés, carrosséis de jogos, layout de console e painéis de controle.
-   - Pegada de memória de ~40MB a 60MB (redução drástica comparada a navegadores pesados empacotados).
-   - Suporte nativo a aceleração de hardware e gamepad.
+## Considered Options
 
-2. **Opção 2: Pure Rust GUI (Slint ou Iced)**
-   - Renderização gráfica nativa direta via Skia ou wgpu.
-   - Excelente consumo de memória (<30MB) e tempo de compilação compacto.
-   - *Desvantagens:* Menor flexibilidade para renderizar componentes dinâmicos de streaming de vídeo/estatísticas do Sunshine, maior esforço para layouts complexos de carrossel de jogos, animações e integração com o ecossistema do Sunshine.
+1. **Option 1: Modular Rust Workspace + Tauri v2 (Recommended & Selected)**
+   - 100% Rust backend distributed across specialized crates.
+   - Native WebView frontend (WebKit/WebView2 via Tauri v2), leveraging modern web technologies (TypeScript/Tailwind) for rich 10-foot carousels, console TV layouts, and configuration dashboards.
+   - Memory footprint of ~40MB to 60MB (dramatic reduction compared to heavyweight bundled browsers).
+   - Native hardware acceleration and Gamepad API support.
 
-## Decisão
+2. **Option 2: Pure Rust GUI (Slint or Iced)**
+   - Direct native rendering via Skia or wgpu.
+   - Low memory usage (<30MB) and fast compilation.
+   - *Downsides:* Lower flexibility for dynamic streaming previews/stats from Sunshine, higher implementation complexity for game carousels, animations, and ecosystem integrations.
 
-Adotamos a **Opção 1**: Um workspace modular em **Rust** combinado com **Tauri v2** para a camada de apresentação.
+## Decision Outcome
 
-### Estrutura Modular das Crates no Workspace Cargo
+Chosen **Option 1**: A modular **Rust** Cargo workspace paired with **Tauri v2** for the presentation layer.
+
+### Modular Crates Structure
 
 ```text
-my-console-pc/
-├── Cargo.toml (Workspace raiz)
+kame-house-launcher/
+├── Cargo.toml (Root Workspace)
 ├── crates/
-│   ├── launcher-core/         # Tipos centrais, biblioteca de jogos, scanner, identificação de ROMs/PE, VDF
-│   ├── launcher-steam/        # Injeção em shortcuts.vdf, grid de artes e bridge CDP WebSocket para Steam CEF
-│   ├── launcher-achievements/ # Monitor de conquistas (RetroAchievements, RPCS3, Vita3K, Stores) e relay
-│   ├── launcher-sunshine/     # Cliente REST API Sunshine, gestor de processo headless e sincronizador
-│   ├── launcher-console/      # Módulo Console Mode: auto-login, autostart, switch de resolução/áudio, kiosk
-│   └── launcher-app/          # Executável Tauri v2, comandos IPC e frontend 10-foot gamepad-first
-└── ui/                        # Frontend UI (TypeScript, Tailwind, gamepad navigation, console layout)
+│   ├── launcher-core/         # Platform catalog, scanner, ROM headers, disc parser, PE inspection
+│   ├── launcher-steam/        # shortcuts.vdf binary upsert, grid artwork, and CDP WebSocket bridge
+│   ├── launcher-achievements/ # Unified achievement tracker (RetroAchievements, RPCS3, stores)
+│   ├── launcher-sunshine/     # Sunshine REST HTTPS client, daemon runner, and apps.json sync
+│   ├── launcher-console/      # Console Mode: auto-login, autostart, TV display, audio, supervisor
+│   └── launcher-app/          # Central LauncherService, IPC commands, and kame-house-launcher entrypoint
 ```
 
-## Consequências
+## Consequences
 
-### Positivas
-- **Eficiência e Velocidade:** As varreduras de arquivos, hashes criptográficos e injeções VDF rodam com velocidade nativa multi-thread (Rayon/Tokio).
-- **Consumo Mínimo de Recursos:** O launcher pode permanecer ativo na bandeja do sistema consumindo apenas dezenas de megabytes enquanto o jogo ou streaming estiver em execução.
-- **Console Experience:** WebViews modernas facilitam a criação de transições suaves estilo PS5/Xbox Series, temas escuros para TV e suporte completo a controles com biblioteca Gamepad API padronizada.
-- **Portabilidade:** Compatibilidade de compilação direta para Windows e Linux.
-
-### Negativas / Mitigações
-- **Dependência do WebView do Sistema:** No Windows usa WebView2 (pré-instalado no Win10/11); no Linux usa WebKitGTK. A instalação em ambientes Linux customizados necessita dos pacotes WebKitGTK básicos.
-
+### Positive
+- **Efficiency and Performance:** Multi-disk scanning, cryptographic hashing, and VDF operations execute at native multi-threaded speeds (`rayon`/`tokio`).
+- **Minimal Background Overhead:** The launcher can stay idle in the system tray or background consuming tens of megabytes while games or streaming sessions run.
+- **Console-Grade TV Experience:** Modern WebViews enable PS5/Xbox-like smooth transitions, TV dark themes, and universal gamepad navigation.
+- **Portability:** Cross-platform compilation for Windows and Linux.

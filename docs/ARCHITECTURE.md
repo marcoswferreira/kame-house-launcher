@@ -1,38 +1,42 @@
-# Arquitetura do Sistema: Kame House Launcher 🐢
+# System Architecture: Kame House Launcher 🐢
 
-Este documento detalha o design de software, a divisão de responsabilidades das crates, os fluxos de dados e as integrações de sistema do **Kame House Launcher**.
+This document outlines the system design, crate separation of concerns, data flows, and external integrations for **Kame House Launcher**.
+
+<p align="center">
+  <b>English</b> · <a href="ARCHITECTURE.pt-BR.md">Português (Brasil)</a>
+</p>
 
 ---
 
-## 1. Visão Geral da Arquitetura
+## 1. Architectural Overview
 
-O Kame House Launcher adota uma arquitetura em camadas orientada a eventos e crates modulares em Rust:
+Kame House Launcher is built as an event-driven, modular Rust application organized into specialized crates:
 
 ```mermaid
 flowchart TD
-    subgraph UI["Camada de Interface (10-Foot UI)"]
-        Grid["Biblioteca de Jogos (Grid & Carrossel)"]
-        SunshineTab["Painel Sunshine (Pareamento PIN, Encoders)"]
-        ConsoleTab["Sessão Modo Console (TV, Áudio, Auto-Login)"]
+    subgraph UI["Presentation Layer (10-Foot UI)"]
+        Grid["Game Library (Grid & Carousel)"]
+        SunshineTab["Sunshine Panel (PIN Pairing, Encoders)"]
+        ConsoleTab["Console Mode (TV, Audio, Auto-Login)"]
     end
 
-    subgraph Service["Camada de Coordenação (launcher-app)"]
-        LauncherService["LauncherService (Gestão de Estado & Ciclo de Vida)"]
+    subgraph Service["Coordination Layer (launcher-app)"]
+        LauncherService["LauncherService (State Management & Lifecycle)"]
     end
 
-    subgraph CoreCrates["Crates Especializadas"]
-        Core["launcher-core (Scanner, Headers, Discos, Plataformas)"]
-        Steam["launcher-steam (VDF shortcuts, Grid artes, CDP WebSocket)"]
-        Achiev["launcher-achievements (Relay de Conquistas & SQLite logs)"]
+    subgraph CoreCrates["Specialized Rust Crates"]
+        Core["launcher-core (Scanner, Headers, Discs, Platforms)"]
+        Steam["launcher-steam (VDF shortcuts, Grid art, CDP WebSocket)"]
+        Achiev["launcher-achievements (Achievement Relay & Journal)"]
         Sun["launcher-sunshine (REST HTTPS Client & apps.json sync)"]
-        Console["launcher-console (Display TV, Áudio, Shell Kiosk, Supervisor)"]
+        Console["launcher-console (TV Display, Audio, Shell Kiosk, Supervisor)"]
     end
 
-    subgraph External["Subsistemas Externos"]
+    subgraph External["External Subsystems"]
         SteamClient["Steam Client (shortcuts.vdf & CEF Port 8080)"]
-        SunshineDaemon["Sunshine Daemon C++ (HTTPS 47990 / RTSP)"]
-        MoonlightClient["Cliente Moonlight (TV / Steam Deck / Celular)"]
-        OS["Sistema Operacional (Win32 APIs / Linux xrandr / ALSA)"]
+        SunshineDaemon["Sunshine C++ Daemon (HTTPS 47990 / RTSP)"]
+        MoonlightClient["Moonlight Client (TV / Steam Deck / Mobile)"]
+        OS["Operating System (Win32 APIs / Linux xrandr / ALSA)"]
     end
 
     UI <--> LauncherService
@@ -43,50 +47,48 @@ flowchart TD
     LauncherService --> Console
 
     Steam <-->|"WebSocket CDP"| SteamClient
-    Achiev -->|"Relay Notificação"| Steam
+    Achiev -->|"Notification Relay"| Steam
     Sun <-->|"REST HTTPS /api/*"| SunshineDaemon
     SunshineDaemon -->|"Video/Input"| MoonlightClient
-    Console <-->|"APIs de Sistema"| OS
+    Console <-->|"System APIs"| OS
 ```
 
 ---
 
-## 2. Responsabilidades por Crate
+## 2. Crate Responsibilities
 
 ### `launcher-core`
-- **Catálogo de Plataformas:** Mapeamento imutável de mais de 30 plataformas de jogos, IDs de metadados externos (IGDB, RetroAchievements, libretro) e extensões de arquivos suportadas.
-- **Leitor de Cabeçalhos de Cartuchos (`headers.rs`):** Inspeção com zero alocação de ROMs de GBA, NDS, Game Boy/Color, Nintendo 64 (com rotação de endianness), Sega Genesis e SNES (complement check).
-- **Leitor de Imagens de Disco (`disc.rs`):** Parser ISO9660 PVD de baixo nível e leitor de descritores de volume, extraindo `SYSTEM.CNF` e `PARAM.SFO`.
-- **Inspeção de Executáveis PE (`pe.rs`):** Recuperação de `ProductName` e busca de evidências locais de AppID da Steam (`steam_appid.txt`, `steam_emu.ini`, manifestos).
-- **Scanner Multi-thread (`scanner.rs`):** Varredura concorrente em múltiplos discos através de `rayon` e `walkdir`.
+- **Platform Catalog:** Immutable mapping of 30+ game systems, metadata IDs (IGDB, RetroAchievements, libretro), and supported extensions.
+- **Cartridge Header Inspection (`headers.rs`):** Zero-allocation reading of ROM headers for Game Boy Advance, Nintendo DS, Game Boy/Color, Nintendo 64 (with endianness swapping), Sega Genesis, and Super Nintendo (LoROM/HiROM checksum complement verification).
+- **Disc Sector Reader (`disc.rs`):** Low-level ISO9660 Primary Volume Descriptor (PVD) parser extracting `SYSTEM.CNF` and `PARAM.SFO`.
+- **PE Metadata Inspection (`pe.rs`):** Extraction of `ProductName` and local Steam AppID discovery (`steam_appid.txt`, `steam_emu.ini`, manifest files).
+- **Multi-threaded Scanner (`scanner.rs`):** Concurrent multi-disk traversal powered by `rayon` and `walkdir`.
 
 ### `launcher-steam`
-- **Manipulador Binário de VDF (`vdf.rs`):** Parser recursivo do formato Valve Data Format binário e encoder atômico para `shortcuts.vdf`.
-- **Cálculo de Shortcut AppID:** Hash determinístico de 32 bits:
+- **Binary VDF Engine (`vdf.rs`):** Recursive parser and atomic serializer for Valve's binary Data Format (`shortcuts.vdf`).
+- **Deterministic Shortcut AppID:** CRC32 32-bit hash calculation:
   $$\text{id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
-- **Gerenciador de Artes do Grid (`grid.rs`):** Sincronização de capas, heroes, logos, imagens wide e ícones na pasta da Steam.
-- **Bridge CDP WebSocket (`cdp.rs`):** Conexão assíncrona ao Chrome DevTools Protocol da Steam em `127.0.0.1:8080` com anexo ao `SharedJSContext` para envio de notificações nativas de conquistas.
+- **Grid Artwork Manager (`grid.rs`):** Positions covers, heroes, logos, wide banners, and icons into Steam's `grid/` folder.
+- **CDP WebSocket Bridge (`cdp.rs`):** Async Chrome DevTools Protocol client connecting to Steam CEF on port `8080` to attach to `SharedJSContext` and trigger native achievement notifications.
 
 ### `launcher-achievements`
-- **Monitor de Conquistas (`manager.rs`):** Modelo de dados unificado para troféus e eventos de desbloqueio.
-- **Histórico Persistente:** Gravação atômica em `activity.json`.
-- **Parsers de Log (`models.rs`):** Reconhecimento de eventos de desbloqueio em logs de emuladores (como RPCS3) e encaminhamento ao bridge da Steam.
+- **Unified Tracker (`manager.rs`):** Data models for achievements, unlock events, and persistent activity journal (`activity.json`).
+- **Log Parsers (`models.rs`):** Detects achievement unlocks from emulator logs (such as RPCS3) and relays them to the Steam bridge.
 
 ### `launcher-sunshine`
-- **Cliente REST HTTPS (`client.rs`):** Comunicação assíncrona com Sunshine em `https://127.0.0.1:47990` com tratamento de CSRF tokens e certificados autoassinados locais.
-- **Pareamento por PIN:** Implementação da rota `/api/pin` para pareamento direto de clientes Moonlight.
-- **Sincronizador de Aplicativos (`sync.rs`):** Mapeamento do catálogo do launcher para o formato `apps.json` do Sunshine.
-- **Rastreamento Upstream:** Sunshine mantido como submódulo Git no diretório `Sunshine/`.
+- **REST HTTPS Client (`client.rs`):** Communicates with Sunshine on `https://127.0.0.1:47990`, handling CSRF tokens and self-signed local certificates.
+- **PIN Pairing Flow:** Consumes `/api/pin` to handle Moonlight pairing prompts directly on-screen.
+- **Catalog Synchronizer (`sync.rs`):** Maps scanned game titles and the full launcher into Sunshine's `apps.json`.
+- **Upstream Tracking:** Sunshine maintained as an unmodified Git submodule in `Sunshine/`.
 
 ### `launcher-console`
-- **Supervisor de Janelas (`supervisor.rs`):** Gerencia os dois comportamentos de execução:
-  1. `HideAndRestoreFullscreen`: Oculta o launcher durante a execução do jogo e o restaura com foco imediato no controle ao fechar.
-  2. `KeepOpen`: Mantém o launcher aberto em segundo plano.
-- **Configurações de TV (`models.rs`):** Presets para 4K a 120Hz, 1440p a 120Hz, 1080p a 120Hz e ativação de HDR.
-- **Inicialização do Sistema (`boot.rs`):** Automação de auto-login (`AutoAdminLogon` no Windows / desktop autostart no Linux).
-- **Ações de Energia (`power.rs`):** Comandos nativos para Suspender, Hibernar, Reiniciar e Desligar via controle.
+- **Launch Supervisor (`supervisor.rs`):** Manages both execution behaviors:
+  1. `HideAndRestoreFullscreen`: Minimizes/hides the launcher during gameplay and restores it in fullscreen with immediate gamepad focus on exit.
+  2. `KeepOpen`: Keeps the launcher active in the background.
+- **TV Display Settings (`models.rs`):** Presets for 4K @ 120Hz, 1440p @ 120Hz, 1080p @ 120Hz, and HDR activation.
+- **System Boot (`boot.rs`):** Auto-login helpers (`AutoAdminLogon` on Windows / autostart desktop entry on Linux).
+- **Power Management (`power.rs`):** Controller-mapped Sleep, Hibernate, Restart, and Shutdown commands.
 
 ### `launcher-app`
-- **Serviço Central (`service.rs`):** `LauncherService` agregando estado, persistência de catálogo e chamadas IPC.
-- **Binário Executável (`main.rs`):** Ponto de entrada com logging estruturado via `tracing-subscriber`.
-
+- **Central Coordinator (`service.rs`):** `LauncherService` aggregating state, game catalog persistence, and IPC calls.
+- **Application Binary (`main.rs`):** CLI entrypoint with structured logging via `tracing-subscriber`.

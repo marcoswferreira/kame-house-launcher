@@ -1,32 +1,36 @@
-# Guia de Contribuição: Kame House Launcher 🐢
+# Contributing Guide: Kame House Launcher 🐢
 
-Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este documento orienta sobre o fluxo de desenvolvimento, os padrões de código e as boas práticas de commit.
+Thank you for your interest in contributing to **Kame House Launcher**! This document provides guidelines for development workflows, code standards, and commit practices.
 
----
-
-## 🌟 Princípios de Desenvolvimento
-
-1. **Rust Idiomático e Seguro:** Priorize segurança de tipos, controle estrito de erros com `anyhow`/`thiserror` e zero alocações desnecessárias.
-2. **Alta Performance:** O launcher é voltado para salas de estar e deve manter uso residual de memória (~40MB de RAM) para não competir com jogos e streaming.
-3. **Cobertura de Código Obrigatória (≥ 70%):** Todo novo recurso, parser ou módulo deve ser acompanhado de testes unitários ou de integração, mantendo a cobertura do workspace em ou acima de 70%.
-4. **Respeito aos Projetos Upstream:** Qualquer extensão de serviços como o Sunshine deve manter créditos claros e preservar o código upstream intocado via submódulo Git.
+<p align="center">
+  <b>English</b> · <a href="CONTRIBUTING.pt-BR.md">Português (Brasil)</a>
+</p>
 
 ---
 
-## 🛠 Configuração do Ambiente
+## 🌟 Core Principles
 
-1. Certifique-se de ter o compilador Rust instalado:
+1. **Idiomatic, Memory-Safe Rust:** Emphasize type safety, strict error handling via `anyhow`/`thiserror`, and minimal heap allocations in inner loops.
+2. **High Performance & Low Overhead:** The launcher is designed for living room gaming and must maintain a lightweight background footprint (~40MB RAM) so it never competes with games or streaming encoders.
+3. **Mandatory Test Coverage (≥ 70%):** Every new feature, parser, or module must include unit or integration tests, maintaining the workspace line coverage at or above 70%.
+4. **Respect for Upstream Projects:** Any integration with upstream tools like Sunshine must preserve proper attribution and maintain upstream code intact via Git submodules.
+
+---
+
+## 🛠 Development Setup
+
+1. Ensure the Rust toolchain is installed:
    ```bash
    rustup update stable
    rustup component add llvm-tools-preview
    ```
 
-2. Instale as ferramentas auxiliares:
+2. Install development utilities:
    ```bash
    cargo install cargo-llvm-cov --locked
    ```
 
-3. Clone o repositório recursivamente:
+3. Clone repository recursively:
    ```bash
    git clone --recurse-submodules https://github.com/marcoswferreira/kame-house-launcher.git
    cd kame-house-launcher
@@ -34,52 +38,52 @@ Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este d
 
 ---
 
-## 🧪 Validação e Testes Locais
+## 🧪 Local Testing & Verification
 
-Antes de abrir um Pull Request ou criar commits:
+Before submitting Pull Requests or creating commits:
 
-1. **Checar Formatação e Lints:**
+1. **Check Formatting and Lints:**
    ```bash
    cargo fmt --check
    cargo clippy --workspace --all-targets -- -D warnings
    ```
 
-2. **Executar a Suíte de Testes:**
+2. **Run Workspace Tests:**
    ```bash
    cargo test --workspace
    ```
 
-3. **Verificar a Cobertura de Código:**
+3. **Check Code Coverage:**
    ```bash
    cargo llvm-cov --workspace --summary-only
    ```
-   A cobertura total de linhas não pode ser inferior a 70%.
+   Total line coverage must remain above 70%.
 
 ---
 
-## 📝 Padrão de Commits (Conventional Commits)
+## 📝 Commit Standards (Conventional Commits)
 
-Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](https://www.conventionalcommits.org/):
+All commits must follow the [Conventional Commits v1.0.0](https://www.conventionalcommits.org/) specification:
 
 ```text
-<tipo>(<escopo opcional>): <descrição no imperativo e em minúsculas>
+<type>(<optional scope>): <imperative summary in lowercase>
 
-[corpo opcional explicando o porquê da alteração]
+[optional body explaining motivation and changes]
 
-[rodapé opcional para issues resolvidas ou breaking changes]
+[optional footer for issue references or breaking changes]
 ```
 
-### Tipos Permitidos
-- `feat`: Novo recurso para o usuário ou biblioteca (ex.: novo parser de console, novo preset de TV).
-- `fix`: Correção de bug.
-- `docs`: Alterações exclusivamente na documentação ou ADRs.
-- `style`: Formatação, pontuação ausente, sem alteração de código produtivo.
-- `refactor`: Refatoração de código que não adiciona recurso nem corrige bug.
-- `perf`: Mudança de código que melhora o desempenho.
-- `test`: Adição de testes faltantes ou correção de testes existentes.
-- `chore`: Atualizações de build, dependências ou ferramentas de CI/CD.
+### Allowed Types
+- `feat`: New user-facing feature or library capability.
+- `fix`: Bug fix.
+- `docs`: Documentation or ADR updates only.
+- `style`: Formatting, whitespace, no production logic changes.
+- `refactor`: Code change that neither fixes a bug nor adds a feature.
+- `perf`: Performance optimization.
+- `test`: Adding missing tests or correcting existing tests.
+- `chore`: Build scripts, dependencies, or CI/CD updates.
 
-### Exemplos de Boas Mensagens de Commit
+### Examples of Good Commit Messages
 - `feat(core): add rom header detection for sega saturn disc images`
 - `fix(steam): correct vdf binary endianness when writing 64-bit integers`
 - `docs: update sunshine pairing instructions in readme`
@@ -87,16 +91,12 @@ Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](ht
 
 ---
 
-## 🔀 Fluxo de Branches e Pull Requests
+## 🔀 Branching & Pull Request Workflow
 
-1. Crie uma branch descritiva a partir de `main`:
+1. Create a descriptive feature branch from `main`:
    ```bash
    git checkout -b feat/gamepad-virtual-keyboard
    ```
-2. Realize alterações atômicas com commits bem descritos.
-3. Certifique-se de que `cargo test --workspace` e `cargo llvm-cov` passem sem erros.
-4. Abra o Pull Request descrevendo:
-   - Qual problema ou necessidade a alteração resolve.
-   - Como foi testado.
-   - Impacto na performance ou nos subsistemas relacionados.
-
+2. Make atomic, well-documented commits.
+3. Ensure all tests and coverage checks pass locally.
+4. Open a Pull Request detailing the problem solved and testing performed.

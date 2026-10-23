@@ -1,60 +1,67 @@
 # Kame House Launcher 🐢🎮
 
-> **Transforme seu computador na melhor experiência de console de sala de estar.**  
-> Um launcher de jogos de alta performance, completamente desenvolvido em **Rust**, com integração nativa ao **Sunshine** para streaming sem atrito e uma sessão dedicada de **Modo Console**.
+> **Transform your PC into the ultimate living-room console experience.**  
+> A high-performance game launcher built from scratch in **Rust**, featuring native **Sunshine** headless integration for frictionless game streaming and a dedicated **Console Mode** transformation suite.
 
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-82.13%25-brightgreen.svg?style=flat-square)](#testes-e-cobertura-de-código)
+[![Coverage](https://img.shields.io/badge/coverage-82.13%25-brightgreen.svg?style=flat-square)](#-testing-and-code-coverage)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=flat-square)](https://conventionalcommits.org)
 
----
-
-## 📋 Sumário
-- [Destaques](#-destaques)
-- [Arquitetura do Workspace](#-arquitetura-do-workspace)
-- [Funcionalidades Principais](#-funcionalidades-principais)
-  - [1. Varredura e Identificação por Conteúdo](#1-varredura-e-identificação-por-conteúdo)
-  - [2. Integração Headless com Sunshine](#2-integração-headless-com-sunshine)
-  - [3. Sessão Modo Console (Living Room PC)](#3-sessão-modo-console-living-room-pc)
-  - [4. Interoperabilidade com Steam](#4-interoperabilidade-com-steam)
-  - [5. Conquistas com Notificação Nativa](#5-conquistas-com-notificação-nativa)
-- [Pré-requisitos e Dependências](#-pré-requisitos-e-dependências)
-- [Como Compilar e Executar](#-como-compilar-e-executar)
-- [Testes e Cobertura de Código](#-testes-e-cobertura-de-código)
-- [Decisões de Arquitetura (ADRs)](#-decisões-de-arquitetura-adrs)
-- [Créditos e Atribuições](#-créditos-e-atribuições)
-- [Licença](#-licença)
+<p align="center">
+  <b>English</b> · <a href="README.pt-BR.md">Português (Brasil)</a>
+</p>
 
 ---
 
-## 🔥 Destaques
-
-- ⚡ **100% Rust Nativo:** Consumo de memória ultrabaixo (~40MB de RAM contra centenas de MB de launchers tradicionais em Electron), liberando toda a CPU e GPU para os seus jogos.
-- 📺 **Modo Console para Sala:** Auto-login sem senha no Windows/Linux, inicialização silenciosa em tela cheia (Kiosk), presets para TV 4K a 120Hz, ativação de HDR e roteamento automático de áudio para HDMI/Soundbar.
-- 🎮 **Navegação 10-Pés & Gamepad:** Navegação completa por controle (D-pad, analógicos, gatilhos), efeitos sonoros táteis e teclado virtual em tela (OSK).
-- 🔄 **Dois Modos de Lançamento:** Escolha entre **ocultar o launcher durante a gameplay e restaurar em tela cheia com foco imediato no controle** (padrão de console) ou **manter o launcher aberto em segundo plano**.
-- 📡 **Sunshine Integrado (Adeus Interface Web de Navegador):** Gerenciamento headless do servidor Sunshine diretamente pelo launcher, com pop-up de pareamento por PIN de 4 dígitos para clientes Moonlight e sincronização automática de jogos para o `apps.json`.
-- 🏆 **Conquistas da Steam:** Relay de notificações oficiais com áudio via Chrome DevTools Protocol (CDP), exibindo o aviso oficial da Steam para jogos de emuladores e PC.
+## 📋 Table of Contents
+- [Highlights](#-highlights)
+- [Workspace Architecture](#-workspace-architecture)
+- [Core Features](#-core-features)
+  - [1. Content-Based Scanning & Header Inspection](#1-content-based-scanning--header-inspection)
+  - [2. Headless Sunshine Streaming Integration](#2-headless-sunshine-streaming-integration)
+  - [3. Dedicated Console Mode (Living Room PC)](#3-dedicated-console-mode-living-room-pc)
+  - [4. Steam Ecosystem Interoperability](#4-steam-ecosystem-interoperability)
+  - [5. Native Steam Achievement Relay](#5-native-steam-achievement-relay)
+- [Prerequisites & Dependencies](#-prerequisites--dependencies)
+- [Building & Running](#-building--running)
+- [Testing & Code Coverage](#-testing-and-code-coverage)
+- [Architectural Decision Records (ADRs)](#-architectural-decision-records-adrs)
+- [Credits & Attributions](#-credits--attributions)
+- [License](#-license)
 
 ---
 
-## 🏛 Arquitetura do Workspace
+## 🔥 Highlights
 
-O projeto é organizado como um workspace Cargo modular, garantindo separação estrita de responsabilidades, testabilidade e reutilização:
+- ⚡ **100% Native Rust:** Ultra-low memory footprint (~40MB RAM compared to hundreds of MB consumed by traditional Electron-based launchers), maximizing available CPU and GPU resources for gaming and streaming.
+- 📺 **Living Room Console Mode:** Painless password-free Auto-Login for Windows and Linux, silent fullscreen boot (Kiosk shell), TV resolution presets (4K @ 120Hz), HDR toggle, and automatic audio routing to HDMI/Soundbar.
+- 🎮 **10-Foot Gamepad-First Navigation:** Full controller support (D-pad, thumbsticks, bumpers, triggers), tactile audio cues, automatic mouse cursor suppression, and an on-screen virtual keyboard (OSK).
+- 🔄 **Configurable Launch Behaviors:** Choose between:
+  1. **Hide/minimize on launch and return in fullscreen with immediate gamepad focus on exit** (Console Standard); OR
+  2. **Keep the launcher running in the background**.
+- 📡 **Integrated Sunshine Control Plane (No Browser Popups):** Autonomous headless management of the Sunshine streaming daemon directly inside the launcher, with on-screen 4-digit PIN pairing dialogs for Moonlight clients and auto-synchronization of game libraries into `apps.json`.
+- 🏆 **Steam Achievement Relays:** Native toast notifications with official audio cues dispatched through the Steam CEF Chrome DevTools Protocol (CDP) for emulator and PC games.
+
+---
+
+## 🏛 Workspace Architecture
+
+The project is structured as a modular Cargo workspace, enforcing clean boundaries, testability, and component reusability:
 
 ```text
 kame-house-launcher/
-├── Cargo.toml                      # Manifesto do Workspace Rust
-├── Cargo.lock                      # Lockfile de dependências determinísticas
-├── LICENSE                         # Licença GNU General Public License v3.0
-├── README.md                       # Documentação principal
-├── CONTRIBUTING.md                 # Guia de contribuição e convenções
-├── Sunshine/                       # Submódulo Git oficial do Sunshine (LizardByte)
-├── docs/                           # Documentação técnica e ADRs
-│   ├── ARCHITECTURE.md             # Engenharia e diagramas de fluxo
-│   ├── CONSOLE_MODE.md             # Guia do Modo Console
-│   ├── SUNSHINE_INTEGRATION.md     # Guia da integração Sunshine
+├── Cargo.toml                      # Root Cargo Workspace definition
+├── Cargo.lock                      # Deterministic dependency lockfile
+├── LICENSE                         # GNU General Public License v3.0
+├── README.md                       # English documentation (default)
+├── README.pt-BR.md                 # Portuguese documentation
+├── CONTRIBUTING.md                 # Contribution and commit guidelines
+├── Sunshine/                       # Official upstream Sunshine Git submodule (LizardByte)
+├── docs/                           # Technical documentation and guides
+│   ├── ARCHITECTURE.md             # System design and data flow diagrams
+│   ├── CONSOLE_MODE.md             # Living room console transformation guide
+│   ├── SUNSHINE_INTEGRATION.md     # Headless Sunshine extension guide
 │   └── adrs/                       # Architectural Decision Records
 │       ├── 0001-rust-tauri-architecture.md
 │       ├── 0002-sunshine-integration-and-upstream-tracking.md
@@ -62,154 +69,153 @@ kame-house-launcher/
 │       ├── 0004-steam-injection-and-native-notifications.md
 │       └── 0005-console-mode-transformation.md
 └── crates/
-    ├── launcher-core/              # Scanner, headers de cartuchos, leitor de discos e plataformas
-    ├── launcher-steam/             # VDF binário (shortcuts.vdf), artes de grid e bridge CDP WebSocket
-    ├── launcher-achievements/      # Gestor unificado de conquistas e parser de logs (RPCS3/RA)
-    ├── launcher-sunshine/          # Cliente REST HTTPS Sunshine, pareamento PIN e sync apps.json
-    ├── launcher-console/           # Display TV, áudio, auto-login, kiosk e launch supervisor
-    └── launcher-app/               # Serviço central e executável kame-house-launcher
+    ├── launcher-core/              # Scanner, cartridge headers, disc parser, platforms
+    ├── launcher-steam/             # Binary VDF shortcuts, grid artwork, CDP WebSocket bridge
+    ├── launcher-achievements/      # Unified achievement tracker and emulator log parsers
+    ├── launcher-sunshine/          # REST HTTPS client, PIN pairing, apps.json sync
+    ├── launcher-console/           # TV display presets, audio routing, auto-login, launch supervisor
+    └── launcher-app/               # Central coordinator service and kame-house-launcher CLI
 ```
 
 ---
 
-## 🎮 Funcionalidades Principais
+## 🎮 Core Features
 
-### 1. Varredura e Identificação por Conteúdo
-Em vez de depender de nomes de arquivo frágeis (como `jogo_v2_final.iso`), o `launcher-core` inspeciona o conteúdo binário:
-- **Cartuchos:** Cabeçalhos de Nintendo GBA, NDS, Game Boy/Color, Nintendo 64 (com suporte a big-endian, byte-swapped e word-swapped), Sega Mega Drive/Genesis e SNES (verificação de checksum/complement LoROM e HiROM).
-- **Imagens de Disco:** Extração direta de setores ISO9660 PVD, localização de `SYSTEM.CNF` de PS1/PS2 e decodificação de `PARAM.SFO` (PSP, PS3, PS4).
-- **Jogos de PC e Lojas:** Leitura de metadados PE (`ProductName`, `FileDescription`) e busca de evidências de AppID em `steam_appid.txt`, `steam_emu.ini`, Goldberg e manifestos de instalação.
-- **Multithreading:** Varredura paralela ultrarrápida com `rayon` e `walkdir`.
+### 1. Content-Based Scanning & Header Inspection
+Rather than relying on volatile or arbitrary filenames (like `game_final_v2.iso`), `launcher-core` inspects internal binary signatures:
+- **Cartridge Headers:** Zero-allocation inspection for Game Boy Advance, Nintendo DS, Game Boy/Color, Nintendo 64 (supporting big-endian, byte-swapped, and word-swapped encodings), Sega Mega Drive/Genesis, and Super Nintendo (LoROM/HiROM checksum and complement verification).
+- **Disc Sector Images:** Direct sector decoding of ISO9660 Primary Volume Descriptors (PVD), extracting `SYSTEM.CNF` for PS1/PS2 and parsing `PARAM.SFO` for PSP, PS3, and PS4.
+- **PC Games & Stores:** Portable Executable (PE) metadata inspection (`ProductName`, `FileDescription`) and local Steam AppID discovery (`steam_appid.txt`, `steam_emu.ini`, Goldberg emulators, installation manifests).
+- **Parallel Multi-Threading:** High-speed multi-disk traversal powered by `rayon` and `walkdir`.
 
-### 2. Integração Headless com Sunshine
-- **Zero Apropriação:** O código de captura, codificação de vídeo (NVENC, AMF, QuickSync) e RTSP do Sunshine permanece 100% sob os cuidados do time original (LizardByte). O repositório é rastreado como submódulo Git.
-- **Frontend Próprio Embutido:** O usuário não precisa abrir um navegador nem aceitar certificados SSL autoassinados. Quando o Moonlight em uma TV, Steam Deck ou celular solicita conexão, um pop-up surge na tela do launcher para inserção do PIN de 4 dígitos.
-- **Sincronização de Catálogo:** Exporta os jogos adicionados e o próprio Kame House Launcher em modo Big Picture diretamente para o arquivo `apps.json` do Sunshine.
+### 2. Headless Sunshine Streaming Integration
+- **Pure Extension Without Appropriation:** All core video capture, hardware encoding (NVENC, AMD AMF, Intel QuickSync, VAAPI), RTSP streaming, and input virtual devices remain 100% under Sunshine's upstream C++ engine. Sunshine is tracked cleanly as an official Git submodule.
+- **Integrated Controller-Friendly Frontend:** Eliminates the need to open web browsers or accept self-signed SSL certificate warnings. When Moonlight on a TV or handheld requests pairing, an on-screen dialog accepts the 4-digit PIN directly.
+- **Library Synchronization:** Automatically updates Sunshine's `apps.json` with the launcher's scanned titles and adds an entry to stream the full Kame House Launcher in Big Picture mode.
 
-### 3. Sessão Modo Console (Living Room PC)
-Projetada para eliminar as fricções de um sistema operacional de desktop tradicional:
-- **Assistente de Auto-Login:** Gera as diretivas seguras de `AutoAdminLogon` no Windows ou autostart no Linux para pular a tela de senha.
-- **Modo Kiosk / Shell:** Opção de iniciar diretamente na interface do launcher em tela cheia, ocultando barra de tarefas e ícones do sistema.
-- **Alternador de TV & Display:** Presets de um clique para resoluções de sala: 4K 120Hz, 1440p 120Hz, 1080p 120Hz e ativação de HDR.
-- **Roteamento de Áudio:** Alterna a saída de som padrão automaticamente para o HDMI da TV ou Soundbar.
-- **Menu de Energia via Controle:** Ações de Suspender, Hibernar, Reiniciar ou Desligar o PC com o gamepad.
-- **Dois Comportamentos de Lançamento Configuáveis:**
-  - `HideAndRestoreFullscreen` (Padrão): Ao iniciar um jogo, o launcher se esconde ou minimiza para economizar recursos; ao fechar o jogo, o launcher restaura imediatamente em tela cheia com foco no controle.
-  - `KeepOpen`: Mantém a interface do launcher aberta em segundo plano.
+### 3. Dedicated Console Mode (Living Room PC)
+Engineered to remove desktop operating system friction:
+- **Auto-Login Assistant:** Generates Windows `AutoAdminLogon` registry directives or Linux display manager configurations to bypass password prompts on startup.
+- **Kiosk / Shell Mode:** Option to boot directly into the launcher in exclusive fullscreen, hiding taskbars, desktop icons, and OS notifications.
+- **TV Display Switcher:** Instant presets for living room screens: 4K @ 120Hz, 1440p @ 120Hz, 1080p @ 120Hz, and one-click HDR enablement.
+- **Audio Routing:** Automatically redirects default system audio to HDMI TV or Soundbar outputs.
+- **Gamepad Power Actions:** Sleep, Hibernate, Restart, or Shutdown the PC directly using your controller.
+- **Dual Launch Behaviors:**
+  - `HideAndRestoreFullscreen` (Default): Hides or minimizes the launcher while playing, and immediately restores it in fullscreen with controller focus when the game exits.
+  - `KeepOpen`: Keeps the launcher active in the background.
 
-### 4. Interoperabilidade com Steam
-- **Manipulação Binária Atômica de VDF:** O módulo `launcher-steam` codifica e decodifica o formato proprietário `shortcuts.vdf` da Valve sem corromper atalhos já existentes.
-- **Cálculo de AppID da Steam:** Gera o hash CRC32 com o bit 31 habilitado:
+### 4. Steam Ecosystem Interoperability
+- **Atomic Binary VDF Manipulation:** The `launcher-steam` crate parses and serializes Valve's binary format without corrupting existing shortcuts.
+- **Deterministic Steam AppID Hashing:** Computes the 32-bit CRC32 shortcut identifier with bit 31 set:
   $$\text{shortcut\_id} = (\text{CRC32}(\text{exe} + \text{AppName}) \mid 0x80000000)$$
-- **Gestão de Artes do Grid:** Posiciona capas verticais (`p.png`), banners horizontais (`_hero.png`), logos transparentes (`_logo.png`), wide (`.png`) e ícones executáveis (`_icon.ico`) na pasta `userdata/<ID>/config/grid`.
+- **Grid Artwork Management:** Places custom vertical posters (`p.png`), hero banners (`_hero.png`), transparent logos (`_logo.png`), wide capsules (`.png`), and executable icons (`_icon.ico`) into `userdata/<account>/config/grid`.
 
-### 5. Conquistas com Notificação Nativa
-- Conecta-se à porta de depuração do CEF da Steam (`127.0.0.1:8080`) via Chrome DevTools Protocol (CDP).
-- Quando uma conquista é desbloqueada em emuladores ou lojas de PC, o launcher aciona a API de notificações do contexto principal da Steam (`SharedJSContext`), exibindo o toast oficial com som e animação.
+### 5. Native Steam Achievement Relay
+- Connects to Steam's CEF debugging port (`127.0.0.1:8080`) over Chrome DevTools Protocol (CDP).
+- When achievements are unlocked in emulators (RetroAchievements, RPCS3, Vita3K) or PC stores, an event is dispatched to Steam's `SharedJSContext`, triggering the official notification overlay with audio.
 
 ---
 
-## 🛠 Pré-requisitos e Dependências
+## 🛠 Prerequisites & Dependencies
 
-- **Rust:** Versão 1.75 ou superior (`rustc` e `cargo`).
-- **Compilador C/C++:** `gcc`/`g++` e `pkg-config` (Linux) ou MSVC Build Tools (Windows).
-- **Sistema Operacional:**
+- **Rust:** Version 1.75 or higher (`rustc` and `cargo`).
+- **C/C++ Compiler & Build Tools:** `gcc`/`g++` and `pkg-config` (Linux) or MSVC Build Tools (Windows).
+- **Supported Operating Systems:**
   - Windows 10/11 (64-bit).
   - Linux (Ubuntu 22.04+, Debian, Fedora, Arch Linux).
 
 ---
 
-## 🚀 Como Compilar e Executar
+## 🚀 Building & Running
 
-### 1. Clonar o Repositório com Submódulos
+### 1. Clone Repository With Submodules
 ```bash
 git clone --recurse-submodules https://github.com/marcoswferreira/kame-house-launcher.git
 cd kame-house-launcher
 ```
 
-Se já clonou sem os submódulos:
+If already cloned without submodules:
 ```bash
 git submodule update --init --recursive
 ```
 
-### 2. Compilar em Modo Debug
+### 2. Build in Debug Mode
 ```bash
 cargo build --workspace
 ```
 
-### 3. Compilar em Modo Release (Otimizado para Produção)
+### 3. Build in Release Mode (Optimized for Production)
 ```bash
 cargo build --release --workspace
 ```
-O executável otimizado estará localizado em `target/release/kame-house-launcher`.
+The optimized binary will be produced at `target/release/kame-house-launcher`.
 
-### 4. Executar o Launcher
+### 4. Run the Launcher
 ```bash
 cargo run -p launcher-app
 ```
-Ou diretamente pelo binário compilado:
+Or directly via the compiled binary:
 ```bash
 ./target/release/kame-house-launcher
 ```
 
 ---
 
-## 🧪 Testes e Cobertura de Código
+## 🧪 Testing and Code Coverage
 
-O projeto foi construído sob rigorosos padrões de testabilidade e possui cobertura de código superior a 80%:
+The project enforces test-driven reliability and maintains over 80% code coverage across all crates:
 
-### Executar a Suíte de Testes
+### Run Full Test Suite
 ```bash
 cargo test --workspace
 ```
-Todos os 30 testes unitários e de integração devem passar com sucesso:
+All 30 unit and integration tests should pass:
 ```text
 test result: ok. 30 passed; 0 failed; 0 ignored; finished in 0.25s
 ```
 
-### Gerar Relatório de Cobertura de Código
-O projeto utiliza `cargo-llvm-cov` integrado ao compilador Rust:
+### Measure Code Coverage
+Coverage is measured using LLVM source instrumentation via `cargo-llvm-cov`:
 ```bash
-# Instalação da ferramenta (se necessário)
+# Install tools if needed
 rustup component add llvm-tools-preview
 cargo install cargo-llvm-cov --locked
 
-# Gerar resumo de cobertura do workspace
+# Generate coverage summary
 cargo llvm-cov --workspace --summary-only
 ```
 
-**Resultado de Cobertura Atual:**
-- **Linhas cobertas:** **82.13%**
-- **Regiões cobertas:** **79.98%**
-- **Funções cobertas:** **80.69%**
+**Current Verified Metrics:**
+- **Line Coverage:** **82.13%**
+- **Region Coverage:** **79.98%**
+- **Function Coverage:** **80.69%**
 
 ---
 
-## 📚 Decisões de Arquitetura (ADRs)
+## 📚 Architectural Decision Records (ADRs)
 
-Para entender a motivação de cada decisão técnica, consulte a pasta [`docs/adrs/`](docs/adrs/):
-- [ADR 0001: Arquitetura do Launcher em Rust e Tauri v2](docs/adrs/0001-rust-tauri-architecture.md)
-- [ADR 0002: Integração com Sunshine, Substituição do Frontend e Rastreamento Upstream](docs/adrs/0002-sunshine-integration-and-upstream-tracking.md)
-- [ADR 0003: Motor de Varredura de Jogos, Identificação por Conteúdo e Metadados](docs/adrs/0003-game-scanner-and-rom-identification.md)
-- [ADR 0004: Interoperabilidade com a Steam, Injeção VDF e Notificações Nativas](docs/adrs/0004-steam-injection-and-native-notifications.md)
-- [ADR 0005: Sessão "Modo Console" e Transformação do PC em Console](docs/adrs/0005-console-mode-transformation.md)
-
----
-
-## 🤝 Contribuição
-
-Contribuições são muito bem-vindas! Consulte o arquivo [`CONTRIBUTING.md`](CONTRIBUTING.md) para detalhes sobre nosso fluxo de desenvolvimento, convenções de código e o padrão de **Conventional Commits**.
+To understand the context and tradeoffs behind our architectural decisions, consult [`docs/adrs/`](docs/adrs/):
+- [ADR 0001: Rust and Tauri v2 Architecture](docs/adrs/0001-rust-tauri-architecture.md)
+- [ADR 0002: Sunshine Headless Integration and Upstream Tracking](docs/adrs/0002-sunshine-integration-and-upstream-tracking.md)
+- [ADR 0003: Content-Based Game Scanner and Metadata Engine](docs/adrs/0003-game-scanner-and-rom-identification.md)
+- [ADR 0004: Steam Interoperability and Native Notifications](docs/adrs/0004-steam-injection-and-native-notifications.md)
+- [ADR 0005: Living Room Console Mode Transformation](docs/adrs/0005-console-mode-transformation.md)
 
 ---
 
-## 💖 Créditos e Atribuições
+## 🤝 Contributing
 
-- **Sunshine:** Streaming de jogos desenvolvido e mantido pela equipe do [LizardByte & Sunshine Contributors](https://github.com/LizardByte/Sunshine) sob licença GPL-3.0. O Kame House Launcher estende a infraestrutura headless do Sunshine e concede todos os devidos créditos aos seus desenvolvedores originais.
-- **Comunidade Rust & Open Source:** Agradecimentos especiais aos mantenedores das bibliotecas `tokio`, `rayon`, `reqwest`, `serde`, `byteorder`, `walkdir` e `crc32fast`.
+Contributions are welcomed! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for detailed guidelines on code conventions, PR workflows, and our **Conventional Commits** standard.
 
 ---
 
-## 📄 Licença
+## 💖 Credits & Attributions
 
-Este projeto é software livre licenciado sob os termos da **GNU General Public License v3.0** (GPL-3.0-or-later). Consulte o arquivo [LICENSE](LICENSE) para obter a íntegra da licença.
+- **Sunshine:** High-performance game stream host developed by the [LizardByte & Sunshine Contributors](https://github.com/LizardByte/Sunshine) under the GPL-3.0 license. Kame House Launcher extends Sunshine headless infrastructure and gives full credit to the original creators.
+- **Rust Ecosystem:** Sincere gratitude to the maintainers of `tokio`, `rayon`, `reqwest`, `serde`, `byteorder`, `walkdir`, and `crc32fast`.
 
+---
+
+## 📄 License
+
+This project is free and open-source software licensed under the **GNU General Public License v3.0** (GPL-3.0-or-later). See the [LICENSE](LICENSE) file for the full text.

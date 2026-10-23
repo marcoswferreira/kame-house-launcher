@@ -1,89 +1,78 @@
-# ADR 0005: Sessão "Console Mode" e Transformação do PC em Console
+# ADR 0005: "Console Mode" Session and Living Room TV Transformation
 
-- **Status:** Proposto (Aceito para Planejamento)
-- **Data:** 2026-10-22
-- **Decisores:** Time de Desenvolvimento / Engenharia
+- **Status:** Accepted
+- **Date:** 2026-10-22
+- **Deciders:** Engineering Team
 
-## Contexto e Declaração do Problema
+<p align="center">
+  <b>English</b> · <a href="0005-console-mode-transformation.pt-BR.md">Português (Brasil)</a>
+</p>
 
-Transformar um computador tradicional com Windows ou Linux em uma verdadeira central de entretenimento ("Living Room Console") exige eliminar as fricções típicas de um PC de mesa:
-- Telas de bloqueio e senhas na inicialização;
-- Barras de tarefas, notificações de segundo plano e pop-ups do sistema;
-- Necessidade de mouse e teclado para ações rotineiras;
-- Resoluções inadequadas para TV da sala, taxas de atualização de 60Hz em TVs de 120Hz e HDR desligado;
-- Saídas de áudio presas nos fones de ouvido do escritório em vez da soundbar da TV;
-- Desligamento ou suspensão da máquina sem controle remoto/gamepad.
+## Context and Problem Statement
 
-O usuário solicitou explicitamente:
-> *"quero ter uma sessão dentro do launcher que ajude o usuário a transformar seu pc o mais proximo de um console possivel."*
+Transforming a desktop computer running Windows or Linux into a true living room gaming console requires eliminating conventional desktop operating system frictions:
+- Lock screens and password prompts upon booting;
+- Taskbars, desktop icons, and background notifications;
+- The necessity of keyboard and mouse for routine interactions;
+- Suboptimal TV resolutions, 60Hz limits on 120Hz panels, and disabled HDR;
+- Audio outputs trapped on office headphones instead of living room soundbars;
+- Awkward PC shutdown or sleep processes without a gamepad.
 
-## Decisão
+## Decision Outcome
 
-Criamos a crate Rust `launcher-console` e uma sessão de destaque no launcher chamada **"Modo Console"**, organizada em pilares de experiência de console:
+Establish the `launcher-console` crate and a prominent **"Console Mode"** section structured into five core pillars:
 
 ```mermaid
 flowchart TD
-    subgraph ConsoleMode["Sessão: Modo Console"]
+    subgraph ConsoleMode["Console Mode Suite"]
         direction TB
-        A["1. Inicialização & Shell (Cold Boot)"]
-        B["2. Display & Áudio para TV"]
-        C["3. Navegação 10-Pés & Gamepad"]
-        D["4. Otimização & Foco Sem Distrações"]
-        E["5. Energia & Remote Play"]
+        A["1. Cold Boot & Shell"]
+        B["2. Living Room Display & Audio"]
+        C["3. 10-Foot Gamepad UX"]
+        D["4. Distraction-Free Supervision"]
+        E["5. Power & Remote Access"]
     end
     
-    A -->|"Helper"| A1["Auto-Login sem Senha (Win/Linux)"]
-    A -->|"Autostart"| A2["Inicializar com o Sistema em Tela Cheia"]
-    A -->|"Shell Mode"| A3["Ocultar Barra de Tarefas e Ícones"]
+    A -->|"Helper"| A1["Password-Free Auto-Login (Win/Linux)"]
+    A -->|"Autostart"| A2["Fullscreen Boot at System Startup"]
+    A -->|"Shell Mode"| A3["Kiosk Mode: Hide Taskbars & Icons"]
     
-    B -->|"Display API"| B1["Alternador de Resolução (ex: 4K 120Hz)"]
-    B -->|"HDR Toggle"| B2["Ativação/Calibração de HDR"]
-    B -->|"Audio Switcher"| B3["Roteamento Automático de Som para HDMI/TV"]
+    B -->|"Display API"| B1["TV Resolution Switcher (4K 120Hz)"]
+    B -->|"HDR Toggle"| B2["HDR Activation & Calibration"]
+    B -->|"Audio Switcher"| B3["Automatic HDMI/Soundbar Routing"]
     
-    C -->|"Gamepad API"| C1["Controle 100% via Gamepad + Sons de Console"]
-    C -->|"OSK"| C2["Teclado Virtual em Tela para Controle"]
+    C -->|"Gamepad API"| C1["100% Gamepad Navigation + Audio Cues"]
+    C -->|"OSK"| C2["On-Screen Virtual Keyboard"]
     
-    D -->|"Focus Assist"| D1["Silenciar Notificações do Windows"]
-    D -->|"Cursor Hide"| D2["Ocultação Inteligente do Cursor do Mouse"]
-    D -->|"Keep-Alive"| D3["Prevenir Suspensão Durante Jogo/Stream"]
+    D -->|"Focus Assist"| D1["Silence System Notifications"]
+    D -->|"Cursor Hide"| D2["Automatic Mouse Cursor Suppression"]
+    D -->|"Supervisor"| D3["Configurable Launch Behaviors"]
     
-    E -->|"Power Menu"| E1["Suspender / Desligar via Controle"]
-    E -->|"WoL Setup"| E2["Configuração de Wake-on-LAN para Moonlight"]
+    E -->|"Power Menu"| E1["Gamepad Sleep / Shutdown"]
+    E -->|"WoL Setup"| E2["Wake-on-LAN for Moonlight"]
 ```
 
-### 1. Inicialização Direta ("Cold Boot into Console")
-- **Assistente de Auto-Login:** Guias e automação segura para configurar o Windows para entrar automaticamente no usuário gamer sem pedir PIN/senha (`AutoAdminLogon` via API do Windows / autologin no Linux).
-- **Modo Shell / Kiosk:** Opção de iniciar o launcher em modo tela cheia exclusivo na inicialização do sistema, minimizando a visibilidade da área de trabalho do Windows.
-- **Suporte a Inicialização Silenciosa:** Instruções e ajustes para silenciar o logo e sons padrão do Windows, simulando a inicialização de um console de videogame dedicado.
+### 1. Direct Cold Boot into Console
+- **Auto-Login:** Automates `AutoAdminLogon` on Windows or display manager autologin on Linux.
+- **Kiosk Shell:** Boots the launcher in exclusive fullscreen, preventing the desktop environment from showing.
 
-### 2. Controle de Display e Áudio para Sala de Estar
-- **Seletor de Display Primário:** Troca automática do monitor principal para a TV conectada via HDMI ao abrir o modo console.
-- **Resolução e Taxa de Atualização:** Presets de um clique para 4K 120Hz, 1440p 120Hz, 1080p 120Hz, com suporte a Variable Refresh Rate (VRR) e G-Sync/FreeSync.
-- **Alternador de HDR:** Ativação automática de HDR quando a TV suportar, com atalho para o calibrador de HDR do sistema.
-- **Roteador de Dispositivos de Áudio:** Seleção instantânea da saída de áudio (HDMI da TV, Soundbar via eARC ou fone do controle) com verificação de canais surround (5.1 / 7.1).
+### 2. TV Display and Audio Control
+- **Presets:** Quick switches for 4K @ 120Hz, 1440p @ 120Hz, 1080p @ 120Hz, with HDR activation.
+- **Audio Switcher:** Directs system audio to the TV HDMI or Soundbar via eARC.
 
-### 3. Navegação de 10 Pés ("10-Foot Experience")
-- **Mapeamento Total de Gamepad:** Suporte a controles de Xbox, PlayStation (DualShock 4 / DualSense) e Switch Pro via Gamepad API nativa.
-- **Design de Som de Console:** Feedback sonoro sutil ao navegar (movimentação, seleção, voltar, erro), conferindo a mesma sensação tátil de um PS5 ou Nintendo Switch.
-- **Teclado Virtual em Tela (OSK):** Interface de teclado navegável por D-pad/analógico para busca de jogos, digitação de credenciais e senhas Wi-Fi sem precisar de teclado físico.
+### 3. Dual Configurable Launch Behaviors
+The launch supervisor supports two behaviors:
+1. **Hide and Restore in Fullscreen (Console Default):** Hides/minimizes the launcher during gameplay and restores it in fullscreen with immediate gamepad focus on exit.
+2. **Keep Open in Background:** Keeps the launcher visible in the background.
 
-### 4. Ambiente Imersivo e Sem Distrações
-- **Ocultação Automática do Cursor:** O cursor do mouse desaparece automaticamente assim que qualquer botão do gamepad é pressionado.
-- **Silenciamento de Notificações:** Ativação automática do modo "Não Perturbe" / "Focus Assist" durante o uso do launcher ou execução de jogos.
-- **Supervisor de Foco de Jogo:** Quando um jogo é iniciado, o launcher se esconde ou minimiza para economizar GPU; quando o processo do jogo termina, o launcher volta à tela cheia em primeiro plano com foco imediato no controle.
-- **Prevenção de Suspensão:** Bloqueio do descanso de tela e da suspensão de energia enquanto uma sessão de jogo ou streaming Sunshine estiver ativa (`SetThreadExecutionState` no Windows).
+### 4. 10-Foot Experience & Power Actions
+- Universal controller navigation (Xbox, DualShock 4, DualSense, Switch Pro).
+- Virtual on-screen keyboard for text input without physical keyboards.
+- Gamepad power menu: Sleep, Hibernate, Restart, Shutdown.
+- Wake-on-LAN helper for waking the PC from Moonlight.
 
-### 5. Menu de Energia e Acesso Remoto
-- **Menu de Energia via Gamepad:** Pressionando o botão Guide/PS ou selecionando o ícone de energia, o usuário pode:
-  - Suspender PC
-  - Hibernar
-  - Reiniciar
-  - Desligar completamente
-- **Configurador de Wake-on-LAN (WoL):** Diagnóstico das configurações de placa de rede para permitir que a TV ou celular com Moonlight acorde o PC remotamente da cama ou sofá.
+## Consequences
 
-## Consequências
-
-### Positivas
-- **Atingimento do Objetivo Principal:** O PC passa a operar de forma idêntica a um console doméstico de videogame, eliminando as fricções de desktop.
-- **Segurança e Reversibilidade:** Todos os ajustes são organizados em botões claros com opções de "Reverter para o padrão do Windows", garantindo que o usuário mantenha o controle total.
-
+### Positive
+- **Frictionless Gaming:** Turns a desktop PC into an authentic home console experience.
+- **Safety and Control:** All system tweaks are reversible with clear "Restore Defaults" options.

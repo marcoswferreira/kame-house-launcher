@@ -1,56 +1,55 @@
-# ADR 0002: Integração com Sunshine, Substituição do Frontend e Rastreamento Upstream
+# ADR 0002: Headless Sunshine Integration, Frontend Replacement, and Upstream Tracking
 
-- **Status:** Proposto (Aceito para Planejamento)
-- **Data:** 2026-10-22
-- **Decisores:** Time de Desenvolvimento / Engenharia
+- **Status:** Accepted
+- **Date:** 2026-10-22
+- **Deciders:** Engineering Team
 
-## Contexto e Declaração do Problema
+<p align="center">
+  <b>English</b> · <a href="0002-sunshine-integration-and-upstream-tracking.pt-BR.md">Português (Brasil)</a>
+</p>
 
-O [Sunshine](https://github.com/LizardByte/Sunshine) é o servidor de streaming de jogos open source líder de mercado (compatível com clientes Moonlight). Ele é escrito em C++ e possui um servidor HTTP interno (`confighttp.cpp`) que expõe tanto uma API REST completa em `/api/...` quanto uma interface web legada baseada em Vue 3 (`src_assets/common/assets/web`).
+## Context and Problem Statement
 
-O usuário especificou três requisitos fundamentais:
-1. **Integração completa com o Sunshine:** Descartar a interface web atual do Sunshine e utilizar nosso próprio frontend integrado dentro do launcher.
-2. **Extensão sem apropriação ou reinventar a roda:** Não reinventar nenhum código de captura, codificação de vídeo, RTSP ou entrada que o Sunshine já faz brilhantemente.
-3. **Manter-se sempre atualizado com o código de infraestrutura mais recente do Sunshine**, concedendo os devidos créditos aos autores originais.
+[Sunshine](https://github.com/LizardByte/Sunshine) is the industry-standard open-source game streaming server for Moonlight clients. It is written in C++ and contains an internal HTTP/HTTPS server (`confighttp.cpp`) exposing a complete REST API at `/api/...` as well as a legacy web UI.
 
-## Decisão
+The core project requirements are:
+1. **Complete Sunshine Integration:** Bypass/discard Sunshine's default web UI and provide our own native, controller-friendly frontend inside the launcher.
+2. **Extension Without Reinventing or Appropriating:** Do not reinvent screen capture, video encoding (NVENC, AMF, QuickSync), RTSP, or virtual input devices.
+3. **Continuous Upstream Synchronization:** Stay continuously updated with Sunshine's latest C++ infrastructure code while giving full credit to the authors.
 
-Adotamos uma arquitetura de **Plano de Controle Separado (Headless Daemon + Native Embedded UI)**:
+## Decision Outcome
+
+Adopt a **Separated Control Plane Architecture (Headless Daemon + Native Embedded UI)**:
 
 ```mermaid
 flowchart LR
     A["Launcher (Tauri/Rust)"] -->|"REST HTTPS /api/*"| B["Sunshine Daemon (C++)"]
-    A -->|"Sync / Escrita"| C["apps.json & sunshine.conf"]
+    A -->|"Sync / Write"| C["apps.json & sunshine.conf"]
     B -->|"NVHTTP / RTSP / Video"| D["Moonlight Client (TV / Deck / Mobile)"]
     subgraph Launcher UI
-        E["Painel Sunshine (Pareamento, PIN, Encoders, Stats)"]
-        F["Modo Console / Launcher"]
+        E["Sunshine Tab (Pairing, PIN, Encoders, Stats)"]
+        F["Console Mode / Big Picture"]
     end
 ```
 
-### 1. Descarte do Frontend Web do Sunshine e Nova UI Integrada
-- O Sunshine é executado em modo de serviço de segundo plano (daemon).
-- O nosso launcher se comunica com a API REST HTTPS local do Sunshine (porta padrão `47990` com autenticação por credencial/token seguro ou CSRF) através da crate Rust `launcher-sunshine`.
-- Dentro da interface do launcher, criamos uma aba nativa de **Remote Play / Sunshine**:
-  - **Diálogo de Pareamento Instantâneo:** Quando o Moonlight solicita pareamento, o launcher exibe um pop-up na tela estilo console para digitar o PIN de 4 dígitos ou aprovar conexões ativas.
-  - **Gerenciador de Aplicativos Transmitidos:** Sincronização automática da biblioteca de jogos do launcher para o `apps.json` do Sunshine, permitindo inclusive lançar diretamente o próprio launcher em modo Big Picture no dispositivo cliente.
-  - **Configurações de Codificador & Vídeo:** Presets fáceis para TV (4K 60/120fps, HDR, AV1/HEVC/H.264, bitrate adaptativo, emulação de gamepad ViGEmBus/uinput).
-  - **Monitor de Status e Logs:** Estado do daemon (Ativo, Em Streaming, Inativo) e consumo de banda em tempo real.
+### 1. Discarding the Web UI & Embedding Native Controls
+- Sunshine runs as an autonomous background daemon.
+- The launcher communicates with Sunshine's local HTTPS REST API (default port `47990` with CSRF tokens) via the `launcher-sunshine` crate.
+- Within the launcher, a dedicated **Remote Play / Sunshine** section provides:
+  - **Instant PIN Pairing:** An on-screen 4-digit PIN dialog pops up when Moonlight requests pairing.
+  - **Streamed Apps Synchronization:** Automatic sync between the launcher's library and Sunshine's `apps.json`, including a Big Picture launcher entry.
+  - **Encoder & Display Presets:** Quick TV streaming presets (4K @ 60/120Hz, HDR, AV1/HEVC/H.264, adaptive bitrate).
+  - **Status & Diagnostics:** Live daemon state and bandwidth monitoring.
 
-### 2. Rastreamento Upstream e Manutenção Contínua
-- O repositório Sunshine é mantido como **Git Submodule** (ou acompanhado por branch de vendor) apontando para o upstream oficial `https://github.com/LizardByte/Sunshine.git`.
-- Nenhum arquivo do núcleo de captura ou streaming do C++ é modificado ou forkeado com alterações incompatíveis.
-- **Fluxo de Atualização Upstream:**
-  - Script automatizado de verificação de releases e tags upstream (`tools/sync-sunshine-upstream.sh`).
-  - Execução de testes de integração da API `/api/*` a cada nova versão do Sunshine para garantir compatibilidade retroativa e detectar eventuais adições de endpoints.
-- **Créditos e Atribuição:**
-  - Inclusão visível no menu "Sobre / Créditos" do launcher destacando: *"Streaming powered by Sunshine - Copyright (C) LizardByte & Sunshine Contributors (GPL-3.0)"*.
-  - Exibição de links oficiais para o projeto Sunshine, documentação e repositório.
+### 2. Upstream Tracking and Licensing
+- Sunshine is tracked cleanly as an official **Git Submodule** pointing to `https://github.com/LizardByte/Sunshine.git`.
+- No C++ core files are modified or forked with incompatible changes.
+- **Attribution Notice:** Prominently included in the about/credits dialog:  
+  *"Streaming powered by Sunshine - Copyright (C) LizardByte & Sunshine Contributors (GPL-3.0)"*.
 
-## Consequências
+## Consequences
 
-### Positivas
-- **Experiência Unificada para o Usuário:** O usuário nunca precisa abrir um navegador web separado nem lidar com certificados auto-assinados de navegador para emparelhar a TV ou ajustar uma resolução.
-- **Zero Duplicação de Esforço Técnico:** Toda a complexidade de captura de tela de baixíssima latência (Desktop Duplication API, DXGI, KMS/DRM, NVENC, QuickSync, AMF, VAAPI) é delegada à robustez do Sunshine.
-- **Manutenibilidade Superior:** Quando a equipe do LizardByte lançar novas otimizações de codificação ou correções de segurança, nosso launcher se atualiza simplesmente atualizando o submódulo ou o binário do Sunshine, sem riscos de quebra.
-
+### Positive
+- **Frictionless UX:** Users never have to open web browsers or accept self-signed SSL warnings from their couch.
+- **Zero Duplication of Effort:** Complex low-latency capture (DXGI, Desktop Duplication, KMS/DRM) is delegated to Sunshine.
+- **Long-term Maintainability:** Upstream bug fixes and encoder improvements flow in seamlessly via Git submodule updates.

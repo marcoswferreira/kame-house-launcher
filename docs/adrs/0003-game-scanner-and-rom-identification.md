@@ -1,65 +1,62 @@
-# ADR 0003: Motor de Varredura de Jogos, Identificação por Conteúdo e Metadados
+# ADR 0003: Content-Based Game Scanner, ROM Identifier, and Metadata Engine
 
-- **Status:** Proposto (Aceito para Planejamento)
-- **Data:** 2026-10-22
-- **Decisores:** Time de Desenvolvimento / Engenharia
+- **Status:** Accepted
+- **Date:** 2026-10-22
+- **Deciders:** Engineering Team
 
-## Contexto e Declaração do Problema
+<p align="center">
+  <b>English</b> · <a href="0003-game-scanner-and-rom-identification.pt-BR.md">Português (Brasil)</a>
+</p>
 
-Um launcher de jogos para console de sala de estar precisa encontrar automaticamente jogos em qualquer diretório ou loja do PC e identificá-los com precisão sem exigir chaves de API nem configurações manuais complexas pelo usuário.
-A arquitetura do `launcher-core` suporta:
-1. Varredura multi-thread em múltiplos discos e pastas configuradas.
-2. Identificação por conteúdo interno (cabeçalhos de cartuchos, imagens de disco, arquivos de configuração internos, serials).
-3. Detecção de lojas de jogos de PC instaladas (Epic Games, GOG Galaxy, Xbox/MS Store, EA, Ubisoft, Battle.net).
-4. Desduplicação inteligente (ex.: port de PC junto com a ROM de console tornam-se uma única entrada limpa).
-5. Enriquecimento de metadados e artes visuais (capas verticais, banners horizontais "hero", logos e ícones) sem depender obrigatoriamente de contas de terceiros.
+## Context and Problem Statement
 
-## Decisão
+A living-room console game launcher must automatically locate games across arbitrary directories, storage drives, and digital storefronts, identifying each title accurately by its internal contents rather than fragile filenames, without forcing users to register third-party API keys.
 
-Adotamos uma pipeline de identificação em estágios na crate `launcher-core`:
+The `launcher-core` crate fulfills these requirements by providing:
+1. Multi-threaded filesystem scanning across multiple drives and folders.
+2. Content-based binary identification (cartridge headers, disc sector descriptors, internal serials).
+3. Detection of installed PC storefront games (Epic Games, GOG Galaxy, Xbox/MS Store, EA, Ubisoft).
+4. Intelligent deduplication (e.g. PC ports combined cleanly with console dumps).
+5. Artwork and metadata enrichment (vertical covers, horizontal hero banners, logos, and icons).
+
+## Decision Outcome
+
+Adopt a staged identification pipeline in `launcher-core`:
 
 ```mermaid
 flowchart TD
-    A["Diretórios / Discos / Lojas"] --> B["Varredura Multi-thread (walkdir + rayon)"]
-    B --> C{"Tipo de Arquivo"}
-    C -->|"Cartuchos (.gba, .nds, .snes, .n64...)"| D["Parser de Cabeçalho Interno (Magic + Serial)"]
-    C -->|"Imagens de Disco (.iso, .cso, .cue, .chd)"| E["Parser de Setor / ISO9660 (SYSTEM.CNF / PARAM.SFO)"]
-    C -->|"Executáveis de PC (.exe)"| F["Inspeção PE (Product Name + steam_appid.txt + Manifestos)"]
-    C -->|"Manifestos de Lojas"| G["Scanner de Lojas (Epic, GOG, Xbox, EA)"]
+    A["Folders / Drives / Storefronts"] --> B["Multi-threaded Scanner (walkdir + rayon)"]
+    B --> C{"File Type"}
+    C -->|"Cartridges (.gba, .nds, .snes, .n64...)"| D["Internal Header Parser (Magic + Serial)"]
+    C -->|"Disc Images (.iso, .cso, .cue, .chd)"| E["Sector & ISO9660 Parser (SYSTEM.CNF / PARAM.SFO)"]
+    C -->|"PC Executables (.exe)"| F["PE Inspection (Product Name + steam_appid.txt + Manifests)"]
+    C -->|"Store Manifests"| G["Storefront Scanner (Epic, GOG, Xbox, EA)"]
     
-    D --> H["Consulta ao Índice DAT Local (Redump / No-Intro)"]
+    D --> H["Local DAT Index (Redump / No-Intro)"]
     E --> H
-    F --> I["Mapeador de AppID da Steam / Consenso"]
+    F --> I["Steam AppID Matcher & Consensus"]
     G --> I
     
-    H --> J["Resolução de Metadados e Artes (SteamGridDB / IGDB / Cache)"]
+    H --> J["Metadata & Artwork Resolution"]
     I --> J
-    J --> K["Biblioteca Unificada de Jogos (DB Local SQLite/JSON)"]
+    J --> K["Unified Game Library"]
 ```
 
-### 1. Parsers de Cabeçalho e Mídia em Rust
-Implementados em Rust puro com zero alocação desnecessária e zero chamadas a ferramentas externas:
-- **Cartuchos:** Extração dos primeiros bytes para detecção de magic bytes e serials de GBA, NDS, GB/GBC, N64 (com suporte a big-endian, byte-swapped e little-endian), Genesis/Mega Drive e SNES (LoROM/HiROM).
-- **Discos:** Parser de descritores de volume ISO9660 primários (PVD), extração direta de `SYSTEM.CNF` (PS1/PS2), leitura de arquivos `PARAM.SFO` (PSP, PS3, PS Vita, PS4) e decodificação sob demanda de setores de ISO, CUE/BIN, CSO v1 e GDI.
-- **Jogos de PC e Ports:** Leitura de metadados PE (`winres`/`pelite`) para recuperar `ProductName` e `FileDescription`; busca de evidências de AppID (`steam_appid.txt`, `steam_emu.ini`, `OnlineFix.ini`, `steam_settings`, manifestos de instalação).
+### 1. Pure Rust Binary Parsers
+- **Cartridges:** Direct header inspection for Game Boy Advance, Nintendo DS, Game Boy/Color, Nintendo 64 (handling big-endian, byte-swapped, and word-swapped encodings), Sega Genesis, and Super Nintendo (LoROM/HiROM checksum complement verification).
+- **Disc Sectors:** Low-level ISO9660 Primary Volume Descriptor (PVD) decoding, PlayStation `SYSTEM.CNF` extraction (PS1/PS2), and `PARAM.SFO` reading (PSP, PS3, PS4).
+- **PC Executables & Ports:** PE metadata reading (`ProductName`, `FileDescription`) and local Steam AppID discovery (`steam_appid.txt`, `steam_emu.ini`, installation manifests).
 
-### 2. Bancos de Dumps Verificados (DATs Redump e No-Intro)
-- Download sob demanda dos arquivos DAT no formato CLRMAMEPRO mantidos pelo projeto `libretro-database`.
-- Parser rápido em Rust com indexação por serial, MD5, CRC32, tamanho de arquivo e título normalizado.
-- Cache local em disco com expiração de 30 dias.
+### 2. Multi-Tier Artwork Hierarchy
+Automatic retrieval for:
+- `cover`: 600x900 (vertical poster)
+- `hero`: 1920x620 (horizontal background banner)
+- `logo`: transparent PNG game logo
+- `icon`: executable icon or 256x256 PNG
 
-### 3. Pipeline de Artes e Imagens
-- Busca automatizada de artes em 4 categorias essenciais para a Steam e para o próprio launcher:
-  - `cover`: 600x900 (capa vertical)
-  - `hero`: 1920x620 (banner horizontal de fundo)
-  - `logo`: imagem PNG com fundo transparente para o título
-  - `icon`: 256x256 ou arquivo `.ico`
-- Resolução multi-fonte em cascata: SteamGridDB / CDN Compartilhado -> Loja Oficial da Steam -> Libretro Thumbnails -> Wikipedia.
+## Consequences
 
-## Consequências
-
-### Positivas
-- **Desempenho Extremo:** A varredura de centenas de gigabytes de jogos em SSDs ou HDDs secundários ocorre em poucos segundos graças ao I/O assíncrono e paralelismo de CPU em Rust.
-- **Identificação Confiável:** Elimina ambiguidades de nomes de arquivo (ex.: "game_final_v2.iso" é identificado corretamente pelo serial interno).
-- **Autonomia Total:** O launcher é utilizável imediatamente após a instalação, sem exigir cadastros preliminares de API.
-
+### Positive
+- **Extreme Speed:** Multi-threaded parallel traversal across SSDs and secondary HDDs completes in seconds via `rayon`.
+- **Reliable Identification:** Prevents ambiguity caused by custom, compressed, or generic filenames.
+- **Immediate Out-of-the-Box Usability:** Works immediately without requiring API keys or account logins.
