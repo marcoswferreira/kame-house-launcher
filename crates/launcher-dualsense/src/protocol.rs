@@ -100,6 +100,7 @@ pub struct OutputReportBuilder {
     pub mic_led: MicLed,
     pub heavy_rumble: u8,
     pub light_rumble: u8,
+    pub seq_num: u8,
 }
 
 impl Default for OutputReportBuilder {
@@ -111,6 +112,7 @@ impl Default for OutputReportBuilder {
             mic_led: MicLed::Off,
             heavy_rumble: 0,
             light_rumble: 0,
+            seq_num: 0,
         }
     }
 }
@@ -146,6 +148,11 @@ impl OutputReportBuilder {
         self
     }
 
+    pub fn with_seq(mut self, seq_num: u8) -> Self {
+        self.seq_num = seq_num;
+        self
+    }
+
     /// Builds a 64-byte USB Output Report (Report ID 0x02)
     pub fn build_usb(&self) -> [u8; USB_OUTPUT_REPORT_SIZE] {
         let mut report = [0u8; USB_OUTPUT_REPORT_SIZE];
@@ -154,8 +161,10 @@ impl OutputReportBuilder {
         // valid_flag0: Enable compatible rumble (0x01 | 0x02), triggers (0x04 | 0x08)
         report[1] = 0xFF;
 
-        // valid_flag1: Enable mic mute led (0x01), power save (0x02), lightbar (0x04), player leds (0x10)
-        report[2] = 0x1F;
+        // valid_flag1: Enable mic mute led (0x01), lightbar (0x04), player leds (0x10).
+        // IMPORTANT: Bit 0x08 (DS_OUTPUT_VALID_FLAG1_RELEASE_LEDS) MUST NOT be set,
+        // otherwise the controller firmware resets and turns off all LEDs.
+        report[2] = 0x15;
 
         // Rumble motors
         report[3] = self.light_rumble;
@@ -172,11 +181,14 @@ impl OutputReportBuilder {
         let lt = self.triggers.left.compile_payload();
         report[22..33].copy_from_slice(&lt);
 
-        // valid_flag2: Enable lightbar setup
+        // valid_flag2: Enable lightbar setup (DS_OUTPUT_VALID_FLAG2_LIGHTBAR_SETUP_CONTROL_ENABLE)
         report[39] = 0x02;
 
-        // lightbar setup: 0x01 = light on
-        report[42] = 0x01;
+        // lightbar_setup: 0x02 = DS_OUTPUT_LIGHTBAR_SETUP_LIGHT_OUT (clears default fade-in so RGB takes over)
+        report[42] = 0x02;
+
+        // led_brightness: 0x00 = High brightness
+        report[43] = 0x00;
 
         // Player LEDs
         report[44] = self.player_led.to_bitmask();
@@ -193,14 +205,16 @@ impl OutputReportBuilder {
     pub fn build_bluetooth(&self) -> [u8; BT_OUTPUT_REPORT_SIZE] {
         let mut report = [0u8; BT_OUTPUT_REPORT_SIZE];
         report[0] = 0x31; // Report ID
-        report[1] = 0x02; // BT Report Flags (0x02)
-        report[2] = 0x10; // BT Tag
+                          // Highest 4-bit is rolling sequence number (0..15), lowest 4-bit is 0x02 flag
+        report[1] = ((self.seq_num & 0x0F) << 4) | 0x02;
+        report[2] = 0x10; // DS_OUTPUT_TAG (0x10)
 
         // valid_flag0: Enable rumble and triggers (offset 3)
         report[3] = 0xFF;
 
-        // valid_flag1: Enable mic led, lightbar, player leds (offset 4)
-        report[4] = 0x1F;
+        // valid_flag1: Enable mic led (0x01), lightbar (0x04), player leds (0x10) (offset 4)
+        // Must NOT set 0x08 (RELEASE_LEDS)
+        report[4] = 0x15;
 
         // Rumble
         report[5] = self.light_rumble;
@@ -220,8 +234,11 @@ impl OutputReportBuilder {
         // valid_flag2: Enable lightbar setup (common[38] is at index 3 + 38 = 41)
         report[41] = 0x02;
 
-        // lightbar setup: 0x01 = light on (common[41] is at index 3 + 41 = 44)
-        report[44] = 0x01;
+        // lightbar_setup: 0x02 = DS_OUTPUT_LIGHTBAR_SETUP_LIGHT_OUT (common[41] is at index 3 + 41 = 44)
+        report[44] = 0x02;
+
+        // led_brightness: 0x00 = High brightness (common[42] is at index 3 + 42 = 45)
+        report[45] = 0x00;
 
         // Player LEDs (common[43] is at index 3 + 43 = 46)
         report[46] = self.player_led.to_bitmask();
@@ -404,8 +421,12 @@ mod tests {
         let usb = builder.build_usb();
         assert_eq!(usb[0], 0x02);
         assert_eq!(usb[1], 0xFF);
+        assert_eq!(usb[2], 0x15);
+        assert_eq!(usb[2] & 0x08, 0); // RELEASE_LEDS must NOT be set
         assert_eq!(usb[9], 0x01);
         assert_eq!(usb[39], 0x02);
+        assert_eq!(usb[42], 0x02);
+        assert_eq!(usb[43], 0x00);
         assert_eq!(usb[44], 0x0A);
         assert_eq!(usb[45], 255);
         assert_eq!(usb[46], 0);
@@ -425,12 +446,17 @@ mod tests {
     fn test_bluetooth_report_structure_and_crc() {
         let builder = OutputReportBuilder::new()
             .with_lightbar(RgbColor::GREEN)
-            .with_player_led(PlayerLed::Player1);
+            .with_player_led(PlayerLed::Player1)
+            .with_seq(3);
 
         let bt = builder.build_bluetooth();
         assert_eq!(bt[0], 0x31);
-        assert_eq!(bt[1], 0x02);
+        assert_eq!(bt[1], 0x32);
+        assert_eq!(bt[2], 0x10);
+        assert_eq!(bt[4], 0x15);
+        assert_eq!(bt[4] & 0x08, 0); // RELEASE_LEDS must NOT be set
         assert_eq!(bt[41], 0x02);
+        assert_eq!(bt[44], 0x02);
         assert_eq!(bt[46], 0x04);
         assert_eq!(bt[48], 255);
 

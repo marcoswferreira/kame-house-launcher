@@ -134,6 +134,12 @@ impl DualSenseManager {
             crate::lightbar::MicLed::Off
         };
 
+        tracing::info!(
+            "DualSense microphone mute toggled: muted={}, mic_led={:?}",
+            is_muted,
+            lighting.mic_led
+        );
+
         is_muted
     }
 
@@ -145,24 +151,56 @@ impl DualSenseManager {
         } else {
             crate::lightbar::MicLed::Off
         };
+        tracing::info!(
+            "DualSense microphone mute explicitly set: muted={}, mic_led={:?}",
+            muted,
+            lighting.mic_led
+        );
     }
 
     pub fn set_speaker_volume(&self, volume: u8) {
-        *self.speaker_volume.write() = volume.min(100);
+        let clamped = volume.min(100);
+        *self.speaker_volume.write() = clamped;
+        tracing::info!("DualSense speaker volume set to {}%", clamped);
     }
 
     pub fn set_triggers(&self, triggers: DualTriggerConfig) {
+        tracing::info!(
+            "DualSense adaptive triggers configured: L2={:?}, R2={:?}",
+            triggers.left,
+            triggers.right
+        );
         *self.shared_state.triggers.write() = triggers;
     }
 
     pub fn set_lighting(&self, lighting: LightingConfig) {
-        if let crate::lightbar::LightbarMode::Static { color } = lighting.lightbar {
-            *self.shared_state.lightbar.write() = color;
-        }
+        let input = self.input_state.read().clone();
+        let resolved_color = lighting.lightbar.compute_color(
+            0.0,
+            input.battery.percentage,
+            input.battery.is_charging,
+        );
+        *self.shared_state.lightbar.write() = resolved_color;
+        tracing::info!(
+            "DualSense lighting configured: mode={:?}, resolved_rgb=({},{},{}), player_led={:?} (0x{:02x}), mic_led={:?}",
+            lighting.lightbar,
+            resolved_color.r,
+            resolved_color.g,
+            resolved_color.b,
+            lighting.player_led,
+            lighting.player_led.to_bitmask(),
+            lighting.mic_led
+        );
         *self.lighting.write() = lighting;
     }
 
     pub fn set_emulation(&self, config: EmulationConfig) {
+        tracing::info!(
+            "DualSense emulation configured: mode={:?}, gyro_enabled={}, gyro_sensitivity={}",
+            config.mode,
+            config.gyro.enabled,
+            config.gyro.sensitivity
+        );
         *self.emulation.write() = config;
     }
 
@@ -173,8 +211,19 @@ impl DualSenseManager {
             *self.shared_state.lightbar.write() = p.lightbar;
             let mut lighting = self.lighting.write();
             lighting.lightbar = crate::lightbar::LightbarMode::Static { color: p.lightbar };
+            tracing::info!(
+                "DualSense preset profile applied: id='{}' ({}), L2={}, R2={}, RGB=({},{},{})",
+                p.id,
+                p.name,
+                p.triggers.left.name(),
+                p.triggers.right.name(),
+                p.lightbar.r,
+                p.lightbar.g,
+                p.lightbar.b
+            );
             true
         } else {
+            tracing::warn!("DualSense preset profile not found: id='{}'", profile_id);
             false
         }
     }
@@ -223,6 +272,14 @@ impl DualSenseManager {
                 cb(new_muted);
             }
             toggled_to = Some(new_muted);
+        }
+        let lightbar_mode = self.lighting.read().lightbar.clone();
+        if matches!(lightbar_mode, crate::lightbar::LightbarMode::BatteryLevel) {
+            *self.shared_state.lightbar.write() = lightbar_mode.compute_color(
+                0.0,
+                new_state.battery.percentage,
+                new_state.battery.is_charging,
+            );
         }
         *self.prev_mic_btn.write() = curr_pressed;
         *self.input_state.write() = new_state;

@@ -102,6 +102,7 @@ function calculateCrc32(data: Uint8Array): number {
 export class WebHidDualSenseController {
   private device: WebHidDevice | null = null;
   private isBluetooth = false;
+  private btSeq = 0;
 
   public static isSupported(): boolean {
     return typeof navigator !== 'undefined' && 'hid' in navigator;
@@ -163,7 +164,7 @@ export class WebHidDualSenseController {
   ): Uint8Array {
     const payload = new Uint8Array(63);
     payload[0] = 0xff; // valid_flag0: enable rumble, triggers
-    payload[1] = 0x1f; // valid_flag1: enable mic led, power save, lightbar, player leds
+    payload[1] = 0x15; // valid_flag1: enable mic led (0x01), lightbar (0x04), player leds (0x10) - NO 0x08 RELEASE_LEDS
     payload[2] = rumbleLight;
     payload[3] = rumbleHeavy;
 
@@ -181,8 +182,11 @@ export class WebHidDualSenseController {
     // valid_flag2: DS_OUTPUT_VALID_FLAG2_LIGHTBAR_SETUP_CONTROL_ENABLE
     payload[38] = 0x02;
 
-    // lightbar_setup: 0x01 = light on
-    payload[41] = 0x01;
+    // lightbar_setup: 0x02 = DS_OUTPUT_LIGHTBAR_SETUP_LIGHT_OUT (clears default fade so RGB takes over)
+    payload[41] = 0x02;
+
+    // led_brightness: 0x00 = High brightness
+    payload[42] = 0x00;
 
     // player_leds
     switch (lighting.player_led) {
@@ -198,7 +202,9 @@ export class WebHidDualSenseController {
     const color =
       lighting.lightbar.mode === 'static' || lighting.lightbar.mode === 'breathing'
         ? lighting.lightbar.color
-        : { r: 0, g: 68, b: 204 };
+        : lighting.lightbar.mode === 'off'
+          ? { r: 0, g: 0, b: 0 }
+          : { r: 0, g: 68, b: 204 };
 
     payload[44] = color.r;
     payload[45] = color.g;
@@ -214,12 +220,13 @@ export class WebHidDualSenseController {
     rumbleLight = 0
   ): Uint8Array {
     const payload = new Uint8Array(77);
-    payload[0] = 0x02; // BT Report flags
-    payload[1] = 0x10; // BT Tag
+    payload[0] = ((this.btSeq & 0x0f) << 4) | 0x02; // Rolling BT sequence tag + 0x02 flag
+    this.btSeq = (this.btSeq + 1) & 0x0f;
+    payload[1] = 0x10; // DS_OUTPUT_TAG
 
     // common starts at index 2 of 77-byte BT payload
     payload[2] = 0xff; // valid_flag0
-    payload[3] = 0x1f; // valid_flag1
+    payload[3] = 0x15; // valid_flag1 (0x01 | 0x04 | 0x10, NO 0x08 RELEASE_LEDS)
     payload[4] = rumbleLight;
     payload[5] = rumbleHeavy;
 
@@ -238,7 +245,10 @@ export class WebHidDualSenseController {
     payload[40] = 0x02;
 
     // lightbar_setup (offset 2 + 41 = 43)
-    payload[43] = 0x01;
+    payload[43] = 0x02;
+
+    // led_brightness (offset 2 + 42 = 44)
+    payload[44] = 0x00;
 
     // player_leds (offset 2 + 43 = 45)
     switch (lighting.player_led) {
@@ -254,7 +264,9 @@ export class WebHidDualSenseController {
     const color =
       lighting.lightbar.mode === 'static' || lighting.lightbar.mode === 'breathing'
         ? lighting.lightbar.color
-        : { r: 0, g: 68, b: 204 };
+        : lighting.lightbar.mode === 'off'
+          ? { r: 0, g: 0, b: 0 }
+          : { r: 0, g: 68, b: 204 };
 
     payload[46] = color.r;
     payload[47] = color.g;

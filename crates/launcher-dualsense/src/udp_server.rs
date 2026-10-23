@@ -19,18 +19,21 @@ pub enum DualSenseXInstructionType {
     PlayerLedUpdate = 3,
     RumbleUpdate = 4,
     Reset = 5,
+    PlayerLedNewRevision = 6,
+    MicLed = 7,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DualSenseXInstruction {
-    #[serde(rename = "type")]
+    #[serde(rename = "type", alias = "Type")]
     pub inst_type: u32,
+    #[serde(default, alias = "Parameters")]
     pub parameters: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DualSenseXPacket {
-    #[serde(default)]
+    #[serde(default, alias = "Instructions")]
     pub instructions: Vec<DualSenseXInstruction>,
     #[serde(default)]
     pub left_trigger: Option<TriggerEffect>,
@@ -101,6 +104,22 @@ impl DualSenseUdpServer {
         let socket = UdpSocket::bind(addr).await?;
         self.is_running.store(true, Ordering::SeqCst);
 
+        // Write %TEMP%\DualSenseX\DualSenseX_PortNumber.txt for Paliverse/DualSenseX mod discovery
+        let temp_dsx_dir = std::env::temp_dir().join("DualSenseX");
+        if let Err(e) = std::fs::create_dir_all(&temp_dsx_dir) {
+            tracing::debug!("Could not create temp DualSenseX dir: {}", e);
+        } else {
+            let port_file = temp_dsx_dir.join("DualSenseX_PortNumber.txt");
+            if let Err(e) = std::fs::write(&port_file, self.port.to_string()) {
+                tracing::debug!("Could not write DualSenseX_PortNumber.txt: {}", e);
+            } else {
+                tracing::info!(
+                    "Published DualSenseX port discovery file at {}",
+                    port_file.display()
+                );
+            }
+        }
+
         let running_flag = self.is_running.clone();
         let counter = self.packets_received.clone();
         let last_time = self.last_packet_time.clone();
@@ -117,6 +136,11 @@ impl DualSenseUdpServer {
                         *last_sender.write() = Some(peer.to_string());
 
                         if let Ok(text) = std::str::from_utf8(&buf[..len]) {
+                            tracing::info!(
+                                "DualSenseX UDP packet received from {} ({} bytes)",
+                                peer,
+                                len
+                            );
                             Self::process_payload(text, &shared);
                         }
                     }
@@ -159,6 +183,13 @@ impl DualSenseUdpServer {
 
             // Process instructions array (standard DualSenseX C# protocol)
             for inst in packet.instructions {
+                let param_u8 = |idx: usize, default: u8| -> u8 {
+                    inst.parameters
+                        .get(idx)
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(default as u64) as u8
+                };
+
                 match inst.inst_type {
                     1 => {
                         // Trigger update: [controller_idx, trigger_idx (1=L2, 2=R2), mode_idx, ...params]
@@ -168,152 +199,71 @@ impl DualSenseUdpServer {
 
                             let effect = match mode_idx {
                                 0 => TriggerEffect::Off,
-                                1 | 2 => {
-                                    let p1 = inst
-                                        .parameters
-                                        .get(3)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(0)
-                                        as u8;
-                                    let p2 = inst
-                                        .parameters
-                                        .get(4)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(5)
-                                        as u8;
-                                    TriggerEffect::Feedback {
-                                        start_position: p1,
-                                        force: p2,
-                                    }
-                                }
-                                3 => {
-                                    let p1 = inst
-                                        .parameters
-                                        .get(3)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(0)
-                                        as u8;
-                                    let p2 = inst
-                                        .parameters
-                                        .get(4)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(8)
-                                        as u8;
-                                    let p3 = inst
-                                        .parameters
-                                        .get(5)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(4)
-                                        as u8;
-                                    let p4 = inst
-                                        .parameters
-                                        .get(6)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(6)
-                                        as u8;
-                                    TriggerEffect::Bow {
-                                        start_position: p1,
-                                        end_position: p2,
-                                        force: p3,
-                                        snap_force: p4,
-                                    }
-                                }
-                                4 => {
-                                    let p1 = inst
-                                        .parameters
-                                        .get(3)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(0)
-                                        as u8;
-                                    let p2 = inst
-                                        .parameters
-                                        .get(4)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(8)
-                                        as u8;
-                                    let p3 = inst
-                                        .parameters
-                                        .get(5)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(1)
-                                        as u8;
-                                    let p4 = inst
-                                        .parameters
-                                        .get(6)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(4)
-                                        as u8;
-                                    let p5 = inst
-                                        .parameters
-                                        .get(7)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(10)
-                                        as u8;
-                                    TriggerEffect::Galloping {
-                                        start_position: p1,
-                                        end_position: p2,
-                                        first_foot: p3,
-                                        second_foot: p4,
-                                        frequency: p5,
-                                    }
-                                }
-                                5 => {
-                                    let p1 = inst
-                                        .parameters
-                                        .get(3)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(2)
-                                        as u8;
-                                    let p2 = inst
-                                        .parameters
-                                        .get(4)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(7)
-                                        as u8;
-                                    let p3 = inst
-                                        .parameters
-                                        .get(5)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(8)
-                                        as u8;
-                                    TriggerEffect::Weapon {
-                                        start_position: p1,
-                                        end_position: p2,
-                                        force: p3,
-                                    }
-                                }
-                                6 => {
-                                    let p1 = inst
-                                        .parameters
-                                        .get(3)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(1)
-                                        as u8;
-                                    let p2 = inst
-                                        .parameters
-                                        .get(4)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(8)
-                                        as u8;
-                                    let p3 = inst
-                                        .parameters
-                                        .get(5)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(7)
-                                        as u8;
-                                    let p4 = inst
-                                        .parameters
-                                        .get(6)
-                                        .and_then(|v| v.as_u64())
-                                        .unwrap_or(20)
-                                        as u8;
-                                    TriggerEffect::MachineGun {
-                                        start_position: p1,
-                                        end_position: p2,
-                                        strength: p3,
-                                        frequency: p4,
-                                    }
-                                }
+                                1 | 2 => TriggerEffect::Feedback {
+                                    start_position: param_u8(3, 0),
+                                    force: param_u8(4, 5),
+                                },
+                                3 => TriggerEffect::Bow {
+                                    start_position: param_u8(3, 0),
+                                    end_position: param_u8(4, 8),
+                                    force: param_u8(5, 4),
+                                    snap_force: param_u8(6, 6),
+                                },
+                                4 => TriggerEffect::Galloping {
+                                    start_position: param_u8(3, 0),
+                                    end_position: param_u8(4, 8),
+                                    first_foot: param_u8(5, 1),
+                                    second_foot: param_u8(6, 4),
+                                    frequency: param_u8(7, 10),
+                                },
+                                5 => TriggerEffect::Weapon {
+                                    start_position: param_u8(3, 2),
+                                    end_position: param_u8(4, 7),
+                                    force: param_u8(5, 8),
+                                },
+                                6 => TriggerEffect::MachineGun {
+                                    start_position: param_u8(3, 1),
+                                    end_position: param_u8(4, 8),
+                                    strength: param_u8(5, 7),
+                                    frequency: param_u8(6, 20),
+                                },
+                                7 => TriggerEffect::Vibration {
+                                    position: param_u8(3, 1),
+                                    amplitude: param_u8(4, 6),
+                                    frequency: param_u8(5, 20),
+                                },
+                                8 => TriggerEffect::CustomZone {
+                                    zones: [
+                                        param_u8(3, 0),
+                                        param_u8(4, 0),
+                                        param_u8(5, 0),
+                                        param_u8(6, 0),
+                                        param_u8(7, 0),
+                                        param_u8(8, 0),
+                                        param_u8(9, 0),
+                                        param_u8(10, 0),
+                                        param_u8(11, 0),
+                                        param_u8(12, 0),
+                                    ],
+                                },
+                                9 => TriggerEffect::Machine {
+                                    start_position: param_u8(3, 1),
+                                    end_position: param_u8(4, 9),
+                                    strength_a: param_u8(5, 4),
+                                    strength_b: param_u8(6, 7),
+                                    frequency: param_u8(7, 15),
+                                    period: param_u8(8, 2),
+                                },
+                                10 => TriggerEffect::Choppy,
+                                11 => TriggerEffect::VerySoft,
+                                12 => TriggerEffect::Soft,
+                                13 => TriggerEffect::Medium,
+                                14 => TriggerEffect::Hard,
+                                15 => TriggerEffect::VeryHard,
+                                16 => TriggerEffect::Hardest,
+                                17 => TriggerEffect::Rigid,
+                                18 => TriggerEffect::VibrateTriggerPulse,
+                                19 => TriggerEffect::GameCube,
                                 _ => TriggerEffect::Off,
                             };
 
@@ -328,17 +278,17 @@ impl DualSenseUdpServer {
                     2 => {
                         // RGB update: [controller_idx, r, g, b]
                         if inst.parameters.len() >= 4 {
-                            let r = inst.parameters[1].as_u64().unwrap_or(0) as u8;
-                            let g = inst.parameters[2].as_u64().unwrap_or(0) as u8;
-                            let b = inst.parameters[3].as_u64().unwrap_or(0) as u8;
+                            let r = param_u8(1, 0);
+                            let g = param_u8(2, 0);
+                            let b = param_u8(3, 0);
                             *shared.lightbar.write() = RgbColor::new(r, g, b);
                         }
                     }
                     4 => {
                         // Rumble: [controller_idx, heavy, light]
                         if inst.parameters.len() >= 3 {
-                            let heavy = inst.parameters[1].as_u64().unwrap_or(0) as u8;
-                            let light = inst.parameters[2].as_u64().unwrap_or(0) as u8;
+                            let heavy = param_u8(1, 0);
+                            let light = param_u8(2, 0);
                             *shared.heavy_rumble.write() = heavy;
                             *shared.light_rumble.write() = light;
                         }
@@ -405,6 +355,21 @@ mod tests {
         // Verify Rumble updated
         assert_eq!(*shared.heavy_rumble.read(), 180);
         assert_eq!(*shared.light_rumble.read(), 90);
+
+        // Test PascalCase DualSenseX packet & extended modes (Choppy=10, Rigid=17, VibrateTrigger=7, Reset=5)
+        let pascal_payload = r#"{
+            "Instructions": [
+                { "Type": 1, "Parameters": [0, 1, 10] },
+                { "Type": 1, "Parameters": [0, 2, 17] }
+            ]
+        }"#;
+        DualSenseUdpServer::process_payload(pascal_payload, &shared);
+        assert_eq!(shared.triggers.read().left, TriggerEffect::Choppy);
+        assert_eq!(shared.triggers.read().right, TriggerEffect::Rigid);
+
+        let reset_payload = r#"{ "instructions": [{ "type": 5, "parameters": [] }] }"#;
+        DualSenseUdpServer::process_payload(reset_payload, &shared);
+        assert_eq!(shared.triggers.read().left, TriggerEffect::Off);
 
         server.stop();
         assert!(!server.stats().running);
