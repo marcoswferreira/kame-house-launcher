@@ -28,6 +28,9 @@ pub struct DualSenseStatus {
     pub speaker_volume: u8,
 }
 
+/// Callback type for physical microphone mute toggle events
+pub type MicToggleHandler = Arc<dyn Fn(bool) + Send + Sync>;
+
 pub struct DualSenseManager {
     shared_state: Arc<SharedControllerState>,
     lighting: RwLock<LightingConfig>,
@@ -41,7 +44,7 @@ pub struct DualSenseManager {
     prev_mic_btn: RwLock<bool>,
     audio_device_detected: RwLock<bool>,
     speaker_volume: RwLock<u8>,
-    mic_toggle_callback: RwLock<Option<Arc<dyn Fn(bool) + Send + Sync>>>,
+    mic_toggle_callback: RwLock<Option<MicToggleHandler>>,
 }
 
 impl DualSenseManager {
@@ -205,7 +208,7 @@ impl DualSenseManager {
         *self.controller_name.write() = name.to_string();
     }
 
-    pub fn set_mic_toggle_handler(&self, handler: Arc<dyn Fn(bool) + Send + Sync>) {
+    pub fn set_mic_toggle_handler(&self, handler: MicToggleHandler) {
         *self.mic_toggle_callback.write() = Some(handler);
     }
 

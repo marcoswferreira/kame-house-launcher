@@ -535,7 +535,11 @@ pub fn open_fullscreen_ui(url: &str) {
                 .spawn()
                 .is_err()
                 && Command::new("powershell.exe")
-                    .args(["-NoProfile", "-Command", &format!("Start-Process '{}'", url)])
+                    .args([
+                        "-NoProfile",
+                        "-Command",
+                        &format!("Start-Process '{}'", url),
+                    ])
                     .spawn()
                     .is_err()
                 && Command::new("wslview").arg(url).spawn().is_err()

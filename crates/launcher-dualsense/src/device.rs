@@ -5,7 +5,7 @@ use std::time::Duration;
 use tracing::{debug, info, warn};
 
 use crate::manager::DualSenseManager;
-use crate::protocol::{ConnectionType, OutputReportBuilder};
+use crate::protocol::ConnectionType;
 
 pub const SONY_VENDOR_ID: u16 = 0x054c;
 pub const DUALSENSE_PID: u16 = 0x0ce6;
@@ -63,12 +63,9 @@ impl HidDeviceWorker {
                     let mut controller_name = "Sony DualSense Wireless Controller";
 
                     for dev_info in api.device_list() {
-                        if is_supported_sony_controller(
-                            dev_info.vendor_id(),
-                            dev_info.product_id(),
-                        ) {
-                            let (name, is_dualsense) =
-                                identify_controller(dev_info.product_id());
+                        if is_supported_sony_controller(dev_info.vendor_id(), dev_info.product_id())
+                        {
+                            let (name, is_dualsense) = identify_controller(dev_info.product_id());
                             controller_name = name;
                             is_ds = is_dualsense;
                             target_device = Some(dev_info.clone());
@@ -115,7 +112,10 @@ impl HidDeviceWorker {
                                 let parsed = if slice[0] == 0x01 && bytes_read >= 10 {
                                     crate::protocol::parse_input_report(slice, ConnectionType::Usb)
                                 } else if slice[0] == 0x31 && bytes_read >= 12 {
-                                    crate::protocol::parse_input_report(slice, ConnectionType::Bluetooth)
+                                    crate::protocol::parse_input_report(
+                                        slice,
+                                        ConnectionType::Bluetooth,
+                                    )
                                 } else if bytes_read >= 9 {
                                     crate::protocol::parse_input_report(slice, connection)
                                 } else {
@@ -124,7 +124,10 @@ impl HidDeviceWorker {
 
                                 if let Some(state) = parsed {
                                     if let Some(muted) = manager.update_input_state(state) {
-                                        info!("Physical DualSense Mic Mute toggled: muted={}", muted);
+                                        info!(
+                                            "Physical DualSense Mic Mute toggled: muted={}",
+                                            muted
+                                        );
                                     }
                                 }
                             }
@@ -181,16 +184,25 @@ mod tests {
     #[test]
     fn test_controller_identification() {
         assert!(is_supported_sony_controller(SONY_VENDOR_ID, DUALSENSE_PID));
-        assert!(is_supported_sony_controller(SONY_VENDOR_ID, DUALSENSE_EDGE_PID));
-        assert!(is_supported_sony_controller(SONY_VENDOR_ID, DUALSHOCK4_V1_PID));
-        assert!(is_supported_sony_controller(SONY_VENDOR_ID, DUALSHOCK4_V2_PID));
+        assert!(is_supported_sony_controller(
+            SONY_VENDOR_ID,
+            DUALSENSE_EDGE_PID
+        ));
+        assert!(is_supported_sony_controller(
+            SONY_VENDOR_ID,
+            DUALSHOCK4_V1_PID
+        ));
+        assert!(is_supported_sony_controller(
+            SONY_VENDOR_ID,
+            DUALSHOCK4_V2_PID
+        ));
         assert!(!is_supported_sony_controller(0x045e, 0x028e)); // Xbox 360
 
         let (ds_name, is_ds) = identify_controller(DUALSENSE_PID);
         assert!(is_ds);
         assert!(ds_name.contains("DualSense"));
 
-        let (ds4_name, is_ds4) = identify_controller(DUALSOCK4_V1_PID);
+        let (ds4_name, is_ds4) = identify_controller(DUALSHOCK4_V1_PID);
         assert!(!is_ds4);
         assert!(ds4_name.contains("DualShock 4"));
     }
