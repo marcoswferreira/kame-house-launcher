@@ -1,6 +1,6 @@
-# Guia de Contribuição: Kame House Launcher 🐢
+# Guia de Contribuição: Steam Companion 🐢
 
-Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este documento orienta sobre o fluxo de desenvolvimento, os padrões de código e as boas práticas de commit.
+Obrigado pelo seu interesse em contribuir para o **Steam Companion**! Este documento orienta sobre o fluxo de desenvolvimento, os padrões de código e as boas práticas de commit.
 
 ---
 
@@ -15,17 +15,20 @@ Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este d
 ## 🛠 Configuração do Ambiente
 
 1. Certifique-se de ter o compilador Rust instalado:
+
    ```bash
    rustup update stable
    rustup component add llvm-tools-preview
    ```
 
 2. Instale as ferramentas auxiliares:
+
    ```bash
    cargo install cargo-llvm-cov --locked
    ```
 
 3. Clone o repositório recursivamente:
+
    ```bash
    git clone --recurse-submodules https://github.com/marcoswferreira/kame-house-launcher.git
    cd kame-house-launcher
@@ -38,20 +41,24 @@ Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este d
 Antes de abrir um Pull Request ou criar commits:
 
 1. **Checar Formatação e Lints:**
+
    ```bash
    cargo fmt --check
    cargo clippy --workspace --all-targets -- -D warnings
    ```
 
 2. **Executar a Suíte de Testes:**
+
    ```bash
    cargo test --workspace
    ```
 
 3. **Verificar a Cobertura de Código:**
+
    ```bash
    cargo llvm-cov --workspace --summary-only
    ```
+
    A cobertura total de linhas não pode ser inferior a 70%.
 
 ---
@@ -69,6 +76,7 @@ Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](ht
 ```
 
 ### Tipos Permitidos
+
 - `feat`: Novo recurso para o usuário ou biblioteca (ex.: novo parser de console, novo preset de TV).
 - `fix`: Correção de bug.
 - `docs`: Alterações exclusivamente na documentação ou ADRs.
@@ -79,6 +87,7 @@ Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](ht
 - `chore`: Atualizações de build, dependências ou ferramentas de CI/CD.
 
 ### Exemplos de Boas Mensagens de Commit
+
 - `feat(core): add rom header detection for sega saturn disc images`
 - `fix(steam): correct vdf binary endianness when writing 64-bit integers`
 - `docs: update dualsense pairing instructions in readme`
@@ -89,13 +98,14 @@ Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](ht
 ## 🔀 Fluxo de Branches e Pull Requests
 
 1. Crie uma branch descritiva a partir de `main`:
+
    ```bash
    git checkout -b feat/gamepad-virtual-keyboard
    ```
+
 2. Realize alterações atômicas com commits bem descritos.
 3. Certifique-se de que `cargo test --workspace` e `cargo llvm-cov` passem sem erros.
 4. Abra o Pull Request descrevendo:
    - Qual problema ou necessidade a alteração resolve.
    - Como foi testado.
    - Impacto na performance ou nos subsistemas relacionados.
-

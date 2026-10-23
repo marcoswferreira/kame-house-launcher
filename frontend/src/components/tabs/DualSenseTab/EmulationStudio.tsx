@@ -12,7 +12,27 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
   const [emulation, setEmulation] = useState<EmulationConfig>(initialEmulation);
 
   const setMode = (mode: EmulationMode) => {
-    setEmulation((prev) => ({ ...prev, mode }));
+    const updated = { ...emulation, mode };
+    setEmulation(updated);
+    onApply(updated);
+  };
+
+  const toggleGyro = () => {
+    const updated = {
+      ...emulation,
+      gyro: { ...emulation.gyro, enabled: !emulation.gyro.enabled },
+    };
+    setEmulation(updated);
+    onApply(updated);
+  };
+
+  const updateGyro = (patch: Partial<EmulationConfig['gyro']>) => {
+    const updated = {
+      ...emulation,
+      gyro: { ...emulation.gyro, ...patch },
+    };
+    setEmulation(updated);
+    onApply(updated);
   };
 
   return (
@@ -22,9 +42,6 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
           <h3>{t('dualsense_emulation_title')}</h3>
           <p className="section-subtitle">{t('dualsense_emulation_subtitle')}</p>
         </div>
-        <button className="deck-btn primary" onClick={() => onApply(emulation)}>
-          💾 {t('dualsense_apply_emulation')}
-        </button>
       </div>
 
       <div className="emulation-modes-grid">
@@ -71,12 +88,7 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
           </div>
           <button
             className={`deck-btn ${emulation.gyro.enabled ? 'danger' : 'primary'}`}
-            onClick={() =>
-              setEmulation((prev) => ({
-                ...prev,
-                gyro: { ...prev.gyro, enabled: !prev.gyro.enabled },
-              }))
-            }
+            onClick={toggleGyro}
           >
             {emulation.gyro.enabled ? t('dualsense_gyro_disable') : t('dualsense_gyro_enable')}
           </button>
@@ -92,12 +104,7 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
                 max="3.0"
                 step="0.1"
                 value={emulation.gyro.sensitivity}
-                onChange={(e) =>
-                  setEmulation((prev) => ({
-                    ...prev,
-                    gyro: { ...prev.gyro, sensitivity: parseFloat(e.target.value) },
-                  }))
-                }
+                onChange={(e) => updateGyro({ sensitivity: parseFloat(e.target.value) })}
               />
             </div>
 
@@ -109,12 +116,7 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
                 max="150"
                 step="5"
                 value={emulation.gyro.deadzone}
-                onChange={(e) =>
-                  setEmulation((prev) => ({
-                    ...prev,
-                    gyro: { ...prev.gyro, deadzone: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateGyro({ deadzone: parseInt(e.target.value, 10) })}
               />
             </div>
 
@@ -123,12 +125,7 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
                 <input
                   type="checkbox"
                   checked={emulation.gyro.invert_x}
-                  onChange={(e) =>
-                    setEmulation((prev) => ({
-                      ...prev,
-                      gyro: { ...prev.gyro, invert_x: e.target.checked },
-                    }))
-                  }
+                  onChange={(e) => updateGyro({ invert_x: e.target.checked })}
                 />
                 {t('dualsense_gyro_invert_x')}
               </label>
@@ -136,12 +133,7 @@ export const EmulationStudio: React.FC<Props> = ({ emulation: initialEmulation, 
                 <input
                   type="checkbox"
                   checked={emulation.gyro.invert_y}
-                  onChange={(e) =>
-                    setEmulation((prev) => ({
-                      ...prev,
-                      gyro: { ...prev.gyro, invert_y: e.target.checked },
-                    }))
-                  }
+                  onChange={(e) => updateGyro({ invert_y: e.target.checked })}
                 />
                 {t('dualsense_gyro_invert_y')}
               </label>

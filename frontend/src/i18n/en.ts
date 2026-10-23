@@ -43,9 +43,9 @@ export const en = {
   th_platform: "Platform",
   th_path: "Target / ROM Path",
   th_appid: "Steam AppID",
-  th_action: "Action",
+  th_status: "Steam Status",
+  status_steam_ready: "Steam Ready",
   table_empty: "No games indexed yet. Click 'Scan Game Directories' or sync your folders.",
-  btn_launch: "Launch",
 
   // DualSense Studio Subtabs
   dualsense_subtab_tester: "Controller Tester",

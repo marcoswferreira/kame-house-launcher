@@ -517,7 +517,11 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast, onRefreshAppStatus 
           {/* Active SubTab View */}
           <div className="dualsense-subview-area">
             {activeSubTab === 'tester' && (
-              <ControllerTester onShowToast={onShowToast} />
+              <ControllerTester
+                onShowToast={onShowToast}
+                isHardwareConnected={isHardwareConnected}
+                controllerName={displayControllerName}
+              />
             )}
             {activeSubTab === 'triggers' && (
               <TriggerStudio

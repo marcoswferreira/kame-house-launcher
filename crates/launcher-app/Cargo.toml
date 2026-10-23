@@ -6,7 +6,7 @@ authors.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "kame-house-launcher"
+name = "steam-companion"
 path = "src/main.rs"
 
 [dependencies]

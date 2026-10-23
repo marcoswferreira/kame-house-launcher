@@ -10,10 +10,16 @@ import {
 
 interface Props {
   onShowToast?: (message: string) => void;
+  isHardwareConnected?: boolean;
+  controllerName?: string;
 }
 
-export const ControllerTester: React.FC<Props> = ({ onShowToast }) => {
-  const { t } = useTranslation();
+export const ControllerTester: React.FC<Props> = ({
+  onShowToast,
+  isHardwareConnected = false,
+  controllerName,
+}) => {
+  const { t, lang } = useTranslation();
   const [liveGamepad, setLiveGamepad] = useState<LiveGamepadState | null>(null);
   const [isWebHidConnected, setIsWebHidConnected] = useState(webHidController.isConnected());
   const [webHidName, setWebHidName] = useState(webHidController.getDeviceName());
@@ -68,10 +74,20 @@ export const ControllerTester: React.FC<Props> = ({ onShowToast }) => {
           <h4>🕹️ {t('dualsense_tester_title')}</h4>
           <p className="section-subtitle">{t('dualsense_tester_subtitle')}</p>
           <div className="status-badges">
-            <span className={`badge-tag ${liveGamepad?.connected ? 'live-badge' : 'danger'}`}>
+            <span
+              className={`badge-tag ${
+                liveGamepad?.connected || isHardwareConnected ? 'live-badge' : 'danger'
+              }`}
+            >
               {liveGamepad?.connected
                 ? `🟢 Gamepad: ${liveGamepad.id}`
-                : `⚠️ ${t('dualsense_tester_no_gamepad')}`}
+                : isHardwareConnected
+                  ? `🟢 ${controllerName || 'Sony DualSense Wireless Controller'} (${
+                      lang === 'pt'
+                        ? 'Hardware Ativo — Pressione um botão para testar na tela'
+                        : 'Hardware Active — Press any button to test on screen'
+                    })`
+                  : `⚠️ ${t('dualsense_tester_no_gamepad')}`}
             </span>
             {isWebHidConnected ? (
               <span className="badge-tag live-badge">

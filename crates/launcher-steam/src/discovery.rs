@@ -172,12 +172,43 @@ pub fn find_steam_shortcuts_vdf(fallback_dir: &Path) -> (PathBuf, bool) {
     (app_fallback, false)
 }
 
+/// Checks if the Steam client process is actively running in the OS
+pub fn is_steam_running() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("tasklist")
+            .args(["/FI", "IMAGENAME eq steam.exe", "/NH"])
+            .output()
+            .map(|out| {
+                let s = String::from_utf8_lossy(&out.stdout);
+                s.to_lowercase().contains("steam.exe")
+            })
+            .unwrap_or(false)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::process::Command::new("pgrep")
+            .args(["-x", "steam"])
+            .output()
+            .map(|out| out.status.success())
+            .unwrap_or(false)
+    }
+}
+
 /// Safely writes `shortcuts.vdf` content:
 /// - Strips Windows Read-Only file flags if set.
 /// - Creates a `.bak` backup copy of existing shortcuts.
 /// - Performs atomic write via temporary file with graceful replacement.
 /// - Provides a helpful, human-readable error if Steam client process lock prevents write.
 pub fn safe_write_shortcuts_vdf(target_path: &Path, content: &[u8]) -> Result<()> {
+    #[cfg(not(test))]
+    if is_steam_running() {
+        return Err(Error::new(
+            ErrorKind::PermissionDenied,
+            "O cliente da Steam está aberto no momento. Feche a Steam completamente (inclusive na bandeja do sistema) antes de sincronizar para evitar que a Steam bloqueie ou sobrescreva os atalhos.",
+        ));
+    }
+
     if let Some(parent) = target_path.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -215,7 +246,7 @@ pub fn safe_write_shortcuts_vdf(target_path: &Path, content: &[u8]) -> Result<()
         }
     }
 
-    // 3. Write via temporary file
+    // 3. Write via temporary file with robust replacement fallback
     let tmp_path = target_path.with_extension("vdf.tmp");
 
     match fs::write(&tmp_path, content) {
@@ -223,10 +254,13 @@ pub fn safe_write_shortcuts_vdf(target_path: &Path, content: &[u8]) -> Result<()
             // Attempt rename/replace
             if let Err(_e) = fs::rename(&tmp_path, target_path) {
                 // On Windows, rename fails if destination exists and cannot be replaced directly.
-                // Try fallback write directly to target
-                if let Err(write_err) = fs::write(target_path, content) {
-                    let _ = fs::remove_file(&tmp_path);
-                    return map_access_denied_error(write_err, target_path);
+                let _ = fs::remove_file(target_path);
+                if let Err(_second_rename) = fs::rename(&tmp_path, target_path) {
+                    // Try fallback write directly to target
+                    if let Err(write_err) = fs::write(target_path, content) {
+                        let _ = fs::remove_file(&tmp_path);
+                        return map_access_denied_error(write_err, target_path);
+                    }
                 }
                 let _ = fs::remove_file(&tmp_path);
             }

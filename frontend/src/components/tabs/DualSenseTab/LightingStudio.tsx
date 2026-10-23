@@ -48,9 +48,6 @@ export const LightingStudio: React.FC<Props> = ({ lighting: initialLighting, onA
           <h3>{t('dualsense_lighting_title')}</h3>
           <p className="section-subtitle">{t('dualsense_lighting_subtitle')}</p>
         </div>
-        <button className="deck-btn primary" onClick={() => onApply(lighting)}>
-          💾 {t('dualsense_apply_lighting')}
-        </button>
       </div>
 
       <div className="lighting-grid">

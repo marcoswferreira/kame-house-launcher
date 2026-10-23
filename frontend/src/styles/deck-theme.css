@@ -652,6 +652,14 @@ input:checked + .switch-slider::before { transform: translateX(22px); }
   padding: 6px;
   border-radius: 6px;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dualsense-subnav::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .subnav-pill {

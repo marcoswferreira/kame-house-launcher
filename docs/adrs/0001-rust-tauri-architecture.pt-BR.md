@@ -6,9 +6,10 @@
 
 ## Contexto e Declaração do Problema
 
-O Kame House Launcher foi concebido como uma central de jogos de alto desempenho para transformar computadores comuns em consoles de sala de estar (Living Room Console PC).
+O Steam Companion foi concebido como uma central de jogos de alto desempenho para transformar computadores comuns em consoles de sala de estar (Living Room Console PC).
 
 Os requisitos técnicos fundamentais são:
+
 1. Uma base de código sólida em **Rust**, com arquitetura modular, tipagem estrita, performance nativa e segurança de memória.
 2. Alta performance em operações de baixo nível: varredura e hashing multi-thread de milhares de ROMs/ISOs, parsing de binários proprietários (Valve VDF, ISO9660, PARAM.SFO, PE executáveis), inspeção de discos e chamadas ao sistema operacional com footprint de memória residual ínfimo (<60MB de RAM).
 3. Uma interface de usuário de 10 pés ("10-foot UI") fluida a 60/120fps, com navegação total via gamepad/controle, feedback sonoro e renderização de artes visuais em alta resolução.
@@ -49,11 +50,12 @@ kame-house-launcher/
 ## Consequências
 
 ### Positivas
+
 - **Eficiência e Velocidade:** As varreduras de arquivos, hashes criptográficos e injeções VDF rodam com velocidade nativa multi-thread (Rayon/Tokio).
 - **Consumo Mínimo de Recursos:** O launcher pode permanecer ativo na bandeja do sistema consumindo apenas dezenas de megabytes enquanto o jogo ou streaming estiver em execução.
 - **Console Experience:** WebViews modernas facilitam a criação de transições suaves estilo PS5/Xbox Series, temas escuros para TV e suporte completo a controles com biblioteca Gamepad API padronizada.
 - **Portabilidade:** Compatibilidade de compilação direta para Windows e Linux.
 
 ### Negativas / Mitigações
-- **Dependência do WebView do Sistema:** No Windows usa WebView2 (pré-instalado no Win10/11); no Linux usa WebKitGTK. A instalação em ambientes Linux customizados necessita dos pacotes WebKitGTK básicos.
 
+- **Dependência do WebView do Sistema:** No Windows usa WebView2 (pré-instalado no Win10/11); no Linux usa WebKitGTK. A instalação em ambientes Linux customizados necessita dos pacotes WebKitGTK básicos.

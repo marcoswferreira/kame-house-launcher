@@ -43,9 +43,9 @@ export const pt = {
   th_platform: "Plataforma",
   th_path: "Caminho / ROM",
   th_appid: "Steam AppID",
-  th_action: "Ação",
+  th_status: "Status Steam",
+  status_steam_ready: "Pronto para Steam",
   table_empty: "Nenhum jogo indexado ainda. Clique em 'Escanear Pastas de Jogos' ou sincronize suas pastas.",
-  btn_launch: "Jogar",
 
   // DualSense Studio Subtabs
   dualsense_subtab_tester: "Testador de Controle",

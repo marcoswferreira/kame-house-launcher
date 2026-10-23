@@ -9,7 +9,7 @@ export function FooterLegend() {
       <div className="footer-telemetry">
         <span>PORT {currentPort}</span>
         <span>VDF READY</span>
-        <span>KAME HOUSE LAUNCHER</span>
+        <span>Steam Companion</span>
       </div>
     </footer>
   );

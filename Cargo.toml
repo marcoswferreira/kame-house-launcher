@@ -12,9 +12,9 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["Kame House Team"]
+authors = ["marcoswferreira"]
 license = "GPL-3.0-or-later"
-repository = "https://github.com/marcoswferreira/kame-house-launcher"
+repository = "https://github.com/marcoswferreira/steam-companion"
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }

@@ -33,11 +33,6 @@ struct StatusResponse {
 }
 
 #[derive(Deserialize)]
-struct LaunchRequest {
-    id: String,
-}
-
-#[derive(Deserialize)]
 struct ScanRequest {
     paths: Option<Vec<String>>,
 }
@@ -231,34 +226,12 @@ where
             let json = serde_json::to_vec(&games).unwrap_or_default();
             ("200 OK", "application/json", json)
         }
-        ("POST", "/api/launch") => {
-            let body_str = extract_body(&request_str);
-            if let Ok(req) = serde_json::from_str::<LaunchRequest>(&body_str) {
-                if let Some((game, state_before)) = service.prepare_launch(&req.id) {
-                    info!(
-                        "Launching game '{}' with state {:?}",
-                        game.title, state_before
-                    );
-                    (
-                        "200 OK",
-                        "application/json",
-                        b"{\"status\":\"launched\"}".to_vec(),
-                    )
-                } else {
-                    (
-                        "404 Not Found",
-                        "application/json",
-                        b"{\"error\":\"game not found\"}".to_vec(),
-                    )
-                }
-            } else {
-                (
-                    "400 Bad Request",
-                    "application/json",
-                    b"{\"error\":\"invalid body\"}".to_vec(),
-                )
-            }
-        }
+        ("POST", "/api/launch") => (
+            "400 Bad Request",
+            "application/json",
+            b"{\"error\":\"Direct game launch through launcher is disabled. Launch games via Steam shortcuts.vdf.\"}"
+                .to_vec(),
+        ),
         ("POST", "/api/settings") => {
             let body_str = extract_body(&request_str);
             if let Ok(req) = serde_json::from_str::<SettingsUpdateRequest>(&body_str) {
@@ -450,7 +423,10 @@ where
                         vdf_path.display(),
                         e
                     );
-                    let resp = format!("{{\"error\":\"{}\"}}", e);
+                    let resp = serde_json::to_string(&serde_json::json!({
+                        "error": e.to_string()
+                    }))
+                    .unwrap_or_else(|_| "{\"error\":\"Failed to sync shortcuts\"}".to_string());
                     ("500 Internal Error", "application/json", resp.into_bytes())
                 }
             }

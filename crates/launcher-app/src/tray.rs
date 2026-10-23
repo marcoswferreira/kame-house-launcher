@@ -153,7 +153,12 @@ pub fn attach_parent_console_for_cli() {
 
 /// Ensures no console window is visible on startup when running the GUI daemon on Windows
 pub fn hide_console_on_startup_if_daemon(hide: bool) {
-    let _ = hide;
+    if hide {
+        #[cfg(target_os = "windows")]
+        {
+            win32::hide_console_window();
+        }
+    }
 }
 
 /// Toggles or sets the visibility of the Windows Debug Console window
@@ -340,10 +345,12 @@ mod win32 {
     extern "system" {
         fn AttachConsole(dw_process_id: u32) -> i32;
         fn GetModuleHandleW(lp_module_name: *const u16) -> isize;
+        fn GetConsoleWindow() -> isize;
     }
 
     #[link(name = "user32")]
     extern "system" {
+        fn ShowWindow(hwnd: isize, n_cmd_show: i32) -> i32;
         fn SetForegroundWindow(hwnd: isize) -> i32;
         fn RegisterClassW(lp_wnd_class: *const WNDCLASSW) -> u16;
         fn CreateWindowExW(
@@ -426,6 +433,16 @@ mod win32 {
         const ATTACH_PARENT_PROCESS: u32 = 0xFFFFFFFF;
         unsafe {
             let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+        }
+    }
+
+    pub fn hide_console_window() {
+        const SW_HIDE: i32 = 0;
+        unsafe {
+            let hwnd = GetConsoleWindow();
+            if hwnd != 0 {
+                ShowWindow(hwnd, SW_HIDE);
+            }
         }
     }
 

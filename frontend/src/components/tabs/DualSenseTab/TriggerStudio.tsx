@@ -45,6 +45,14 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
     onApply(updated);
   };
 
+  const updateSideEffect = (side: 'left' | 'right', patch: Record<string, any>) => {
+    const current = triggers[side];
+    const updatedEffect = { ...current, ...patch } as TriggerEffect;
+    const updated: DualTriggerConfig = { ...triggers, [side]: updatedEffect };
+    setTriggers(updated);
+    onApply(updated);
+  };
+
   const renderEffectControls = (side: 'left' | 'right') => {
     const effect = triggers[side];
 
@@ -76,12 +84,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="9"
                 value={effect.start_position}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, start_position: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { start_position: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -91,12 +94,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="8"
                 value={effect.force}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, force: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { force: parseInt(e.target.value, 10) })}
               />
             </div>
           </div>
@@ -111,12 +109,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="9"
                 value={effect.start_position}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, start_position: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { start_position: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -126,12 +119,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="9"
                 value={effect.end_position}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, end_position: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { end_position: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -141,12 +129,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="8"
                 value={effect.force}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, force: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { force: parseInt(e.target.value, 10) })}
               />
             </div>
           </div>
@@ -161,12 +144,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="9"
                 value={effect.start_position}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, start_position: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { start_position: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -176,12 +154,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="9"
                 value={effect.end_position}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, end_position: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { end_position: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -191,12 +164,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="8"
                 value={effect.force}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, force: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { force: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -206,12 +174,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="8"
                 value={effect.snap_force}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, snap_force: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { snap_force: parseInt(e.target.value, 10) })}
               />
             </div>
           </div>
@@ -226,12 +189,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="9"
                 value={effect.position}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, position: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { position: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -241,12 +199,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="8"
                 value={effect.amplitude}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, amplitude: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { amplitude: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -256,12 +209,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="1"
                 max="40"
                 value={effect.frequency}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, frequency: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { frequency: parseInt(e.target.value, 10) })}
               />
             </div>
           </div>
@@ -276,12 +224,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="0"
                 max="8"
                 value={effect.strength}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, strength: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { strength: parseInt(e.target.value, 10) })}
               />
             </div>
             <div className="slider-row">
@@ -291,12 +234,7 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
                 min="1"
                 max="30"
                 value={effect.frequency}
-                onChange={(e) =>
-                  setTriggers((prev) => ({
-                    ...prev,
-                    [side]: { ...effect, frequency: parseInt(e.target.value, 10) },
-                  }))
-                }
+                onChange={(e) => updateSideEffect(side, { frequency: parseInt(e.target.value, 10) })}
               />
             </div>
           </div>
@@ -312,9 +250,6 @@ export const TriggerStudio: React.FC<Props> = ({ triggers: initialTriggers, onAp
           <h3>{t('dualsense_triggers_title')}</h3>
           <p className="section-subtitle">{t('dualsense_triggers_subtitle')}</p>
         </div>
-        <button className="deck-btn primary" onClick={() => onApply(triggers)}>
-          💾 {t('dualsense_apply_triggers')}
-        </button>
       </div>
 
       <div className="triggers-grid">

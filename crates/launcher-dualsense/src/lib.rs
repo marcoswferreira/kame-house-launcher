@@ -6,6 +6,7 @@ pub mod profiles;
 pub mod protocol;
 pub mod triggers;
 pub mod udp_server;
+pub mod vigem;
 
 pub use device::{
     identify_controller, is_supported_sony_controller, HidDeviceWorker, DUALSENSE_EDGE_PID,
@@ -20,6 +21,7 @@ pub use protocol::{
 };
 pub use triggers::{DualTriggerConfig, TriggerEffect};
 pub use udp_server::{DualSenseUdpServer, UdpServerStats, DEFAULT_DUALSENSEX_UDP_PORT};
+pub use vigem::VirtualGamepadBus;
 
 #[cfg(test)]
 mod tests {

@@ -10,9 +10,10 @@
 
 ## Context and Problem Statement
 
-Kame House Launcher is conceived as a high-performance game launcher and central control system designed to transform everyday PCs into living-room gaming consoles.
+Steam Companion is conceived as a high-performance game launcher and central control system designed to transform everyday PCs into living-room gaming consoles.
 
 The core technical requirements are:
+
 1. A solid codebase in **Rust**, with strict modularity, strong typing, native performance, and memory safety.
 2. High-performance low-level operations: multi-threaded traversal and hashing of thousands of ROMs/ISOs, parsing proprietary binary formats (Valve VDF, ISO9660, PARAM.SFO, PE executables), direct disc inspection, and OS-level system calls with a minimal background memory footprint (<60MB RAM).
 3. A fluid 60/120fps 10-foot user interface with complete gamepad navigation, subtle tactile audio cues, and high-resolution artwork rendering.
@@ -53,6 +54,7 @@ kame-house-launcher/
 ## Consequences
 
 ### Positive
+
 - **Efficiency and Performance:** Multi-disk scanning, cryptographic hashing, and VDF operations execute at native multi-threaded speeds (`rayon`/`tokio`).
 - **Minimal Background Overhead:** The launcher can stay idle in the system tray or background consuming tens of megabytes while games or streaming sessions run.
 - **Console-Grade TV Experience:** Modern WebViews enable PS5/Xbox-like smooth transitions, TV dark themes, and universal gamepad navigation.

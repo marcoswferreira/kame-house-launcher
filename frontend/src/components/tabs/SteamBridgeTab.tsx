@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from '../../i18n';
 import { Game } from '../../types/models';
-import { RefreshCw, FolderSearch, FolderCog, Play, Plus, Trash2, X } from 'lucide-react';
+import { RefreshCw, FolderSearch, FolderCog, Plus, Trash2, X } from 'lucide-react';
 
 interface SteamBridgeTabProps {
   games: Game[];
@@ -9,7 +9,6 @@ interface SteamBridgeTabProps {
   onSyncSteam: () => void;
   onScanGames: (paths?: string[]) => void;
   onUpdateScanDirectories: (paths: string[]) => void;
-  onLaunchGame: (id: string) => void;
 }
 
 export function SteamBridgeTab({
@@ -18,7 +17,6 @@ export function SteamBridgeTab({
   onSyncSteam,
   onScanGames,
   onUpdateScanDirectories,
-  onLaunchGame,
 }: SteamBridgeTabProps) {
   const { t } = useTranslation();
   const [cdpEnabled, setCdpEnabled] = useState(true);
@@ -151,7 +149,7 @@ export function SteamBridgeTab({
               <th>{t.th_platform}</th>
               <th>{t.th_path}</th>
               <th>{t.th_appid}</th>
-              <th>{t.th_action}</th>
+              <th>{t.th_status}</th>
             </tr>
           </thead>
           <tbody>
@@ -179,15 +177,31 @@ export function SteamBridgeTab({
                   </td>
                   <td className="mono-cell">{game.shortcut_id || 'AUTO-CRC'}</td>
                   <td>
-                    <button
-                      className="deck-btn deck-btn-primary focusable"
-                      style={{ padding: '5px 12px', fontSize: '11px' }}
-                      onClick={() => onLaunchGame(game.id)}
-                      tabIndex={100 + idx}
+                    <span
+                      className="status-badge active"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 10px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        backgroundColor: 'rgba(92, 191, 71, 0.15)',
+                        border: '1px solid rgba(92, 191, 71, 0.35)',
+                        color: 'var(--deck-green)',
+                      }}
                     >
-                      <Play size={11} />
-                      <span>{t.btn_launch}</span>
-                    </button>
+                      <span
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--deck-green)',
+                        }}
+                      />
+                      <span>{t.status_steam_ready}</span>
+                    </span>
                   </td>
                 </tr>
               ))

@@ -77,6 +77,12 @@ impl HidDeviceWorker {
                 info!("Starting DualSense/DualShock HID hardware worker");
 
                 while worker_running.load(Ordering::Relaxed) {
+                    if !manager.is_extension_enabled() {
+                        manager.set_connected(false, "Disconnected");
+                        thread::sleep(Duration::from_millis(500));
+                        continue;
+                    }
+
                     let api = match hidapi::HidApi::new() {
                         Ok(api) => api,
                         Err(e) => {
@@ -166,6 +172,12 @@ impl HidDeviceWorker {
                     let mut write_error_count: u32 = 0;
 
                     while worker_running.load(Ordering::Relaxed) {
+                        if !manager.is_extension_enabled() {
+                            is_currently_connected = false;
+                            manager.set_connected(false, "Disconnected");
+                            break;
+                        }
+
                         // Read incoming input report (timeout 10ms for 100Hz responsiveness)
                         match device.read_timeout(&mut in_buf, 10) {
                             Ok(bytes_read) if bytes_read > 0 => {

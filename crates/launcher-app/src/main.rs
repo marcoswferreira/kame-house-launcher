@@ -73,13 +73,15 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    if !matches!(
+    if matches!(
         args.command,
         CliCommand::RunDaemon {
             keep_alive: true,
             open_ui: true
         }
     ) {
+        launcher_app::tray::hide_console_on_startup_if_daemon(true);
+    } else {
         launcher_app::tray::attach_parent_console_for_cli();
     }
 

@@ -174,23 +174,6 @@ export function App() {
     }
   };
 
-  const handleLaunchGame = async (id: string) => {
-    try {
-      const res = await fetch('/api/launch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-      if (res.ok) {
-        showToast('Game launched via supervisor.', 'success');
-      } else {
-        showToast('Launch failed.', 'error');
-      }
-    } catch (_) {
-      showToast('Error connecting to launcher daemon.', 'error');
-    }
-  };
-
   // Passive Gamepad Telemetry (No button hijacking or tab switching)
   useEffect(() => {
     let animId: number;
@@ -279,7 +262,6 @@ export function App() {
               onSyncSteam={handleSyncSteam}
               onScanGames={() => handleScanGames()}
               onUpdateScanDirectories={handleUpdateScanDirectories}
-              onLaunchGame={handleLaunchGame}
             />
           )}
 

@@ -166,6 +166,22 @@ const UTILITIES_DATA: UtilityItem[] = [
       pt: 'Excelente para dobrar o framerate de jogos de emulador travados em 30 FPS para 60 FPS ou 120 FPS fluidos na TV da sala.',
     },
   },
+  {
+    id: 'vigembus',
+    name: 'ViGEmBus Driver',
+    category: 'tools',
+    categoryLabel: { en: 'Virtual Gamepad Driver', pt: 'Driver de Controle Virtual' },
+    tag: 'Xbox / DS4 Emulation',
+    url: 'https://github.com/nefarius/ViGEmBus/releases',
+    description: {
+      en: 'Official Virtual Gamepad Emulation Bus driver for Windows. Required by Steam Companion to spawn virtual Xbox 360 and DualShock 4 controllers for older PC titles.',
+      pt: 'Driver oficial do Virtual Gamepad Emulation Bus para Windows. Necessário pelo Steam Companion para criar controles virtuais de Xbox 360 e DualShock 4 em jogos de PC.',
+    },
+    kameTip: {
+      en: 'Install the ViGEmBus driver once on Windows so Steam Companion can emulate Xbox 360 or PS4 controllers natively with zero latency.',
+      pt: 'Instale o ViGEmBus uma única vez no Windows para o Steam Companion emular controles de Xbox 360 e PS4 nativamente sem lag.',
+    },
+  },
 ];
 
 interface Props {

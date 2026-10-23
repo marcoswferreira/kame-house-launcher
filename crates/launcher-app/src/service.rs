@@ -190,7 +190,36 @@ impl LauncherService {
 
     pub fn export_games_to_steam(&self, steam_shortcuts_vdf_path: &Path) -> std::io::Result<usize> {
         let mut root_nodes = if steam_shortcuts_vdf_path.is_file() {
-            let bytes = fs::read(steam_shortcuts_vdf_path)?;
+            // Strip Read-Only flag if set before reading
+            if let Ok(metadata) = fs::metadata(steam_shortcuts_vdf_path) {
+                let mut perms = metadata.permissions();
+                if perms.readonly() {
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::PermissionsExt;
+                        perms.set_mode(0o644);
+                    }
+                    #[cfg(not(unix))]
+                    #[allow(clippy::permissions_set_readonly_false)]
+                    {
+                        perms.set_readonly(false);
+                    }
+                    let _ = fs::set_permissions(steam_shortcuts_vdf_path, perms);
+                }
+            }
+            let bytes = fs::read(steam_shortcuts_vdf_path).map_err(|e| {
+                if e.kind() == std::io::ErrorKind::PermissionDenied || e.raw_os_error() == Some(5) {
+                    std::io::Error::new(
+                        std::io::ErrorKind::PermissionDenied,
+                        format!(
+                            "Acesso negado ao ler '{}'. Por favor feche a Steam antes de sincronizar.",
+                            steam_shortcuts_vdf_path.display()
+                        ),
+                    )
+                } else {
+                    e
+                }
+            })?;
             parse_binary_vdf(&bytes)?
         } else {
             Vec::new()

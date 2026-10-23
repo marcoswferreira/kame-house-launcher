@@ -49,6 +49,7 @@ pub struct DualSenseManager {
     audio_device_detected: RwLock<bool>,
     speaker_volume: RwLock<u8>,
     mic_toggle_callback: RwLock<Option<MicToggleHandler>>,
+    virtual_bus: parking_lot::Mutex<crate::vigem::VirtualGamepadBus>,
 }
 
 impl DualSenseManager {
@@ -82,6 +83,7 @@ impl DualSenseManager {
             audio_device_detected: RwLock::new(false),
             speaker_volume: RwLock::new(80),
             mic_toggle_callback: RwLock::new(None),
+            virtual_bus: parking_lot::Mutex::new(crate::vigem::VirtualGamepadBus::new()),
         }
     }
 
@@ -93,6 +95,7 @@ impl DualSenseManager {
         *self.extension_enabled.write() = enabled;
         if !enabled {
             self.set_connected(false, "Disconnected");
+            self.virtual_bus.lock().unplug();
         }
         tracing::info!("DualSense extension enabled state set to: {}", enabled);
     }
@@ -234,14 +237,16 @@ impl DualSenseManager {
         *self.lighting.write() = lighting;
     }
 
-    pub fn set_emulation(&self, config: EmulationConfig) {
+    pub fn set_emulation(&self, config: EmulationConfig) -> bool {
         tracing::info!(
             "DualSense emulation configured: mode={:?}, gyro_enabled={}, gyro_sensitivity={}",
             config.mode,
             config.gyro.enabled,
             config.gyro.sensitivity
         );
+        let ok = self.virtual_bus.lock().set_mode(config.mode);
         *self.emulation.write() = config;
+        ok
     }
 
     pub fn apply_profile(&self, profile_id: &str) -> bool {
@@ -326,7 +331,14 @@ impl DualSenseManager {
             );
         }
         *self.prev_mic_btn.write() = curr_pressed;
-        *self.input_state.write() = new_state;
+        *self.input_state.write() = new_state.clone();
+
+        // Forward input state to emulated virtual controller (Xbox 360 / DualShock 4)
+        {
+            let gyro = self.emulation.read().gyro.clone();
+            self.virtual_bus.lock().submit_input(&new_state, &gyro);
+        }
+
         toggled_to
     }
 }
