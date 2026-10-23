@@ -8,6 +8,7 @@ export interface StatusResponse {
   dualsense_connected: boolean;
   dualsense_udp_enabled: boolean;
   scan_directories?: string[];
+  debug_console_visible?: boolean;
 }
 
 export interface Game {

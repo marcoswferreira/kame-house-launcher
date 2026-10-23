@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { StatusResponse } from '../types/models';
-import { Radio, Gamepad2, Globe } from 'lucide-react';
+import { Gamepad2, Globe, Terminal, X } from 'lucide-react';
 
 interface HeaderProps {
   status: StatusResponse | null;
   isGamepadActive: boolean;
+  onToggleDebugConsole?: () => void;
+  onRequestClose?: () => void;
 }
 
-export function Header({ status, isGamepadActive }: HeaderProps) {
+export function Header({
+  status,
+  isGamepadActive,
+  onToggleDebugConsole,
+  onRequestClose,
+}: HeaderProps) {
   const { lang, toggleLang, t } = useTranslation();
   const [time, setTime] = useState('');
 
@@ -58,6 +65,26 @@ export function Header({ status, isGamepadActive }: HeaderProps) {
           <span className="chip-label">{isGamepadActive ? 'CONNECTED' : 'KEYBOARD'}</span>
         </div>
 
+        {/* Toggle Debug Terminal button */}
+        {onToggleDebugConsole && (
+          <button
+            className="hud-pill-btn focusable"
+            onClick={onToggleDebugConsole}
+            title={
+              lang === 'pt'
+                ? 'Mostrar/Ocultar Terminal de Debug (também disponível no System Tray)'
+                : 'Show/Hide Debug Terminal (also available in System Tray)'
+            }
+            style={{
+              borderColor: status?.debug_console_visible ? 'var(--deck-blue)' : undefined,
+              color: status?.debug_console_visible ? 'var(--deck-blue)' : undefined,
+            }}
+          >
+            <Terminal size={13} />
+            <span>{lang === 'pt' ? 'DEBUG' : 'DEBUG'}</span>
+          </button>
+        )}
+
         {/* Language switch button */}
         <button className="hud-pill-btn focusable" onClick={toggleLang} title="Switch Language (Y)" tabIndex={1}>
           <Globe size={13} />
@@ -66,6 +93,26 @@ export function Header({ status, isGamepadActive }: HeaderProps) {
 
         {/* System Clock */}
         <div className="deck-clock">{time}</div>
+
+        {/* Close / Minimize to System Tray button */}
+        {onRequestClose && (
+          <button
+            className="hud-pill-btn focusable"
+            onClick={onRequestClose}
+            title={
+              lang === 'pt'
+                ? 'Fechar ou Minimizar para a Bandeja (System Tray)'
+                : 'Close or Minimize to System Tray'
+            }
+            style={{
+              padding: '5px 8px',
+              borderColor: 'rgba(239, 68, 68, 0.35)',
+              color: '#f87171',
+            }}
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
     </header>
   );

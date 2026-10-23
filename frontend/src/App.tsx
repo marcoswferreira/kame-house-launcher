@@ -24,6 +24,7 @@ export function App() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [games, setGames] = useState<Game[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
   // Gamepad state
   const [isGamepadActive, setIsGamepadActive] = useState(false);
@@ -66,7 +67,61 @@ export function App() {
   useEffect(() => {
     fetchStatus();
     fetchGames();
+
+    const handlePageHide = () => {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/window/native-close', '{}');
+      }
+    };
+    window.addEventListener('pagehide', handlePageHide);
+    return () => window.removeEventListener('pagehide', handlePageHide);
   }, []);
+
+  const handleToggleDebugConsole = async () => {
+    try {
+      const res = await fetch('/api/window/toggle-console', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        await fetchStatus();
+        showToast(
+          data.debug_console_visible
+            ? lang === 'pt'
+              ? 'Terminal de Debug aberto.'
+              : 'Debug Terminal opened.'
+            : lang === 'pt'
+              ? 'Terminal de Debug ocultado.'
+              : 'Debug Terminal hidden.',
+          'info'
+        );
+      }
+    } catch (_) {}
+  };
+
+  const handleMinimizeToTray = async () => {
+    setIsCloseModalOpen(false);
+    try {
+      await fetch('/api/window/minimize', { method: 'POST' });
+    } catch (_) {}
+    showToast(
+      lang === 'pt'
+        ? 'Minimizado para a bandeja do sistema (System Tray).'
+        : 'Minimized to System Tray.',
+      'info'
+    );
+    setTimeout(() => {
+      window.close();
+    }, 150);
+  };
+
+  const handleQuitApplication = async () => {
+    setIsCloseModalOpen(false);
+    try {
+      await fetch('/api/window/quit', { method: 'POST' });
+    } catch (_) {}
+    setTimeout(() => {
+      window.close();
+    }, 100);
+  };
 
   // Quick Action Handlers
   const handleSyncSteam = async () => {
@@ -271,7 +326,12 @@ export function App() {
 
   return (
     <div className="deck-window">
-      <Header status={status} isGamepadActive={isGamepadActive} />
+      <Header
+        status={status}
+        isGamepadActive={isGamepadActive}
+        onToggleDebugConsole={handleToggleDebugConsole}
+        onRequestClose={() => setIsCloseModalOpen(true)}
+      />
 
       <div className="deck-body">
         <Sidebar
@@ -323,6 +383,76 @@ export function App() {
       </div>
 
       <FooterLegend />
+
+      {/* Close / Minimize to System Tray Confirmation Modal */}
+      {isCloseModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(10, 14, 20, 0.82)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => setIsCloseModalOpen(false)}
+        >
+          <div
+            style={{
+              background: 'var(--deck-surface, #161b24)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '14px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: '460px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#fff' }}>
+              {lang === 'pt' ? 'Fechar Kame House Launcher' : 'Close Kame House Launcher'}
+            </h3>
+            <p style={{ margin: '0 0 20px 0', fontSize: '13.5px', lineHeight: 1.5, color: 'var(--deck-text-muted, #9ca3af)' }}>
+              {lang === 'pt'
+                ? 'Deseja minimizar o Kame House para continuar online na bandeja do sistema (System Tray) ou encerrar completamente a aplicação?'
+                : 'Do you want to minimize Kame House to stay online in the System Tray or quit the application completely?'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                className="btn-primary focusable"
+                onClick={handleMinimizeToTray}
+                style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
+              >
+                {lang === 'pt'
+                  ? '🗕 Minimizar para a Bandeja (System Tray)'
+                  : '🗕 Minimize to System Tray'}
+              </button>
+              <button
+                className="btn-secondary focusable"
+                onClick={handleQuitApplication}
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: '10px 16px',
+                  borderColor: 'rgba(239, 68, 68, 0.45)',
+                  color: '#f87171',
+                }}
+              >
+                {lang === 'pt' ? '⏻ Encerrar Aplicação' : '⏻ Quit Application'}
+              </button>
+              <button
+                className="btn-secondary focusable"
+                onClick={() => setIsCloseModalOpen(false)}
+                style={{ width: '100%', justifyContent: 'center', padding: '8px 16px' }}
+              >
+                {lang === 'pt' ? 'Cancelar' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Steam Deck Toast System */}
       <aside className="toast-container" aria-live="polite">

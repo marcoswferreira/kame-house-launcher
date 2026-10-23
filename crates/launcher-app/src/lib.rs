@@ -2,6 +2,7 @@ pub mod cli;
 pub mod i18n;
 pub mod server;
 pub mod service;
+pub mod tray;
 
 pub use i18n::I18n;
 pub use service::LauncherService;
@@ -257,6 +258,33 @@ mod tests {
         let n5 = client5.read(&mut resp5).await.unwrap();
         assert!(String::from_utf8_lossy(&resp5[..n5]).contains("200 OK"));
         assert_eq!(svc.language(), Language::PtBr);
+
+        // 6. Test API window toggle-console & minimize routes
+        let (mut client6, server6) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server6, svc_clone).await;
+        });
+        client6
+            .write_all(b"POST /api/window/toggle-console HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut resp6 = [0u8; 512];
+        let n6 = client6.read(&mut resp6).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp6[..n6]).contains("\"debug_console_visible\":true"));
+
+        let (mut client7, server7) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server7, svc_clone).await;
+        });
+        client7
+            .write_all(b"POST /api/window/minimize HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut resp7 = [0u8; 512];
+        let n7 = client7.read(&mut resp7).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp7[..n7]).contains("minimized_to_tray"));
     }
 
     #[test]

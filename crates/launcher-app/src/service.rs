@@ -15,6 +15,7 @@ pub struct LauncherService {
     pub settings: Arc<RwLock<ConsoleSettings>>,
     pub achievements: Arc<RwLock<AchievementManager>>,
     pub dualsense: Arc<DualSenseManager>,
+    pub lifecycle: Arc<crate::tray::WindowLifecycleState>,
     pub _dualsense_worker: Option<launcher_dualsense::HidDeviceWorker>,
 }
 
@@ -36,6 +37,7 @@ impl LauncherService {
             settings: Arc::new(RwLock::new(ConsoleSettings::default())),
             achievements,
             dualsense,
+            lifecycle: Arc::new(crate::tray::WindowLifecycleState::default()),
             _dualsense_worker: Some(hid_worker),
         };
         svc.load_state();

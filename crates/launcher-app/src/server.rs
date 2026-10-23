@@ -29,6 +29,7 @@ struct StatusResponse {
     dualsense_connected: bool,
     dualsense_udp_enabled: bool,
     scan_directories: Vec<String>,
+    debug_console_visible: bool,
 }
 
 #[derive(Deserialize)]
@@ -172,24 +173,31 @@ where
     let path = parts.next().unwrap_or("/");
 
     let (status, content_type, body) = match (method, path) {
-        ("GET", "/") | ("GET", "/index.html") => (
-            "200 OK",
-            "text/html; charset=utf-8",
-            INDEX_HTML.as_bytes().to_vec(),
-        ),
+        ("GET", "/") | ("GET", "/index.html") => {
+            service.lifecycle.record_page_activity();
+            (
+                "200 OK",
+                "text/html; charset=utf-8",
+                INDEX_HTML.as_bytes().to_vec(),
+            )
+        }
         ("GET", "/style.css") => (
             "200 OK",
             "text/css; charset=utf-8",
             STYLE_CSS.as_bytes().to_vec(),
         ),
-        ("GET", "/app.js") => (
-            "200 OK",
-            "application/javascript; charset=utf-8",
-            APP_JS.as_bytes().to_vec(),
-        ),
+        ("GET", "/app.js") => {
+            service.lifecycle.record_page_activity();
+            (
+                "200 OK",
+                "application/javascript; charset=utf-8",
+                APP_JS.as_bytes().to_vec(),
+            )
+        }
         ("GET", "/logo.svg") => ("200 OK", "image/svg+xml", LOGO_SVG.as_bytes().to_vec()),
         ("GET", "/kame-house-hero.jpg") => ("200 OK", "image/jpeg", HERO_JPG.to_vec()),
         ("GET", "/api/status") => {
+            service.lifecycle.record_page_activity();
             let games = service.list_games();
             let settings = service.settings.read().clone();
             let behavior_str = match settings.launch_behavior {
@@ -205,6 +213,7 @@ where
                 dualsense_connected: ds_status.connected,
                 dualsense_udp_enabled: settings.dualsense_udp_enabled,
                 scan_directories: settings.scan_directories.clone(),
+                debug_console_visible: service.lifecycle.is_debug_console_visible(),
             };
             let json = serde_json::to_vec(&resp).unwrap_or_default();
             ("200 OK", "application/json", json)
@@ -529,6 +538,73 @@ where
                 )
             }
         }
+        ("POST", "/api/window/toggle-console") => {
+            let visible = crate::tray::toggle_debug_console(&service.lifecycle);
+            let resp = format!("{{\"debug_console_visible\":{}}}", visible);
+            ("200 OK", "application/json", resp.into_bytes())
+        }
+        ("POST", "/api/window/minimize") => {
+            service.lifecycle.record_explicit_action();
+            crate::tray::notify_minimized_to_tray(service.language());
+            (
+                "200 OK",
+                "application/json",
+                b"{\"status\":\"minimized_to_tray\"}".to_vec(),
+            )
+        }
+        ("POST", "/api/window/quit") => {
+            service.lifecycle.record_explicit_action();
+            info!("User requested application quit via Frontend UI");
+            crate::tray::cleanup_system_tray();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+                std::process::exit(0);
+            });
+            (
+                "200 OK",
+                "application/json",
+                b"{\"status\":\"quitting\"}".to_vec(),
+            )
+        }
+        ("POST", "/api/window/native-close") => {
+            let close_ts = crate::tray::current_time_ms();
+            let svc = Arc::clone(&service);
+            tokio::spawn(async move {
+                // Wait 450ms to distinguish a real window close from a page refresh (F5)
+                tokio::time::sleep(std::time::Duration::from_millis(450)).await;
+                if svc.lifecycle.was_recently_active_or_explicit(close_ts) {
+                    return;
+                }
+                let lang = svc.language();
+                let decision = tokio::task::spawn_blocking(move || {
+                    crate::tray::prompt_native_close_decision(lang)
+                })
+                .await
+                .unwrap_or(crate::tray::CloseDecision::MinimizeToTray);
+
+                match decision {
+                    crate::tray::CloseDecision::MinimizeToTray => {
+                        info!("Native close prompt: User chose Minimize to System Tray");
+                        crate::tray::notify_minimized_to_tray(svc.language());
+                    }
+                    crate::tray::CloseDecision::QuitApplication => {
+                        info!("Native close prompt: User chose Quit Application");
+                        crate::tray::cleanup_system_tray();
+                        std::process::exit(0);
+                    }
+                    crate::tray::CloseDecision::ReopenWindow => {
+                        info!("Native close prompt: User chose Cancel (Reopen Frontend Window)");
+                        let url = svc.lifecycle.get_ui_url();
+                        open_fullscreen_ui(&url);
+                    }
+                }
+            });
+            (
+                "200 OK",
+                "application/json",
+                b"{\"status\":\"close_handled\"}".to_vec(),
+            )
+        }
         _ => ("404 Not Found", "text/plain", b"404 Not Found".to_vec()),
     };
 
@@ -556,24 +632,32 @@ fn extract_body(request: &str) -> String {
     }
 }
 
-/// Spawns the system browser in full-screen/kiosk mode to display the 10-foot UI.
+/// Spawns the system browser in App Mode to display the frontend UI without opening a terminal window.
 pub fn open_fullscreen_ui(url: &str) {
     #[cfg(target_os = "windows")]
     {
-        // Try Microsoft Edge in App Mode (borderless, full screen)
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        // Launch Microsoft Edge in standalone App Mode without spawning a visible cmd.exe window
         if Command::new("cmd")
+            .creation_flags(CREATE_NO_WINDOW)
             .args([
                 "/c",
                 "start",
+                "",
                 "msedge",
                 &format!("--app={}", url),
-                "--start-fullscreen",
+                "--window-size=1360,840",
             ])
             .spawn()
             .is_err()
         {
-            // Fallback to default browser
-            let _ = Command::new("cmd").args(["/c", "start", url]).spawn();
+            // Fallback to default browser without console window
+            let _ = Command::new("cmd")
+                .creation_flags(CREATE_NO_WINDOW)
+                .args(["/c", "start", "", url])
+                .spawn();
         }
     }
 

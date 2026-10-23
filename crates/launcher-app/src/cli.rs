@@ -235,6 +235,10 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
             keep_alive,
             open_ui,
         } => {
+            if keep_alive && open_ui {
+                crate::tray::hide_console_on_startup_if_daemon(true);
+            }
+
             // Log with effective i18n
             tracing::info!("{}", i18n.starting_banner(env!("CARGO_PKG_VERSION")));
             let games = service.list_games();
@@ -287,8 +291,16 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
             });
 
             let ui_url = format!("http://127.0.0.1:{}", bound_port);
+            service.lifecycle.set_ui_url(ui_url.clone());
             tracing::info!("Kame House Big Picture UI: {}", ui_url);
             println!("\n{}", i18n.daemon_running_prompt());
+
+            if keep_alive {
+                crate::tray::start_system_tray(
+                    Arc::clone(&service),
+                    Arc::clone(&service.lifecycle),
+                );
+            }
 
             if open_ui {
                 crate::server::open_fullscreen_ui(&ui_url);
@@ -296,6 +308,7 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
 
             if keep_alive {
                 tokio::signal::ctrl_c().await.ok();
+                crate::tray::cleanup_system_tray();
                 println!("\n{}", i18n.daemon_shutting_down());
             }
         }
