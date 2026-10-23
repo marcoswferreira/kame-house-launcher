@@ -11,8 +11,10 @@ import { LightingStudio } from './LightingStudio';
 import { EmulationStudio } from './EmulationStudio';
 import { UdpServerStudio } from './UdpServerStudio';
 import { GameProfilesStudio } from './GameProfilesStudio';
+import { ControllerTester } from './ControllerTester';
+import { webHidController } from '../../../utils/dualsenseHardware';
 
-type SubTab = 'triggers' | 'lighting' | 'emulation' | 'udp' | 'profiles';
+type SubTab = 'tester' | 'triggers' | 'lighting' | 'emulation' | 'udp' | 'profiles';
 
 interface Props {
   onShowToast?: (message: string) => void;
@@ -20,7 +22,7 @@ interface Props {
 
 export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
   const { t } = useTranslation();
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('triggers');
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('tester');
   const [status, setStatus] = useState<DualSenseStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +48,15 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
 
   const handleApplyTriggers = async (triggers: DualTriggerConfig) => {
     try {
+      if (webHidController.isConnected()) {
+        const currentLighting = status?.lighting || {
+          lightbar: { mode: 'static' as const, color: { r: 0, g: 68, b: 204 } },
+          player_led: 'player1' as const,
+          mic_led: 'off' as const,
+        };
+        await webHidController.sendReport(triggers, currentLighting);
+      }
+
       const res = await fetch('/api/dualsense/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,6 +73,14 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
 
   const handleApplyLighting = async (lighting: LightingConfig) => {
     try {
+      if (webHidController.isConnected()) {
+        const currentTriggers = status?.triggers || {
+          left: { mode: 'off' as const },
+          right: { mode: 'off' as const },
+        };
+        await webHidController.sendReport(currentTriggers, lighting);
+      }
+
       const res = await fetch('/api/dualsense/lightbar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -219,6 +238,12 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
       {/* Sub-Navigation Pills */}
       <div className="dualsense-subnav">
         <button
+          className={`subnav-pill ${activeSubTab === 'tester' ? 'active' : ''}`}
+          onClick={() => setActiveSubTab('tester')}
+        >
+          🕹️ {t('dualsense_subtab_tester')}
+        </button>
+        <button
           className={`subnav-pill ${activeSubTab === 'triggers' ? 'active' : ''}`}
           onClick={() => setActiveSubTab('triggers')}
         >
@@ -234,7 +259,7 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
           className={`subnav-pill ${activeSubTab === 'emulation' ? 'active' : ''}`}
           onClick={() => setActiveSubTab('emulation')}
         >
-          🕹️ {t('dualsense_subtab_emulation')}
+          🎮 {t('dualsense_subtab_emulation')}
         </button>
         <button
           className={`subnav-pill ${activeSubTab === 'udp' ? 'active' : ''}`}
@@ -252,6 +277,9 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
 
       {/* Active SubTab View */}
       <div className="dualsense-subview-area">
+        {activeSubTab === 'tester' && (
+          <ControllerTester onShowToast={onShowToast} />
+        )}
         {activeSubTab === 'triggers' && (
           <TriggerStudio
             triggers={currentStatus.triggers}

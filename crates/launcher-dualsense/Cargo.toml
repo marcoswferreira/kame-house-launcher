@@ -15,6 +15,7 @@ parking_lot = { workspace = true }
 crc32fast = { workspace = true }
 byteorder = { workspace = true }
 chrono = { workspace = true }
+hidapi = { version = "2", default-features = false, features = ["linux-native-basic-udev", "windows-native"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }

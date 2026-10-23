@@ -15,6 +15,7 @@ pub struct LauncherService {
     pub settings: Arc<RwLock<ConsoleSettings>>,
     pub achievements: Arc<RwLock<AchievementManager>>,
     pub dualsense: Arc<DualSenseManager>,
+    pub _dualsense_worker: Option<launcher_dualsense::HidDeviceWorker>,
 }
 
 impl LauncherService {
@@ -23,12 +24,19 @@ impl LauncherService {
         let ach_dir = data_dir.join("achievements");
         let achievements = Arc::new(RwLock::new(AchievementManager::new(ach_dir)));
 
+        let dualsense = Arc::new(DualSenseManager::new());
+        dualsense.set_mic_toggle_handler(Arc::new(|muted| {
+            let _ = launcher_console::audio::execute_set_microphone_mute(muted);
+        }));
+        let hid_worker = launcher_dualsense::HidDeviceWorker::start(dualsense.clone());
+
         let mut svc = Self {
             data_dir: data_dir.clone(),
             games: Arc::new(RwLock::new(Vec::new())),
             settings: Arc::new(RwLock::new(ConsoleSettings::default())),
             achievements,
-            dualsense: Arc::new(DualSenseManager::new()),
+            dualsense,
+            _dualsense_worker: Some(hid_worker),
         };
         svc.load_state();
         svc

@@ -1,3 +1,4 @@
+pub mod device;
 pub mod emulation;
 pub mod lightbar;
 pub mod manager;
@@ -6,6 +7,10 @@ pub mod protocol;
 pub mod triggers;
 pub mod udp_server;
 
+pub use device::{
+    identify_controller, is_supported_sony_controller, HidDeviceWorker, DUALSENSE_EDGE_PID,
+    DUALSENSE_PID, DUALSHOCK4_V1_PID, DUALSHOCK4_V2_PID, SONY_VENDOR_ID,
+};
 pub use emulation::{EmulationConfig, EmulationMode, GyroSettings};
 pub use lightbar::{LightbarMode, LightingConfig, MicLed, PlayerLed, RgbColor};
 pub use manager::{DualSenseManager, DualSenseStatus};

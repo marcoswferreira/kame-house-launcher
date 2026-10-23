@@ -55,11 +55,29 @@ export const pt = {
   btn_launch: "Jogar",
 
   // DualSense Studio Subtabs
+  dualsense_subtab_tester: "Testador de Controle",
   dualsense_subtab_triggers: "Gatilhos Adaptáveis",
   dualsense_subtab_lighting: "Lightbar & LEDs",
   dualsense_subtab_emulation: "Emulação & Giroscópio",
   dualsense_subtab_udp: "Link UDP DualSenseX",
   dualsense_subtab_profiles: "Perfis de Jogos",
+
+  // Controller Tester & WebHID
+  dualsense_tester_title: "Testador de Hardware DualSense & DualShock",
+  dualsense_tester_subtitle: "Telemetria de botões e analógicos em tempo real, teste de vibração háptica e ponte direta WebHID.",
+  dualsense_tester_no_gamepad: "Nenhum controle detectado. Pressione qualquer botão no seu controle para ativar.",
+  dualsense_webhid_standby: "Ponte Direta de Hardware Pronta",
+  dualsense_webhid_unsupported: "WebHID não suportado neste navegador (Use Chrome ou Edge para acesso direto ao hardware)",
+  dualsense_connect_webhid: "Conectar via WebHID",
+  dualsense_disconnect_webhid: "Desconectar WebHID",
+  dualsense_test_rumble: "Testar Vibração Háptica",
+  dualsense_tester_analog_sticks: "Analógicos e Gatilhos",
+  dualsense_tester_buttons: "Status dos Botões e D-Pad",
+  toast_webhid_connected: "DualSense conectado diretamente via WebHID!",
+  toast_webhid_failed: "Não foi possível conectar ao controle via WebHID.",
+  toast_webhid_disconnected: "WebHID desconectado.",
+  toast_rumble_tested: "Comando de vibração háptica enviado ao controle!",
+  toast_rumble_failed: "Atuador de vibração do controle não disponível.",
 
   // DualSense Status
   dualsense_connected: "CONECTADO",

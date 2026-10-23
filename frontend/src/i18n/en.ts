@@ -55,11 +55,29 @@ export const en = {
   btn_launch: "Launch",
 
   // DualSense Studio Subtabs
+  dualsense_subtab_tester: "Controller Tester",
   dualsense_subtab_triggers: "Adaptive Triggers",
   dualsense_subtab_lighting: "Lightbar & LEDs",
   dualsense_subtab_emulation: "Emulation & Gyro",
   dualsense_subtab_udp: "DualSenseX UDP Link",
   dualsense_subtab_profiles: "Game Profiles",
+
+  // Controller Tester & WebHID
+  dualsense_tester_title: "DualSense & DualShock Hardware Tester",
+  dualsense_tester_subtitle: "Real-time input telemetry, haptic vibration verification, and direct WebHID hardware bridge.",
+  dualsense_tester_no_gamepad: "No controller detected. Press any button on your controller to activate.",
+  dualsense_webhid_standby: "Direct Hardware Bridge Ready",
+  dualsense_webhid_unsupported: "WebHID not supported in this browser (Use Chrome or Edge for direct hardware access)",
+  dualsense_connect_webhid: "Connect via WebHID",
+  dualsense_disconnect_webhid: "Disconnect WebHID",
+  dualsense_test_rumble: "Test Haptic Rumble",
+  dualsense_tester_analog_sticks: "Analog Sticks & Triggers",
+  dualsense_tester_buttons: "Buttons & D-Pad Status",
+  toast_webhid_connected: "DualSense connected directly via WebHID!",
+  toast_webhid_failed: "Could not connect to controller via WebHID.",
+  toast_webhid_disconnected: "WebHID disconnected.",
+  toast_rumble_tested: "Haptic rumble command sent to controller!",
+  toast_rumble_failed: "Controller rumble actuator not available.",
 
   // DualSense Status
   dualsense_connected: "CONNECTED",

@@ -41,6 +41,7 @@ pub struct DualSenseManager {
     prev_mic_btn: RwLock<bool>,
     audio_device_detected: RwLock<bool>,
     speaker_volume: RwLock<u8>,
+    mic_toggle_callback: RwLock<Option<Arc<dyn Fn(bool) + Send + Sync>>>,
 }
 
 impl DualSenseManager {
@@ -71,6 +72,7 @@ impl DualSenseManager {
             prev_mic_btn: RwLock::new(false),
             audio_device_detected: RwLock::new(true),
             speaker_volume: RwLock::new(80),
+            mic_toggle_callback: RwLock::new(None),
         }
     }
 
@@ -190,6 +192,23 @@ impl DualSenseManager {
             .with_rumble(heavy, light)
     }
 
+    pub fn get_triggers(&self) -> DualTriggerConfig {
+        self.shared_state.triggers.read().clone()
+    }
+
+    pub fn get_lighting(&self) -> LightingConfig {
+        self.lighting.read().clone()
+    }
+
+    pub fn set_connected(&self, connected: bool, name: &str) {
+        *self.connected.write() = connected;
+        *self.controller_name.write() = name.to_string();
+    }
+
+    pub fn set_mic_toggle_handler(&self, handler: Arc<dyn Fn(bool) + Send + Sync>) {
+        *self.mic_toggle_callback.write() = Some(handler);
+    }
+
     pub fn update_input_state(&self, new_state: DualSenseInputState) -> Option<bool> {
         let mut toggled_to = None;
         let prev_pressed = *self.prev_mic_btn.read();
@@ -197,6 +216,9 @@ impl DualSenseManager {
         if curr_pressed && !prev_pressed {
             // Physical button pressed edge
             let new_muted = self.toggle_microphone();
+            if let Some(cb) = self.mic_toggle_callback.read().as_ref() {
+                cb(new_muted);
+            }
             toggled_to = Some(new_muted);
         }
         *self.prev_mic_btn.write() = curr_pressed;

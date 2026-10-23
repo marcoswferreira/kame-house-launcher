@@ -521,6 +521,40 @@ pub fn open_fullscreen_ui(url: &str) {
 
     #[cfg(target_os = "linux")]
     {
+        let is_wsl = std::fs::read_to_string("/proc/version")
+            .map(|v| {
+                let lower = v.to_lowercase();
+                lower.contains("microsoft") || lower.contains("wsl")
+            })
+            .unwrap_or(false);
+
+        if is_wsl {
+            // Under WSL, open via Windows host interop
+            if Command::new("cmd.exe")
+                .args(["/c", "start", url])
+                .spawn()
+                .is_err()
+                && Command::new("powershell.exe")
+                    .args(["-NoProfile", "-Command", &format!("Start-Process '{}'", url)])
+                    .spawn()
+                    .is_err()
+                && Command::new("wslview").arg(url).spawn().is_err()
+            {
+                tracing::info!("WSL detected. Please open {} in your Windows browser.", url);
+            }
+            return;
+        }
+
+        let has_display =
+            std::env::var("DISPLAY").is_ok() || std::env::var("WAYLAND_DISPLAY").is_ok();
+        if !has_display {
+            tracing::info!(
+                "Headless mode (no $DISPLAY). Please open {} in your browser.",
+                url
+            );
+            return;
+        }
+
         // Try Chrome / Chromium in App Mode
         if Command::new("google-chrome")
             .args([&format!("--app={}", url), "--start-fullscreen"])
