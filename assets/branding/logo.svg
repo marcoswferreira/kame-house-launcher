@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient (Pacific Dusk) -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="60%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0A1128"/>
+    </linearGradient>
+
+    <!-- Sunset Cloud Glow Gradient -->
+    <radialGradient id="sunsetGlow" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FF8A65" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#EC4899" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Flying Nimbus Gold Gradient -->
+    <linearGradient id="nimbusTrail" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF59D" stop-opacity="0.1"/>
+      <stop offset="60%" stop-color="#FFD54F" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FFB300" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- House Coral Gradient -->
+    <linearGradient id="houseWall" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F472B6"/>
+      <stop offset="100%" stop-color="#FB7185"/>
+    </linearGradient>
+
+    <!-- Roof Red Gradient -->
+    <linearGradient id="roofRed" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
+    </linearGradient>
+
+    <!-- Ocean Wave Gradient -->
+    <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#0284C7" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0369A1" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- Nimbus Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Base with Squircle Border -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="4"/>
+
+  <!-- Sunset Horizon Glow -->
+  <circle cx="256" cy="240" r="200" fill="url(#sunsetGlow)"/>
+
+  <!-- Nimbus Speed Arc (Glowing Golden Orbit) -->
+  <path d="M 40 340 C 60 140, 240 70, 430 110 C 470 120, 480 150, 440 180 C 370 230, 260 210, 200 230" 
+        fill="none" 
+        stroke="url(#nimbusTrail)" 
+        stroke-width="12" 
+        stroke-linecap="round" 
+        filter="url(#glow)"/>
+
+  <!-- Flying Nimbus Cloud (Minimalist Stylized) -->
+  <g transform="translate(415, 115) scale(0.65)" filter="url(#glow)">
+    <circle cx="30" cy="30" r="24" fill="#FFCA28"/>
+    <circle cx="56" cy="24" r="20" fill="#FFE082"/>
+    <circle cx="78" cy="32" r="18" fill="#FFCA28"/>
+    <circle cx="48" cy="46" r="22" fill="#FFB300"/>
+    <circle cx="22" cy="42" r="16" fill="#FFA000"/>
+  </g>
+
+  <!-- Island Sand Base -->
+  <ellipse cx="256" cy="370" rx="150" ry="46" fill="#FDE047" opacity="0.95"/>
+  <ellipse cx="256" cy="375" rx="142" ry="40" fill="#EAB308"/>
+
+  <!-- Island Palm Trees -->
+  <!-- Left Palm Trunk -->
+  <path d="M 170 365 Q 160 300 185 240 Q 189 300 178 365 Z" fill="#78350F"/>
+  <!-- Left Palm Fronds -->
+  <path d="M 185 240 Q 140 220 120 250 Q 150 240 185 240 Z" fill="#22C55E"/>
+  <path d="M 185 240 Q 160 190 140 210 Q 170 215 185 240 Z" fill="#16A34A"/>
+  <path d="M 185 240 Q 210 190 230 210 Q 205 215 185 240 Z" fill="#15803D"/>
+  <path d="M 185 240 Q 240 230 250 260 Q 215 245 185 240 Z" fill="#16A34A"/>
+
+  <!-- Right Palm Trunk -->
+  <path d="M 335 365 Q 350 295 330 230 Q 338 295 343 365 Z" fill="#78350F"/>
+  <!-- Right Palm Fronds -->
+  <path d="M 330 230 Q 370 210 395 240 Q 360 230 330 230 Z" fill="#22C55E"/>
+  <path d="M 330 230 Q 350 180 375 200 Q 345 205 330 230 Z" fill="#16A34A"/>
+  <path d="M 330 230 Q 300 180 280 200 Q 310 205 330 230 Z" fill="#15803D"/>
+  <path d="M 330 230 Q 280 220 265 250 Q 300 235 330 230 Z" fill="#16A34A"/>
+
+  <!-- Kame House Body -->
+  <g id="kame-house">
+    <!-- Main Walls -->
+    <polygon points="205,305 205,370 307,370 307,305" fill="url(#houseWall)"/>
+    <!-- House Shading/Perspective Side -->
+    <polygon points="205,305 180,315 180,365 205,370" fill="#E11D48" opacity="0.35"/>
+    
+    <!-- Red Roof (Front Gable & Side Slopes) -->
+    <polygon points="170,318 256,242 342,318" fill="url(#roofRed)"/>
+    <polygon points="170,318 256,242 245,236 155,312" fill="#991B1B"/>
+
+    <!-- Roof Chimney / Weather Vane -->
+    <rect x="235" y="240" width="12" height="18" fill="#F43F5E"/>
+    <polygon points="231,240 241,232 251,240" fill="#B91C1C"/>
+
+    <!-- Kame House Door -->
+    <rect x="268" y="328" width="24" height="42" rx="2" fill="#FEF08A"/>
+    <rect x="272" y="332" width="16" height="38" rx="1" fill="#78350F"/>
+    <circle cx="284" cy="352" r="2.5" fill="#FBBF24"/>
+
+    <!-- Kame House Window with White Shutters -->
+    <rect x="220" y="328" width="26" height="24" rx="2" fill="#BAE6FD"/>
+    <line x1="233" y1="328" x2="233" y2="352" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="220" y1="340" x2="246" y2="340" stroke="#FFFFFF" stroke-width="2"/>
+    <!-- White Left & Right Shutters -->
+    <rect x="214" y="328" width="5" height="24" rx="1" fill="#FFFFFF"/>
+    <rect x="247" y="328" width="5" height="24" rx="1" fill="#FFFFFF"/>
+
+    <!-- Iconic Kanji / Logo Label Text "KAME HOUSE" -->
+    <text x="256" y="296" font-family="'Outfit', 'Inter', 'Segoe UI', sans-serif" font-weight="900" font-size="11" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">KAME HOUSE</text>
+  </g>
+
+  <!-- Ocean Waves (Gentle Foreground Crests) -->
+  <path d="M 0 430 Q 130 410 256 425 Q 380 440 512 420 L 512 512 L 0 512 Z" fill="url(#oceanGrad)" opacity="0.85"/>
+  <path d="M 0 455 Q 120 440 256 450 Q 390 460 512 445 L 512 512 L 0 512 Z" fill="#0284C7" opacity="0.7"/>
+  <path d="M 0 480 Q 140 470 256 475 Q 380 480 512 470 L 512 512 L 0 512 Z" fill="#0369A1"/>
+
+  <!-- Modern Game Controller Micro D-Pad Accent (Discreet Brand Touch at bottom right) -->
+  <g transform="translate(390, 420) scale(0.65)" opacity="0.4">
+    <circle cx="40" cy="40" r="32" fill="#FFFFFF" opacity="0.1"/>
+    <path d="M 34 22 H 46 V 34 H 58 V 46 H 46 V 58 H 34 V 46 H 22 V 34 H 34 Z" fill="#FFFFFF"/>
+  </g>
+</svg>
