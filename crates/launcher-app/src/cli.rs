@@ -209,11 +209,7 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
             println!("{}", i18n.scan_completed(count));
         }
         CliCommand::ExportSteam { path } => {
-            let target = path.unwrap_or_else(|| {
-                dirs::data_dir()
-                    .map(|d| d.join("Steam/userdata/0/config/shortcuts.vdf"))
-                    .unwrap_or_else(|| PathBuf::from("./shortcuts.vdf"))
-            });
+            let target = path.unwrap_or_else(|| service.get_steam_shortcuts_path());
             let count = service.export_games_to_steam(&target)?;
             println!(
                 "{}",

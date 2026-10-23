@@ -428,25 +428,15 @@ where
             ("200 OK", "application/json", resp.into_bytes())
         }
         ("POST", "/api/steam/sync") => {
-            let vdf_path = dirs::data_dir()
-                .map(|p| p.join("Steam/userdata"))
-                .and_then(|p| {
-                    if p.is_dir() {
-                        if let Ok(entries) = std::fs::read_dir(&p) {
-                            for entry in entries.flatten() {
-                                let sub = entry.path().join("config/shortcuts.vdf");
-                                if entry.path().is_dir() {
-                                    return Some(sub);
-                                }
-                            }
-                        }
-                    }
-                    None
-                })
-                .unwrap_or_else(|| PathBuf::from("./shortcuts.vdf"));
+            let vdf_path = service.get_steam_shortcuts_path();
 
             match service.export_games_to_steam(&vdf_path) {
                 Ok(count) => {
+                    tracing::info!(
+                        "Successfully synchronized {} shortcuts into Steam VDF at: {}",
+                        count,
+                        vdf_path.display()
+                    );
                     let resp = format!(
                         "{{\"status\":\"synchronized\",\"count\":{},\"path\":\"{}\"}}",
                         count,
@@ -455,6 +445,11 @@ where
                     ("200 OK", "application/json", resp.into_bytes())
                 }
                 Err(e) => {
+                    tracing::error!(
+                        "Failed to export shortcuts to Steam ({}): {}",
+                        vdf_path.display(),
+                        e
+                    );
                     let resp = format!("{{\"error\":\"{}\"}}", e);
                     ("500 Internal Error", "application/json", resp.into_bytes())
                 }

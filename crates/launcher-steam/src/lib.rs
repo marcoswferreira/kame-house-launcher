@@ -1,8 +1,10 @@
 pub mod cdp;
+pub mod discovery;
 pub mod grid;
 pub mod vdf;
 
 pub use cdp::{classify_target, format_cdp_call, AchievementToast, TargetKind};
+pub use discovery::{find_steam_shortcuts_vdf, find_steam_userdata_dirs, safe_write_shortcuts_vdf};
 pub use grid::SteamGridManager;
 pub use vdf::{
     calculate_shortcut_id, encode_binary_vdf, parse_binary_vdf, upsert_shortcut, SteamShortcut,

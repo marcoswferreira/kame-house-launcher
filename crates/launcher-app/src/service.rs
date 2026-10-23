@@ -3,6 +3,7 @@ use launcher_console::{ConsoleSettings, LaunchSupervisor, WindowState};
 use launcher_core::models::{Game, Language};
 use launcher_core::scanner::scan_roots_parallel;
 use launcher_dualsense::DualSenseManager;
+use launcher_steam::discovery::{find_steam_shortcuts_vdf, safe_write_shortcuts_vdf};
 use launcher_steam::vdf::{encode_binary_vdf, parse_binary_vdf, upsert_shortcut, SteamShortcut};
 use parking_lot::RwLock;
 use std::fs;
@@ -182,6 +183,11 @@ impl LauncherService {
         let _ = self.save_state();
     }
 
+    pub fn get_steam_shortcuts_path(&self) -> PathBuf {
+        let (path, _) = find_steam_shortcuts_vdf(&self.data_dir);
+        path
+    }
+
     pub fn export_games_to_steam(&self, steam_shortcuts_vdf_path: &Path) -> std::io::Result<usize> {
         let mut root_nodes = if steam_shortcuts_vdf_path.is_file() {
             let bytes = fs::read(steam_shortcuts_vdf_path)?;
@@ -212,11 +218,8 @@ impl LauncherService {
             exported += 1;
         }
 
-        if let Some(parent) = steam_shortcuts_vdf_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
         let encoded = encode_binary_vdf(&root_nodes)?;
-        fs::write(steam_shortcuts_vdf_path, encoded)?;
+        safe_write_shortcuts_vdf(steam_shortcuts_vdf_path, &encoded)?;
         Ok(exported)
     }
 }
