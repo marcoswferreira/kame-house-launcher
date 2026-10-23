@@ -4,25 +4,18 @@ export const pt = {
   tab_overview: "Visão Geral",
   tab_steam: "Ponte Steam",
   tab_dualsense: "DualSense Studio",
-  tab_display: "Tela & Sistema",
-  tab_power: "Energia & Sessão",
 
   // Overview
-  overview_title: "Visão Geral do Console",
-  overview_desc: "O Kame House atua como uma ponte invisível para o seu PC Console de Sala, conectando jogos fora da Steam, emuladores e gatilhos de hardware DualSense diretamente ao ecossistema da Valve.",
+  overview_title: "Visão Geral do Sistema",
+  overview_desc: "O Kame House conecta jogos fora da Steam, emuladores e gatilhos de hardware DualSense diretamente ao ecossistema da Valve.",
   metric_steam_status: "Integração Steam",
   status_shortcuts_synced: "Atalhos Ativos",
   metric_dualsense_status: "DualSense Studio",
-  metric_tv_profile: "Perfil TV Console",
-  metric_hdr_active: "HDR10 Ativado",
-  metric_launch_supervisor: "Supervisor de Inicialização",
-  mode_hide_restore: "Ocultar ao Abrir",
-  mode_restore_sub: "Restaura ao fechar",
   quick_actions_title: "AÇÕES RÁPIDAS DE UTILITÁRIO",
   btn_quick_sync_steam: "Exportar Tudo para Steam",
   btn_quick_rescan: "Escanear ROMs & Jogos",
   callout_philosophy_title: "Projetado para Acompanhar a Steam, Não Substituí-la:",
-  callout_philosophy_body: "O Kame House roda silenciosamente no seu PC de TV. Inicie seus jogos pelo Steam Big Picture; o Kame House garante atalhos sincronizados, AppIDs determinísticos, notificações de conquistas e efeitos de gatilhos do DualSense automatizados.",
+  callout_philosophy_body: "O Kame House roda silenciosamente na Bandeja do Sistema (System Tray). Inicie seus jogos pela Steam; o Kame House garante atalhos sincronizados, AppIDs determinísticos, notificações de conquistas e efeitos de gatilhos do DualSense sob demanda.",
 
   // Steam Bridge
   steam_bridge_title: "Biblioteca Steam & Ponte shortcuts.vdf",
@@ -58,7 +51,7 @@ export const pt = {
   dualsense_subtab_triggers: "Gatilhos Adaptáveis",
   dualsense_subtab_lighting: "Lightbar & LEDs",
   dualsense_subtab_emulation: "Emulação & Giroscópio",
-  dualsense_subtab_udp: "Link UDP DualSenseX",
+  dualsense_subtab_udp: "Link de Telemetria UDP",
   dualsense_subtab_profiles: "Perfis de Jogos",
 
   // Controller Tester & WebHID
@@ -153,8 +146,8 @@ export const pt = {
   dualsense_gyro_invert_y: "Inverter Eixo Vertical",
 
   // UDP Studio
-  dualsense_udp_title: "Servidor Link UDP DualSenseX (:6969)",
-  dualsense_udp_subtitle: "Servidor UDP assíncrono compatível com o protocolo JSON do DualSenseX para suporte automático a mods da comunidade.",
+  dualsense_udp_title: "Servidor de Telemetria UDP (:6969)",
+  dualsense_udp_subtitle: "Servidor UDP assíncrono ouvindo instruções de telemetria JSON para suporte automático a mods de jogos.",
   dualsense_udp_start: "Iniciar Servidor UDP",
   dualsense_udp_stop: "Parar Servidor UDP",
   dualsense_udp_status_label: "Estado do Servidor",
@@ -165,41 +158,12 @@ export const pt = {
   dualsense_udp_last_client: "Último Jogo / Mod Conectado",
   dualsense_udp_no_traffic: "Aguardando telemetria de jogos...",
   dualsense_udp_compatible_title: "Mods de Jogos Compatíveis",
-  dualsense_udp_compatible_desc: "Qualquer mod desenvolvido para o DualSenseX se comunica diretamente com o Kame House na porta 6969 sem necessidade de programas extras.",
+  dualsense_udp_compatible_desc: "Mods de telemetria se comunicam diretamente com o Kame House na porta 6969 sem necessidade de programas extras.",
 
   // Profiles Studio
   dualsense_profiles_title: "Perfis Selecionados por Gênero",
   dualsense_profiles_subtitle: "Configurações prontas para simuladores de corrida, jogos táticos de tiro e simuladores de voo.",
   dualsense_apply_profile: "Aplicar Perfil no Controle",
-
-  // Display & OS
-  display_title: "Otimização de Tela & Sistema do Console",
-  display_desc: "Configure opções para TV de sala de estar, HDR, scripts de auto-login e o ciclo de vida do launcher.",
-  setting_launch_behavior: "Modo do Ciclo de Vida do Launcher",
-  setting_launch_behavior_sub: "Como o Kame House se comporta enquanto os jogos ou o Steam Big Picture estiverem abertos.",
-  opt_hide_restore: "Ocultar ao Iniciar & Restaurar ao Sair (Padrão de Console)",
-  opt_keep_open: "Manter Launcher Aberto em Segundo Plano",
-  setting_tv_resolution: "Resolução e Taxa de Atualização da TV",
-  setting_tv_resolution_sub: "Garante fluidez de quadros e taxa de atualização ideal ao conectar via HDMI 2.1 em TVs OLED/QLED.",
-  setting_hdr: "High Dynamic Range (HDR10)",
-  setting_hdr_sub: "Ativa automaticamente o espaço de cor HDR no Windows/Linux ao detectar tela compatível.",
-  setting_autologin: "Assistente de Auto-Login sem Senha no Windows",
-  setting_autologin_sub: "Gera um script .reg seguro para o PC iniciar diretamente no Steam Big Picture sem tela de login.",
-  btn_generate_reg: "Gerar Script .reg",
-
-  // Power
-  power_title: "Gerenciamento de Energia & Sessão",
-  power_desc: "Comandos de energia seguros para uso com controle. Suspenda para o modo de baixo consumo S3 ou reinicie diretamente na jogatina.",
-  power_sleep_title: "Suspender Sistema (S3)",
-  power_sleep_desc: "Modo de baixo consumo. Acorda instantaneamente ao pressionar o botão guia Xbox / PS do controle.",
-  btn_sleep: "Suspender",
-  power_restart_title: "Reiniciar Sistema",
-  power_restart_desc: "Reinicia o sistema operacional e reabre o Steam Big Picture de forma limpa.",
-  btn_restart: "Reiniciar",
-  power_shutdown_title: "Desligar Computador",
-  power_shutdown_desc: "Desliga o computador com segurança, salvando todas as configurações do launcher e emuladores.",
-  btn_shutdown: "Desligar",
-  controller_diag_title: "TELEMETRIA & TESTE DE CONTROLE",
 
   loading: "Carregando",
   btn_cancel: "Cancelar",
@@ -207,14 +171,11 @@ export const pt = {
   // Toasts
   toast_steam_synced: "{count} atalhos exportados com sucesso para o shortcuts.vdf da Steam",
   toast_scanned: "Varredura concluída: {count} novos títulos encontrados",
-  toast_power_dispatched: "Comando de energia '{action}' enviado.",
-  toast_settings_saved: "Configurações do console atualizadas com sucesso.",
-  toast_reg_downloaded: "Script de registro de auto-login baixado.",
   toast_dualsense_triggers_applied: "Gatilhos adaptáveis do DualSense configurados com sucesso.",
   toast_dualsense_lighting_applied: "Barra de luz RGB do DualSense atualizada.",
   toast_dualsense_emulation_applied: "Modo de emulação do DualSense salvo.",
-  toast_dualsense_udp_started: "Servidor UDP do DualSenseX iniciado na porta 6969.",
-  toast_dualsense_udp_stopped: "Servidor UDP do DualSenseX parado.",
+  toast_dualsense_udp_started: "Servidor de telemetria UDP iniciado na porta 6969.",
+  toast_dualsense_udp_stopped: "Servidor de telemetria UDP parado.",
   toast_dualsense_profile_applied: "Perfil do DualSense aplicado com sucesso.",
   toast_error: "Ação falhou. Verifique a conexão com o backend."
 };

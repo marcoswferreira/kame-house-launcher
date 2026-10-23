@@ -7,9 +7,8 @@ Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este d
 ## 🌟 Princípios de Desenvolvimento
 
 1. **Rust Idiomático e Seguro:** Priorize segurança de tipos, controle estrito de erros com `anyhow`/`thiserror` e zero alocações desnecessárias.
-2. **Alta Performance:** O launcher é voltado para salas de estar e deve manter uso residual de memória (~40MB de RAM) para não competir com jogos e streaming.
+2. **Alta Performance:** O launcher deve manter uso residual de memória (~40MB de RAM) e extensões de hardware opt-in para não competir com jogos e emuladores.
 3. **Cobertura de Código Obrigatória (≥ 70%):** Todo novo recurso, parser ou módulo deve ser acompanhado de testes unitários ou de integração, mantendo a cobertura do workspace em ou acima de 70%.
-4. **Respeito aos Projetos Upstream:** Qualquer extensão de serviços e protocolos da comunidade (como o DualSenseX) deve manter créditos claros e respeitar licenças upstream.
 
 ---
 

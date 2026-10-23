@@ -1,11 +1,10 @@
 # Kame House Launcher 🐢🎮
 
-> **Transforme seu computador na melhor experiência de console de sala de estar.**  
-> Um launcher de jogos de alta performance, completamente desenvolvido em **Rust**, com integração nativa ao **DualSenseX** para calibração de gatilhos adaptáveis, pontes para o ecossistema Steam e uma sessão dedicada de **Modo Console**.
+> **Companheiro para o Ecossistema Steam & Extensão DualSense Studio de Alta Performance.**  
+> Desenvolvido do zero em **100% Rust Nativo**, o Kame House conecta jogos fora da Steam e emuladores diretamente ao ecossistema da Valve com sincronização atômica do `shortcuts.vdf`, notificações nativas de conquistas da Steam, gerenciamento na Bandeja do Sistema (`System Tray`) e a extensão opcional **DualSense Studio**.
 
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-82.13%25-brightgreen.svg?style=flat-square)](#testes-e-cobertura-de-código)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=flat-square)](https://conventionalcommits.org)
 
 <p align="center">
@@ -19,27 +18,26 @@
 - [Arquitetura do Workspace](#-arquitetura-do-workspace)
 - [Funcionalidades Principais](#-funcionalidades-principais)
   - [1. Varredura e Identificação por Conteúdo](#1-varredura-e-identificação-por-conteúdo)
-  - [2. Motor de Gatilhos Adaptáveis DualSense & Servidor UDP](#2-motor-de-gatilhos-adaptáveis-dualsense--servidor-udp)
-  - [3. Sessão Modo Console (Living Room PC)](#3-sessão-modo-console-living-room-pc)
-  - [4. Interoperabilidade com Steam](#4-interoperabilidade-com-steam)
-  - [5. Conquistas com Notificação Nativa](#5-conquistas-com-notificação-nativa)
+  - [2. Interoperabilidade com a Steam (`shortcuts.vdf`)](#2-interoperabilidade-com-a-steam-shortcutsvdf)
+  - [3. Conquistas com Notificação Nativa na Steam](#3-conquistas-com-notificação-nativa-na-steam)
+  - [4. DualSense Studio (Extensão de Hardware Opt-In)](#4-dualsense-studio-extensão-de-hardware-opt-in)
+  - [5. Bandeja do Sistema (System Tray) & Terminal de Debug sob Demanda](#5-bandeja-do-sistema-system-tray--terminal-de-debug-sob-demanda)
 - [Pré-requisitos e Dependências](#-pré-requisitos-e-dependências)
 - [Como Compilar e Executar](#-como-compilar-e-executar)
-- [Testes e Cobertura de Código](#-testes-e-cobertura-de-código)
+- [Testes e Verificação](#-testes-e-verificação)
 - [Decisões de Arquitetura (ADRs)](#-decisões-de-arquitetura-adrs)
-- [Créditos e Atribuições](#-créditos-e-atribuições)
+- [Contribuição](#-contribuição)
 - [Licença](#-licença)
 
 ---
 
 ## 🔥 Destaques
 
-- ⚡ **100% Rust Nativo:** Consumo de memória ultrabaixo (~40MB de RAM contra centenas de MB de launchers tradicionais em Electron), liberando toda a CPU e GPU para os seus jogos.
-- 📺 **Modo Console para Sala:** Auto-login sem senha no Windows/Linux, inicialização silenciosa em tela cheia (Kiosk), presets para TV 4K a 120Hz, ativação de HDR e roteamento automático de áudio para HDMI/Soundbar.
-- 🎮 **Navegação 10-Pés & Gamepad:** Navegação completa por controle (D-pad, analógicos, gatilhos), efeitos sonoros táteis e teclado virtual em tela (OSK).
-- 🔄 **Dois Modos de Lançamento:** Escolha entre **ocultar o launcher durante a gameplay e restaurar em tela cheia com foco imediato no controle** (padrão de console) ou **manter o launcher aberto em segundo plano**.
-- 🎮 **DualSense Studio Integrado (100% Rust Puro):** Controle direto de hardware para os controles Sony DualSense e DualSense Edge. Gatilhos adaptáveis (Resistência rígida, Disparo de arma, Tensão de arco, Metralhadora, Galope, Vibração e curvas de 10 zonas), barra de luz RGB, LEDs de jogador e servidor assíncrono UDP na porta `6969` compatível com mods de jogos do DualSenseX (Assetto Corsa, F1, Cyberpunk 2077).
-- 🏆 **Conquistas da Steam:** Relay de notificações oficiais com áudio via Chrome DevTools Protocol (CDP), exibindo o aviso oficial da Steam para jogos de emuladores e PC.
+- ⚡ **100% Rust Nativo:** Consumo de memória ultrabaixo (~40MB de RAM), deixando CPU e GPU livres para seus jogos e emuladores.
+- 🔗 **Ponte de Biblioteca com a Steam:** Identifica ROMs, ISOs e executáveis de PC pelo cabeçalho binário interno e sincroniza automaticamente no arquivo binário `shortcuts.vdf` da Steam com AppIDs CRC32 determinísticos e artes de Grid.
+- 🏆 **Relay Nativo de Conquistas da Steam:** Dispara o aviso oficial da Steam com áudio via Chrome DevTools Protocol (CDP) quando conquistas são desbloqueadas em emuladores ou jogos avulsos.
+- 🧩 **DualSense Studio (Extensão Opt-In):** Central modular de controle de hardware para controles Sony DualSense e DualSense Edge via USB e Bluetooth. Permanece **desligada (`OFF`) por padrão** para não consumir recursos até que o usuário a ative ou marque para iniciar junto com a aplicação.
+- 🖥️ **Inicialização Limpa & System Tray:** Abre exclusivamente a janela do frontend sem exibir terminal em segundo plano. Ao clicar no botão fechar (`X`), permite **Minimizar para a Bandeja do Sistema (System Tray)** ou **Encerrar a Aplicação**, além de oferecer **Terminal de Debug (`Logs`)** sob demanda.
 
 ---
 
@@ -52,23 +50,23 @@ kame-house-launcher/
 ├── Cargo.toml                      # Manifesto do Workspace Rust
 ├── Cargo.lock                      # Lockfile de dependências determinísticas
 ├── LICENSE                         # Licença GNU General Public License v3.0
-├── README.md                       # Documentação principal
+├── README.md                       # Documentação em Inglês (padrão)
+├── README.pt-BR.md                 # Documentação em Português
 ├── CONTRIBUTING.md                 # Guia de contribuição e convenções
+├── frontend/                       # Interface React 19 + TypeScript embutida no launcher-app
 ├── docs/                           # Documentação técnica e ADRs
 │   ├── ARCHITECTURE.md             # Engenharia e diagramas de fluxo
-│   ├── CONSOLE_MODE.md             # Guia do Modo Console
 │   └── adrs/                       # Architectural Decision Records
 │       ├── 0001-rust-tauri-architecture.md
 │       ├── 0003-game-scanner-and-rom-identification.md
-│       ├── 0004-steam-injection-and-native-notifications.md
-│       └── 0005-console-mode-transformation.md
+│       └── 0004-steam-injection-and-native-notifications.md
 └── crates/
-    ├── launcher-core/              # Scanner, headers de cartuchos, leitor de discos e plataformas
+    ├── launcher-core/              # Scanner multi-thread, headers de cartuchos, leitor de discos e plataformas
     ├── launcher-steam/             # VDF binário (shortcuts.vdf), artes de grid e bridge CDP WebSocket
-    ├── launcher-achievements/      # Gestor unificado de conquistas e parser de logs (RPCS3/RA)
-    ├── launcher-dualsense/         # Protocolo HID puro em Rust, gatilhos adaptáveis, RGB e UDP 6969
-    ├── launcher-console/           # Display TV, áudio, auto-login, kiosk e launch supervisor
-    └── launcher-app/               # Serviço central, interface React 19 e CLI kame-house-launcher
+    ├── launcher-achievements/      # Gestor unificado de conquistas e parser de logs
+    ├── launcher-dualsense/         # Protocolo HID puro em Rust, 19 modos de gatilho, RGB e UDP :6969
+    ├── launcher-console/           # Controle de áudio/microfone e supervisor de execução de jogos
+    └── launcher-app/               # Serviço central, servidor HTTP embarcado, System Tray e CLI
 ```
 
 ---
@@ -76,47 +74,42 @@ kame-house-launcher/
 ## 🎮 Funcionalidades Principais
 
 ### 1. Varredura e Identificação por Conteúdo
-Em vez de depender de nomes de arquivo frágeis (como `jogo_v2_final.iso`), o `launcher-core` inspeciona o conteúdo binário:
+Em vez de depender de nomes de arquivo frágeis, o `launcher-core` inspeciona o conteúdo binário:
 - **Cartuchos:** Cabeçalhos de Nintendo GBA, NDS, Game Boy/Color, Nintendo 64 (com suporte a big-endian, byte-swapped e word-swapped), Sega Mega Drive/Genesis e SNES (verificação de checksum/complement LoROM e HiROM).
 - **Imagens de Disco:** Extração direta de setores ISO9660 PVD, localização de `SYSTEM.CNF` de PS1/PS2 e decodificação de `PARAM.SFO` (PSP, PS3, PS4).
-- **Jogos de PC e Lojas:** Leitura de metadados PE (`ProductName`, `FileDescription`) e busca de evidências de AppID em `steam_appid.txt`, `steam_emu.ini`, Goldberg e manifestos de instalação.
+- **Jogos de PC:** Leitura de metadados PE (`ProductName`, `FileDescription`) e descoberta local de AppID em `steam_appid.txt`, `steam_emu.ini` e manifestos.
 - **Multithreading:** Varredura paralela ultrarrápida com `rayon` e `walkdir`.
 
-### 2. Motor de Gatilhos Adaptáveis DualSense & Servidor UDP
-- **Implementação 100% em Rust Puro:** Traz toda a arquitetura do DualSenseX nativamente para Rust, eliminando dependências externas de .NET ou C#.
-- **Gatilhos Adaptáveis de Baixo Nível:** Emissão direta de relatórios Sony HID (USB `0x02` e Bluetooth `0x31` com cálculo IEEE 802.3 CRC32 via `crc32fast`) com suporte a Resistência mecânica, Disparo de arma, Tensão de arco, Metralhadora e curvas personalizadas de 10 zonas.
-- **Servidor Link UDP DualSenseX (:6969):** Ouve instruções de telemetria em JSON na porta `6969` para compatibilidade instantânea com mods existentes de jogos como Assetto Corsa, F1 23/24 e Cyberpunk 2077.
-- **Barra de Luz RGB & LEDs de Jogador:** Efeitos em tempo real (Estático, Pulsação, Arco-íris, Nível de Bateria) e LEDs 1 a 4.
-- **Emulação de Controles & Mira por Giroscópio:** Emula Xbox 360 (XInput via ViGEmBus/uinput) e DualShock 4, com mapeamento do giroscópio de 6 eixos para mira precisa no analógico direito.
-
-### 3. Sessão Modo Console (Living Room PC)
-Projetada para eliminar as fricções de um sistema operacional de desktop tradicional:
-- **Assistente de Auto-Login:** Gera as diretivas seguras de `AutoAdminLogon` no Windows ou autostart no Linux para pular a tela de senha.
-- **Modo Kiosk / Shell:** Opção de iniciar diretamente na interface do launcher em tela cheia, ocultando barra de tarefas e ícones do sistema.
-- **Alternador de TV & Display:** Presets de um clique para resoluções de sala: 4K 120Hz, 1440p 120Hz, 1080p 120Hz e ativação de HDR.
-- **Roteamento de Áudio:** Alterna a saída de som padrão automaticamente para o HDMI da TV ou Soundbar.
-- **Menu de Energia via Controle:** Ações de Suspender, Hibernar, Reiniciar ou Desligar o PC com o gamepad.
-- **Dois Comportamentos de Lançamento Configuáveis:**
-  - `HideAndRestoreFullscreen` (Padrão): Ao iniciar um jogo, o launcher se esconde ou minimiza para economizar recursos; ao fechar o jogo, o launcher restaura imediatamente em tela cheia com foco no controle.
-  - `KeepOpen`: Mantém a interface do launcher aberta em segundo plano.
-
-### 4. Interoperabilidade com Steam
-- **Manipulação Binária Atômica de VDF:** O módulo `launcher-steam` codifica e decodifica o formato proprietário `shortcuts.vdf` da Valve sem corromper atalhos já existentes.
-- **Cálculo de AppID da Steam:** Gera o hash CRC32 com o bit 31 habilitado:
+### 2. Interoperabilidade com a Steam (`shortcuts.vdf`)
+- **Manipulação Binária Atômica de VDF:** O módulo `launcher-steam` codifica e decodifica o formato binário `shortcuts.vdf` da Valve sem corromper atalhos existentes.
+- **Cálculo Determinístico de AppID:** Gera o hash CRC32 com o bit 31 habilitado:
   ```text
   shortcut_id = (CRC32(exe + AppName) | 0x80000000)
   ```
 - **Gestão de Artes do Grid:** Posiciona capas verticais (`p.png`), banners horizontais (`_hero.png`), logos transparentes (`_logo.png`), wide (`.png`) e ícones executáveis (`_icon.ico`) na pasta `userdata/<ID>/config/grid`.
 
-### 5. Conquistas com Notificação Nativa
+### 3. Conquistas com Notificação Nativa na Steam
 - Conecta-se à porta de depuração do CEF da Steam (`127.0.0.1:8080`) via Chrome DevTools Protocol (CDP).
-- Quando uma conquista é desbloqueada em emuladores ou lojas de PC, o launcher aciona a API de notificações do contexto principal da Steam (`SharedJSContext`), exibindo o toast oficial com som e animação.
+- Quando uma conquista é desbloqueada em emuladores ou jogos avulsos, o launcher aciona a API de notificações do contexto principal da Steam (`SharedJSContext`), exibindo o toast oficial com som e animação.
+
+### 4. DualSense Studio (Extensão de Hardware Opt-In)
+- **Desligada por Padrão (Opt-In):** A extensão não inicia junto com a aplicação por padrão, evitando qualquer consumo de recursos ou polling USB/Bluetooth em segundo plano. O usuário pode ativá-la a qualquer momento na aba **DualSense Studio** e, se desejar, marcar **"Iniciar automaticamente junto com a aplicação"**.
+- **Telemetria Real de Conexão e Bateria:** Exibe o estado real do controle (`DESCONECTADO` quando nenhum controle está plugado, ou `CONECTADO` via `USB`/`BLUETOOTH` com a porcentagem exata de bateria quando conectado).
+- **19 Modos de Gatilhos Adaptáveis:** Emissão direta de relatórios Sony HID (USB `0x02` e Bluetooth `0x31` com CRC32 IEEE 802.3 e desbloqueio via Feature Report `0x05`) com suporte a `Off`, `Feedback`, `Weapon`, `Bow`, `Galloping`, `MachineGun`, `Machine`, `Vibration`, `GameCube`, `Choppy`, `VerySoft`, `Soft`, `Medium`, `Hard`, `VeryHard`, `Hardest`, `Rigid`, `VibrateTriggerPulse` e curvas personalizadas de 10 zonas (`CustomZone`).
+- **Barra de Luz RGB, LEDs de Jogador e Mudo do Microfone:** Efeitos em tempo real (`Static`, `Breathing`, `Rainbow`, `Battery`), LEDs indicadores de Jogador 1 a 4 e sincronização do botão físico de mudo do microfone com o áudio do sistema.
+- **Testador de Controle, Emulação & Servidor UDP (:6969):** Testador visual de botões e analógicos em tempo real, ponte direta WebHID, perfis de emulação XInput/DS4, mira por giroscópio de 6 eixos e servidor UDP assíncrono na porta `6969`.
+
+### 5. Bandeja do Sistema (System Tray) & Terminal de Debug sob Demanda
+- **Apenas a Janela do Frontend:** Na inicialização, o terminal nativo permanece oculto e somente a janela da aplicação é exibida.
+- **Ícone na Bandeja do Sistema (System Tray):** Permite reabrir a interface principal com duplo clique, alternar a exibição do **Terminal de Debug (`Logs`)** para diagnóstico em tempo real ou encerrar o processo.
+- **Confirmação ao Fechar (`X`):** Ao clicar no botão `X`, o usuário é perguntado se deseja **Minimizar para a Bandeja (System Tray)** mantendo o serviço ativo ou **Encerrar a Aplicação** por completo.
 
 ---
 
 ## 🛠 Pré-requisitos e Dependências
 
 - **Rust:** Versão 1.75 ou superior (`rustc` e `cargo`).
+- **Node.js & npm:** Versão 20+ (necessário apenas ao recompilar o pacote `frontend/`).
 - **Compilador C/C++:** `gcc`/`g++` e `pkg-config` (Linux) ou MSVC Build Tools (Windows).
 - **Sistema Operacional:**
   - Windows 10/11 (64-bit).
@@ -132,28 +125,25 @@ git clone https://github.com/marcoswferreira/kame-house-launcher.git
 cd kame-house-launcher
 ```
 
-### 2. Compilar em Modo Debug
+### 2. Compilar o Frontend (Opcional — Os ativos já estão embutidos)
 ```bash
-cargo build --workspace
+npm install --prefix frontend
+npm run build --prefix frontend
 ```
 
-### 3. Compilar em Modo Release (Otimizado para Produção)
+### 3. Compilar em Modo Release
 ```bash
 cargo build --release --workspace
 ```
-O executável otimizado estará localizado em `target/release/kame-house-launcher`.
+O executável otimizado estará localizado em `target/release/kame-house-launcher` (ou `target\release\kame-house-launcher.exe` no Windows).
 
 ### 4. Executar o Launcher
 ```bash
 cargo run -p launcher-app
 ```
-Ou diretamente pelo binário compilado:
-```bash
-./target/release/kame-house-launcher
-```
 
 ### 5. CLI e Internacionalização (i18n)
-O aplicativo possui o **Inglês (`en`) como padrão** e suporte completo nativo a **Português (`pt-BR`)**. Você pode alternar o idioma sob demanda por comando ou persistir sua preferência permanentemente:
+O aplicativo possui o **Inglês (`en`) como padrão** e suporte completo a **Português (`pt-BR`)**:
 
 ```bash
 # Exibir status no idioma padrão (Inglês)
@@ -162,56 +152,40 @@ O aplicativo possui o **Inglês (`en`) como padrão** e suporte completo nativo 
 # Salvar Português do Brasil como idioma preferencial (persistido em settings.json)
 ./target/release/kame-house-launcher --set-lang pt-br
 
-# Executar temporariamente em Português sem alterar as configurações globais
+# Executar temporariamente em Português
 ./target/release/kame-house-launcher -l pt-br status
 
-# Retornar o idioma padrão para Inglês
-./target/release/kame-house-launcher --set-lang en
-
-# Exibir os comandos e ajuda da CLI em Português
+# Exibir os comandos e ajuda da CLI
 ./target/release/kame-house-launcher -l pt-br --help
 ```
 
 ---
 
-## 🧪 Testes e Cobertura de Código
-
-O projeto foi construído sob rigorosos padrões de testabilidade e possui cobertura de código superior a 80%:
+## 🧪 Testes e Verificação
 
 ### Executar a Suíte de Testes
 ```bash
 cargo test --workspace
 ```
-Todos os 34 testes unitários e de integração devem passar com sucesso:
+Todos os 53 testes unitários e de integração do workspace passam:
 ```text
-test result: ok. 34 passed; 0 failed; 0 ignored; finished in 0.25s
+test result: ok. 53 passed; 0 failed; 0 ignored
 ```
 
-### Gerar Relatório de Cobertura de Código
-O projeto utiliza `cargo-llvm-cov` integrado ao compilador Rust:
+### Verificar Lints e Formatação
 ```bash
-# Instalação da ferramenta (se necessário)
-rustup component add llvm-tools-preview
-cargo install cargo-llvm-cov --locked
-
-# Gerar resumo de cobertura do workspace
-cargo llvm-cov --workspace --summary-only
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
 ```
-
-**Resultado de Cobertura Atual:**
-- **Linhas cobertas:** **82.13%**
-- **Regiões cobertas:** **79.98%**
-- **Funções cobertas:** **80.69%**
 
 ---
 
 ## 📚 Decisões de Arquitetura (ADRs)
 
 Para entender a motivação de cada decisão técnica, consulte a pasta [`docs/adrs/`](docs/adrs/):
-- [ADR 0001: Arquitetura do Launcher em Rust e Tauri v2](docs/adrs/0001-rust-tauri-architecture.md)
-- [ADR 0003: Motor de Varredura de Jogos, Identificação por Conteúdo e Metadados](docs/adrs/0003-game-scanner-and-rom-identification.md)
-- [ADR 0004: Interoperabilidade com a Steam, Injeção VDF e Notificações Nativas](docs/adrs/0004-steam-injection-and-native-notifications.md)
-- [ADR 0005: Sessão "Modo Console" e Transformação do PC em Console](docs/adrs/0005-console-mode-transformation.md)
+- [ADR 0001: Arquitetura do Workspace em Rust e UI Embarcada](docs/adrs/0001-rust-tauri-architecture.pt-BR.md)
+- [ADR 0003: Motor de Varredura de Jogos, Identificação por Conteúdo e Metadados](docs/adrs/0003-game-scanner-and-rom-identification.pt-BR.md)
+- [ADR 0004: Interoperabilidade com a Steam, Injeção VDF e Notificações Nativas](docs/adrs/0004-steam-injection-and-native-notifications.pt-BR.md)
 
 ---
 
@@ -221,14 +195,6 @@ Contribuições são muito bem-vindas! Consulte o arquivo [`CONTRIBUTING.md`](CO
 
 ---
 
-## 💖 Créditos e Atribuições
-
-- **DualSenseX:** Projeto pioneiro de código aberto para personalização e telemetria de controles PlayStation DualSense criado por [Paliverse](https://github.com/Paliverse/DualSenseX). O Kame House Launcher implementa essa arquitetura em Rust nativo.
-- **Comunidade Rust & Open Source:** Agradecimentos especiais aos mantenedores das bibliotecas `tokio`, `rayon`, `reqwest`, `serde`, `byteorder`, `walkdir` e `crc32fast`.
-
----
-
 ## 📄 Licença
 
 Este projeto é software livre licenciado sob os termos da **GNU General Public License v3.0** (GPL-3.0-or-later). Consulte o arquivo [LICENSE](LICENSE) para obter a íntegra da licença.
-

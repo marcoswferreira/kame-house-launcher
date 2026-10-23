@@ -324,8 +324,8 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast, onRefreshAppStatus 
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--deck-text-muted, #9ca3af)' }}>
             {lang === 'pt'
-              ? 'Esta extensão gerencia gatilhos adaptáveis, Lightbar RGB, telemetria HID e servidor UDP DualSenseX.'
-              : 'This extension manages adaptive triggers, RGB Lightbar, HID telemetry, and DualSenseX UDP server.'}
+              ? 'Esta extensão gerencia gatilhos adaptáveis, Lightbar RGB, telemetria HID e servidor UDP.'
+              : 'This extension manages adaptive triggers, RGB Lightbar, HID telemetry, and UDP server.'}
           </p>
         </div>
 

@@ -40,13 +40,14 @@ Chosen **Option 1**: A modular **Rust** Cargo workspace paired with **Tauri v2**
 ```text
 kame-house-launcher/
 ├── Cargo.toml (Root Workspace)
-├── crates/
-│   ├── launcher-core/         # Platform catalog, scanner, ROM headers, disc parser, PE inspection
-│   ├── launcher-steam/        # shortcuts.vdf binary upsert, grid artwork, and CDP WebSocket bridge
-│   ├── launcher-achievements/ # Unified achievement tracker (RetroAchievements, RPCS3, stores)
-│   ├── launcher-dualsense/    # DualSense HID protocol, adaptive triggers, RGB, UDP :6969
-│   ├── launcher-console/      # Console Mode: auto-login, autostart, TV display, audio, supervisor
-│   └── launcher-app/          # Central LauncherService, IPC commands, and kame-house-launcher entrypoint
+├── frontend/                  # React 19 + TypeScript UI bundled into launcher-app
+└── crates/
+    ├── launcher-core/         # Platform catalog, scanner, ROM headers, disc parser, PE inspection
+    ├── launcher-steam/        # shortcuts.vdf binary upsert, grid artwork, and CDP WebSocket bridge
+    ├── launcher-achievements/ # Unified achievement tracker (RetroAchievements, RPCS3, stores)
+    ├── launcher-dualsense/    # Opt-in DualSense HID protocol, adaptive triggers, RGB, UDP :6969
+    ├── launcher-console/      # Audio/microphone routing and game launch supervisor
+    └── launcher-app/          # Central LauncherService, HTTP server, System Tray, and CLI entrypoint
 ```
 
 ## Consequences

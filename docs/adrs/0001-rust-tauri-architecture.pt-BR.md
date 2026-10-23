@@ -34,16 +34,16 @@ Adotamos a **Opção 1**: Um workspace modular em **Rust** combinado com **Tauri
 ### Estrutura Modular das Crates no Workspace Cargo
 
 ```text
-my-console-pc/
+kame-house-launcher/
 ├── Cargo.toml (Workspace raiz)
-├── crates/
-│   ├── launcher-core/         # Tipos centrais, biblioteca de jogos, scanner, identificação de ROMs/PE, VDF
-│   ├── launcher-steam/        # Injeção em shortcuts.vdf, grid de artes e bridge CDP WebSocket para Steam CEF
-│   ├── launcher-achievements/ # Monitor de conquistas (RetroAchievements, RPCS3, Vita3K, Stores) e relay
-│   ├── launcher-dualsense/    # Protocolo DualSense HID, gatilhos adaptáveis, RGB e UDP :6969
-│   ├── launcher-console/      # Módulo Console Mode: auto-login, autostart, switch de resolução/áudio, kiosk
-│   └── launcher-app/          # Executável Tauri v2, comandos IPC e frontend 10-foot gamepad-first
-└── ui/                        # Frontend UI (TypeScript, Tailwind, gamepad navigation, console layout)
+├── frontend/                  # Interface React 19 + TypeScript embutida no launcher-app
+└── crates/
+    ├── launcher-core/         # Tipos centrais, biblioteca de jogos, scanner, identificação de ROMs/PE
+    ├── launcher-steam/        # Injeção em shortcuts.vdf, grid de artes e bridge CDP WebSocket para Steam CEF
+    ├── launcher-achievements/ # Monitor de conquistas e relay de notificações
+    ├── launcher-dualsense/    # Extensão opt-in DualSense HID, gatilhos adaptáveis, RGB e UDP :6969
+    ├── launcher-console/      # Roteamento de mudo de áudio/microfone e supervisor de lançamento
+    └── launcher-app/          # LauncherService central, servidor HTTP, System Tray e CLI
 ```
 
 ## Consequências

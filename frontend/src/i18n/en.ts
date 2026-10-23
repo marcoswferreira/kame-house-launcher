@@ -4,25 +4,18 @@ export const en = {
   tab_overview: "Overview",
   tab_steam: "Steam Bridge",
   tab_dualsense: "DualSense Studio",
-  tab_display: "Display & OS",
-  tab_power: "Power & System",
 
   // Overview
-  overview_title: "Console System Overview",
-  overview_desc: "Kame House acts as an invisible bridge for your Living Room Console PC, connecting non-Steam games, emulators, and DualSense hardware triggers directly into Valve's Steam ecosystem.",
+  overview_title: "System Overview",
+  overview_desc: "Kame House connects non-Steam games, emulators, and DualSense hardware triggers directly into Valve's Steam ecosystem.",
   metric_steam_status: "Steam Integration",
   status_shortcuts_synced: "Shortcuts Active",
   metric_dualsense_status: "DualSense Studio",
-  metric_tv_profile: "Console TV Mode",
-  metric_hdr_active: "HDR10 Enabled",
-  metric_launch_supervisor: "Launch Supervisor",
-  mode_hide_restore: "Hide on Launch",
-  mode_restore_sub: "Restores on exit",
   quick_actions_title: "QUICK UTILITY ACTIONS",
   btn_quick_sync_steam: "Export All to Steam",
   btn_quick_rescan: "Scan ROMs & Games",
   callout_philosophy_title: "Built to Accompany Steam, Not Replace It:",
-  callout_philosophy_body: "Kame House runs quietly on your TV PC. Launch games via Steam Big Picture; Kame House ensures shortcuts, deterministic AppIDs, achievement toasts, and low-level PS5 DualSense trigger effects are automated.",
+  callout_philosophy_body: "Kame House runs quietly in the System Tray. Launch games via Steam; Kame House ensures shortcuts, deterministic AppIDs, achievement toasts, and optional PS5 DualSense trigger effects are automated.",
 
   // Steam Bridge
   steam_bridge_title: "Steam Library & shortcuts.vdf Bridge",
@@ -58,7 +51,7 @@ export const en = {
   dualsense_subtab_triggers: "Adaptive Triggers",
   dualsense_subtab_lighting: "Lightbar & LEDs",
   dualsense_subtab_emulation: "Emulation & Gyro",
-  dualsense_subtab_udp: "DualSenseX UDP Link",
+  dualsense_subtab_udp: "UDP Telemetry Link",
   dualsense_subtab_profiles: "Game Profiles",
 
   // Controller Tester & WebHID
@@ -153,8 +146,8 @@ export const en = {
   dualsense_gyro_invert_y: "Invert Vertical Axis (Pitch)",
 
   // UDP Studio
-  dualsense_udp_title: "DualSenseX Link UDP Telemetry Server (:6969)",
-  dualsense_udp_subtitle: "Async UDP server implementing the DualSenseX JSON protocol to support community game mods out-of-the-box.",
+  dualsense_udp_title: "UDP Telemetry Server (:6969)",
+  dualsense_udp_subtitle: "Async UDP server listening for JSON telemetry instructions to support game mods out-of-the-box.",
   dualsense_udp_start: "Start UDP Server",
   dualsense_udp_stop: "Stop UDP Server",
   dualsense_udp_status_label: "Server State",
@@ -165,41 +158,12 @@ export const en = {
   dualsense_udp_last_client: "Last Connected Game / Mod",
   dualsense_udp_no_traffic: "Waiting for game telemetry...",
   dualsense_udp_compatible_title: "Compatible Game Telemetry Mods",
-  dualsense_udp_compatible_desc: "Any game mod designed for DualSenseX communicates automatically with Kame House on port 6969 without additional software.",
+  dualsense_udp_compatible_desc: "Game telemetry mods communicate automatically with Kame House on port 6969 without additional software.",
 
   // Profiles Studio
   dualsense_profiles_title: "Curated Game & Genre Profiles",
   dualsense_profiles_subtitle: "One-click presets tailored for racing telemetry, tactical shooters, and flight simulators.",
   dualsense_apply_profile: "Apply Preset to Controller",
-
-  // Display & OS
-  display_title: "Display & Console OS Optimization",
-  display_desc: "Configure Living Room TV settings, HDR, auto-login scripts, and launcher lifecycle behavior.",
-  setting_launch_behavior: "Launcher Lifecycle Mode",
-  setting_launch_behavior_sub: "How Kame House behaves when games or Steam Big Picture are running.",
-  opt_hide_restore: "Hide on Launch & Restore on Exit (Console Standard)",
-  opt_keep_open: "Keep Launcher Open in Background",
-  setting_tv_resolution: "TV Resolution & Refresh Rate Preset",
-  setting_tv_resolution_sub: "Ensures smooth frame pacing and optimal refresh rates when connecting via HDMI 2.1 to OLED/QLED TVs.",
-  setting_hdr: "High Dynamic Range (HDR10)",
-  setting_hdr_sub: "Auto-engages Windows/Linux HDR color space when a compatible display is detected.",
-  setting_autologin: "Windows Console Auto-Login Helper",
-  setting_autologin_sub: "Generates a secure .reg configuration file so your PC boots straight into Steam Big Picture without showing the Windows login screen.",
-  btn_generate_reg: "Generate .reg Script",
-
-  // Power
-  power_title: "Power & Session Management",
-  power_desc: "Gamepad-safe console power controls. Suspend your PC into low-power S3 sleep or reboot directly into your gaming session.",
-  power_sleep_title: "Suspend / Sleep (S3)",
-  power_sleep_desc: "Low power mode. Wakes instantly when you press the Xbox / PS guide button on your controller.",
-  btn_sleep: "Sleep",
-  power_restart_title: "Restart System",
-  power_restart_desc: "Reboots the operating system and reloads Steam Big Picture Mode cleanly.",
-  btn_restart: "Restart",
-  power_shutdown_title: "Power Off",
-  power_shutdown_desc: "Safely shuts down the PC and saves all active launcher and emulator configurations.",
-  btn_shutdown: "Shut Down",
-  controller_diag_title: "GAMEPAD TELEMETRY & TEST",
 
   loading: "Loading",
   btn_cancel: "Cancel",
@@ -207,14 +171,11 @@ export const en = {
   // Toasts
   toast_steam_synced: "Successfully exported {count} shortcuts to Steam shortcuts.vdf",
   toast_scanned: "Scan complete: Discovered {count} new game/ROM titles",
-  toast_power_dispatched: "Power command '{action}' dispatched.",
-  toast_settings_saved: "Console settings updated successfully.",
-  toast_reg_downloaded: "Auto-logon registry script downloaded.",
   toast_dualsense_triggers_applied: "DualSense adaptive triggers configured successfully.",
   toast_dualsense_lighting_applied: "DualSense RGB lightbar updated.",
   toast_dualsense_emulation_applied: "DualSense controller emulation mode saved.",
-  toast_dualsense_udp_started: "DualSenseX UDP server started on port 6969.",
-  toast_dualsense_udp_stopped: "DualSenseX UDP server stopped.",
+  toast_dualsense_udp_started: "UDP telemetry server started on port 6969.",
+  toast_dualsense_udp_stopped: "UDP telemetry server stopped.",
   toast_dualsense_profile_applied: "DualSense game profile applied.",
   toast_error: "Action failed. Please check backend connection."
 };

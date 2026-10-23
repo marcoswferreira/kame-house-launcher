@@ -11,9 +11,8 @@ Thank you for your interest in contributing to **Kame House Launcher**! This doc
 ## 🌟 Core Principles
 
 1. **Idiomatic, Memory-Safe Rust:** Emphasize type safety, strict error handling via `anyhow`/`thiserror`, and minimal heap allocations in inner loops.
-2. **High Performance & Low Overhead:** The launcher is designed for living room gaming and must maintain a lightweight background footprint (~40MB RAM) so it never competes with games or streaming encoders.
+2. **High Performance & Low Overhead:** The launcher must maintain a lightweight background footprint (~40MB RAM) and keep hardware extensions opt-in so it never competes with games or emulators.
 3. **Mandatory Test Coverage (≥ 70%):** Every new feature, parser, or module must include unit or integration tests, maintaining the workspace line coverage at or above 70%.
-4. **Respect for Upstream Projects:** Any integration with community tools (such as DualSenseX protocol) must preserve proper attribution and respect upstream licenses.
 
 ---
 
