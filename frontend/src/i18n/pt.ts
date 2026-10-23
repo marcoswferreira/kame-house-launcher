@@ -64,6 +64,12 @@ export const pt = {
   // DualSense Status
   dualsense_connected: "CONECTADO",
   dualsense_disconnected: "EM ESPERA",
+  dualsense_mic_status: "Microfone",
+  dualsense_mic_unmuted: "ATIVO",
+  dualsense_mic_muted: "SILENCIADO",
+  btn_toggle_mic: "Alternar Mudo do Mic",
+  toast_mic_muted: "Microfone silenciado (LED âmbar aceso)",
+  toast_mic_unmuted: "Microfone ativado (LED âmbar apagado)",
 
   // Triggers Studio
   dualsense_triggers_title: "Calibração de Gatilhos Adaptáveis (L2 / R2)",

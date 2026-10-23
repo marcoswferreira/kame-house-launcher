@@ -110,6 +110,19 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
     }
   };
 
+  const handleToggleMic = async () => {
+    try {
+      const res = await fetch('/api/dualsense/mic/toggle', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        onShowToast?.(data.mic_muted ? t('toast_mic_muted') : t('toast_mic_unmuted'));
+        fetchStatus();
+      }
+    } catch {
+      onShowToast?.(t('toast_error'));
+    }
+  };
+
   const handleApplyProfile = async (profileId: string) => {
     try {
       const res = await fetch('/api/dualsense/profile', {
@@ -157,6 +170,9 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
       last_sender: null,
     },
     profiles: [],
+    mic_muted: false,
+    audio_device_detected: true,
+    speaker_volume: 80,
   };
 
   return (
@@ -182,6 +198,13 @@ export const DualSenseTab: React.FC<Props> = ({ onShowToast }) => {
         </div>
 
         <div className="master-bar-right">
+          <button
+            className={`deck-btn ${currentStatus.mic_muted ? 'danger' : 'secondary'}`}
+            onClick={handleToggleMic}
+            title={t('btn_toggle_mic')}
+          >
+            {currentStatus.mic_muted ? '🎙️ MIC [MUTED]' : '🎙️ MIC [ACTIVE]'}
+          </button>
           <button
             className="deck-btn secondary"
             onClick={() => handleToggleUdp(!currentStatus.udp_stats.running)}

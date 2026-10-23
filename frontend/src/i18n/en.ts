@@ -64,6 +64,12 @@ export const en = {
   // DualSense Status
   dualsense_connected: "CONNECTED",
   dualsense_disconnected: "STANDBY",
+  dualsense_mic_status: "Microphone",
+  dualsense_mic_unmuted: "ACTIVE",
+  dualsense_mic_muted: "MUTED",
+  btn_toggle_mic: "Toggle Mic Mute",
+  toast_mic_muted: "Microphone muted (Amber LED on)",
+  toast_mic_unmuted: "Microphone active (Amber LED off)",
 
   // Triggers Studio
   dualsense_triggers_title: "Adaptive Trigger Calibration (L2 / R2)",

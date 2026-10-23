@@ -318,6 +318,12 @@ where
                 )
             }
         }
+        ("POST", "/api/dualsense/mic/toggle") => {
+            let is_muted = service.dualsense.toggle_microphone();
+            let _ = launcher_console::execute_set_microphone_mute(is_muted);
+            let resp = format!("{{\"mic_muted\":{}}}", is_muted);
+            ("200 OK", "application/json", resp.into_bytes())
+        }
         ("POST", "/api/steam/sync") => {
             let vdf_path = dirs::data_dir()
                 .map(|p| p.join("Steam/userdata"))

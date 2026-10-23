@@ -124,4 +124,7 @@ export interface DualSenseStatus {
   emulation: EmulationConfig;
   udp_stats: UdpServerStats;
   profiles: TriggerProfile[];
+  mic_muted: boolean;
+  audio_device_detected: boolean;
+  speaker_volume: number;
 }

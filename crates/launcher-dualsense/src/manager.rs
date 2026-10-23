@@ -23,6 +23,9 @@ pub struct DualSenseStatus {
     pub emulation: EmulationConfig,
     pub udp_stats: UdpServerStats,
     pub profiles: Vec<TriggerProfile>,
+    pub mic_muted: bool,
+    pub audio_device_detected: bool,
+    pub speaker_volume: u8,
 }
 
 pub struct DualSenseManager {
@@ -34,6 +37,10 @@ pub struct DualSenseManager {
     controller_name: RwLock<String>,
     udp_server: tokio::sync::Mutex<DualSenseUdpServer>,
     profiles: RwLock<Vec<TriggerProfile>>,
+    mic_muted: RwLock<bool>,
+    prev_mic_btn: RwLock<bool>,
+    audio_device_detected: RwLock<bool>,
+    speaker_volume: RwLock<u8>,
 }
 
 impl DualSenseManager {
@@ -60,6 +67,10 @@ impl DualSenseManager {
             controller_name: RwLock::new("Sony DualSense Wireless Controller".to_string()),
             udp_server: tokio::sync::Mutex::new(udp_server),
             profiles: RwLock::new(TriggerProfile::default_profiles()),
+            mic_muted: RwLock::new(false),
+            prev_mic_btn: RwLock::new(false),
+            audio_device_detected: RwLock::new(true),
+            speaker_volume: RwLock::new(80),
         }
     }
 
@@ -86,6 +97,9 @@ impl DualSenseManager {
         let connected = *self.connected.read();
         let name = self.controller_name.read().clone();
         let profiles = self.profiles.read().clone();
+        let mic_muted = *self.mic_muted.read();
+        let audio_device_detected = *self.audio_device_detected.read();
+        let speaker_volume = *self.speaker_volume.read();
 
         DualSenseStatus {
             connected,
@@ -97,7 +111,39 @@ impl DualSenseManager {
             emulation,
             udp_stats,
             profiles,
+            mic_muted,
+            audio_device_detected,
+            speaker_volume,
         }
+    }
+
+    pub fn toggle_microphone(&self) -> bool {
+        let mut muted = self.mic_muted.write();
+        *muted = !*muted;
+        let is_muted = *muted;
+
+        let mut lighting = self.lighting.write();
+        lighting.mic_led = if is_muted {
+            crate::lightbar::MicLed::Solid
+        } else {
+            crate::lightbar::MicLed::Off
+        };
+
+        is_muted
+    }
+
+    pub fn set_microphone_mute(&self, muted: bool) {
+        *self.mic_muted.write() = muted;
+        let mut lighting = self.lighting.write();
+        lighting.mic_led = if muted {
+            crate::lightbar::MicLed::Solid
+        } else {
+            crate::lightbar::MicLed::Off
+        };
+    }
+
+    pub fn set_speaker_volume(&self, volume: u8) {
+        *self.speaker_volume.write() = volume.min(100);
     }
 
     pub fn set_triggers(&self, triggers: DualTriggerConfig) {
@@ -144,8 +190,18 @@ impl DualSenseManager {
             .with_rumble(heavy, light)
     }
 
-    pub fn update_input_state(&self, new_state: DualSenseInputState) {
+    pub fn update_input_state(&self, new_state: DualSenseInputState) -> Option<bool> {
+        let mut toggled_to = None;
+        let prev_pressed = *self.prev_mic_btn.read();
+        let curr_pressed = new_state.mic_mute;
+        if curr_pressed && !prev_pressed {
+            // Physical button pressed edge
+            let new_muted = self.toggle_microphone();
+            toggled_to = Some(new_muted);
+        }
+        *self.prev_mic_btn.write() = curr_pressed;
         *self.input_state.write() = new_state;
+        toggled_to
     }
 }
 
@@ -208,5 +264,49 @@ mod tests {
         let report = manager.build_current_output_report();
         let usb = report.build_usb();
         assert_eq!(usb[0], 0x02);
+
+        // Test Microphone Mute toggle and LED sync
+        assert!(!manager.get_status().await.mic_muted);
+        let toggled = manager.toggle_microphone();
+        assert!(toggled);
+        assert!(manager.get_status().await.mic_muted);
+        assert_eq!(
+            manager.get_status().await.lighting.mic_led,
+            crate::lightbar::MicLed::Solid
+        );
+
+        let toggled_back = manager.toggle_microphone();
+        assert!(!toggled_back);
+        assert!(!manager.get_status().await.mic_muted);
+        assert_eq!(
+            manager.get_status().await.lighting.mic_led,
+            crate::lightbar::MicLed::Off
+        );
+
+        // Test physical button edge detection
+        let mut input_press = DualSenseInputState::default();
+        input_press.mic_mute = true;
+        let event = manager.update_input_state(input_press);
+        assert_eq!(event, Some(true)); // Toggled to muted
+        assert!(manager.get_status().await.mic_muted);
+
+        // While held down, should not trigger again
+        let mut input_hold = DualSenseInputState::default();
+        input_hold.mic_mute = true;
+        let event_hold = manager.update_input_state(input_hold);
+        assert_eq!(event_hold, None);
+
+        // Released
+        let mut input_release = DualSenseInputState::default();
+        input_release.mic_mute = false;
+        let event_rel = manager.update_input_state(input_release);
+        assert_eq!(event_rel, None);
+
+        // Press again -> unmutes
+        let mut input_press2 = DualSenseInputState::default();
+        input_press2.mic_mute = true;
+        let event2 = manager.update_input_state(input_press2);
+        assert_eq!(event2, Some(false)); // Toggled to unmuted
+        assert!(!manager.get_status().await.mic_muted);
     }
 }

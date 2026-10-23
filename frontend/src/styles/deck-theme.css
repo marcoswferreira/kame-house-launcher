@@ -629,6 +629,12 @@ input:checked + .switch-slider::before { transform: translateX(22px); }
   gap: 16px;
 }
 
+.master-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .controller-icon-badge {
   font-size: 28px;
   background-color: rgba(26, 159, 255, 0.12);

@@ -1,7 +1,13 @@
+pub mod audio;
 pub mod boot;
 pub mod models;
 pub mod power;
 pub mod supervisor;
+
+pub use audio::{
+    execute_set_microphone_mute, execute_toggle_microphone, get_set_mic_mute_command,
+    get_switch_playback_device_command, get_toggle_mic_command,
+};
 
 pub use boot::{
     generate_linux_autostart_desktop_file, generate_windows_autologin_reg, save_linux_autostart,
