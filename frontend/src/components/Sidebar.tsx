@@ -26,12 +26,6 @@ export function Sidebar({ activeTab, onSelectTab, dualsenseConnected }: SidebarP
 
   return (
     <nav className="deck-sidebar">
-      <div className="nav-shoulder-hint">
-        <span className="deck-bumper">LB</span>
-        <span>{t.nav_bumpers}</span>
-        <span className="deck-bumper">RB</span>
-      </div>
-
       <ul className="nav-list" role="tablist">
         {tabs.map((tab, idx) => {
           const Icon = tab.icon;

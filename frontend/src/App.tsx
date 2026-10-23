@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from './i18n';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -16,6 +16,8 @@ interface Toast {
   type: 'info' | 'success' | 'error';
 }
 
+const TABS_LIST = ['overview', 'steam-bridge', 'dualsense', 'display', 'power'];
+
 export function App() {
   const { t, lang, toggleLang } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
@@ -31,9 +33,6 @@ export function App() {
     leftStick: { x: 0, y: 0 },
     rightStick: { x: 0, y: 0 },
   });
-
-  const prevAxes = useRef<[number, number]>([0, 0]);
-  const prevButtons = useRef<boolean[]>([]);
 
   const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     const id = Date.now() + Math.random();
@@ -204,9 +203,7 @@ export function App() {
     showToast(t.toast_reg_downloaded, 'success');
   };
 
-  // 10-Foot Gamepad Navigation Engine
-  const tabsList = ['overview', 'steam-bridge', 'dualsense', 'display', 'power'];
-
+  // Passive Gamepad Telemetry (No button hijacking or tab switching)
   useEffect(() => {
     let animId: number;
 
@@ -232,42 +229,6 @@ export function App() {
             y: Math.round((gp.axes[3] || 0) * 100),
           },
         });
-
-        const bLB = gp.buttons[4]?.pressed;
-        const bRB = gp.buttons[5]?.pressed;
-        const bY = gp.buttons[3]?.pressed;
-        const bX = gp.buttons[2]?.pressed;
-
-        const wasLB = prevButtons.current[4] || false;
-        const wasRB = prevButtons.current[5] || false;
-        const wasY = prevButtons.current[3] || false;
-        const wasX = prevButtons.current[2] || false;
-
-        if (bLB && !wasLB) {
-          setActiveTab((curr) => {
-            const idx = tabsList.indexOf(curr);
-            const prevIdx = (idx - 1 + tabsList.length) % tabsList.length;
-            return tabsList[prevIdx];
-          });
-        }
-        if (bRB && !wasRB) {
-          setActiveTab((curr) => {
-            const idx = tabsList.indexOf(curr);
-            const nextIdx = (idx + 1) % tabsList.length;
-            return tabsList[nextIdx];
-          });
-        }
-
-        if (bY && !wasY) {
-          toggleLang();
-        }
-
-        if (bX && !wasX) {
-          handleSyncSteam();
-        }
-
-        prevButtons.current = gp.buttons.map((b) => b.pressed);
-        prevAxes.current = [gp.axes[0], gp.axes[1]];
         break;
       }
 
@@ -280,7 +241,7 @@ export function App() {
 
     animId = requestAnimationFrame(pollGamepad);
     return () => cancelAnimationFrame(animId);
-  }, [tabsList, toggleLang]);
+  }, []);
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -291,13 +252,13 @@ export function App() {
 
       if (e.key === 'q' || e.key === 'Q') {
         setActiveTab((curr) => {
-          const idx = tabsList.indexOf(curr);
-          return tabsList[(idx - 1 + tabsList.length) % tabsList.length];
+          const idx = TABS_LIST.indexOf(curr);
+          return TABS_LIST[(idx - 1 + TABS_LIST.length) % TABS_LIST.length];
         });
       } else if (e.key === 'e' || e.key === 'E') {
         setActiveTab((curr) => {
-          const idx = tabsList.indexOf(curr);
-          return tabsList[(idx + 1) % tabsList.length];
+          const idx = TABS_LIST.indexOf(curr);
+          return TABS_LIST[(idx + 1) % TABS_LIST.length];
         });
       } else if (e.key === 'y' || e.key === 'Y') {
         toggleLang();
@@ -306,7 +267,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [tabsList, toggleLang]);
+  }, [toggleLang]);
 
   return (
     <div className="deck-window">

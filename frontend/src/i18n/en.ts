@@ -1,7 +1,6 @@
 export const en = {
   app_subtitle: "STEAM COMPANION & CONSOLE BRIDGE",
   hud_ready: "READY",
-  nav_bumpers: "NAVIGATE",
   tab_overview: "Overview",
   tab_steam: "Steam Bridge",
   tab_dualsense: "DualSense Studio",
@@ -202,12 +201,6 @@ export const en = {
   btn_shutdown: "Shut Down",
   controller_diag_title: "GAMEPAD TELEMETRY & TEST",
 
-  // Prompts
-  prompt_select: "Select",
-  prompt_back: "Back",
-  prompt_sync: "Quick Sync",
-  prompt_language: "Language",
-  prompt_tabs: "Tabs",
   loading: "Loading",
   btn_cancel: "Cancel",
 

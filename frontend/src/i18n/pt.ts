@@ -1,7 +1,6 @@
 export const pt = {
   app_subtitle: "COMPANHEIRO STEAM & PONTE DE CONSOLE",
   hud_ready: "PRONTO",
-  nav_bumpers: "NAVEGAR",
   tab_overview: "Visão Geral",
   tab_steam: "Ponte Steam",
   tab_dualsense: "DualSense Studio",
@@ -202,12 +201,6 @@ export const pt = {
   btn_shutdown: "Desligar",
   controller_diag_title: "TELEMETRIA & TESTE DE CONTROLE",
 
-  // Prompts
-  prompt_select: "Selecionar",
-  prompt_back: "Voltar",
-  prompt_sync: "Sincronização Rápida",
-  prompt_language: "Idioma",
-  prompt_tabs: "Abas",
   loading: "Carregando",
   btn_cancel: "Cancelar",
 
