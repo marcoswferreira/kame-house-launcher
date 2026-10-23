@@ -257,19 +257,41 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
                 });
             }
 
-            // Spawn HTTP & Big Picture Server
+            // Bind HTTP Server BEFORE launching UI (guarantees socket is listening & falls back gracefully)
             let server_svc = Arc::clone(&service);
+            let preferred_port = env::var("KAME_HOUSE_PORT")
+                .ok()
+                .and_then(|p| p.parse::<u16>().ok())
+                .unwrap_or(48080);
+
+            let (server, listener, bound_port) =
+                match crate::server::HttpServer::bind_with_fallback(server_svc, preferred_port)
+                    .await
+                {
+                    Ok(res) => res,
+                    Err(err) => {
+                        tracing::error!(
+                            "FATAL: Failed to bind Kame House Big Picture Server: {}",
+                            err
+                        );
+                        eprintln!("Error starting HTTP server: {}", err);
+                        return Err(err.into());
+                    }
+                };
+
+            // Spawn the accept loop
             tokio::spawn(async move {
-                let s = crate::server::HttpServer::new(server_svc, 48080);
-                let _ = s.run().await;
+                if let Err(e) = server.serve(listener).await {
+                    tracing::error!("Kame House HTTP server error: {}", e);
+                }
             });
 
-            let ui_url = "http://127.0.0.1:48080";
+            let ui_url = format!("http://127.0.0.1:{}", bound_port);
             tracing::info!("Kame House Big Picture UI: {}", ui_url);
             println!("\n{}", i18n.daemon_running_prompt());
 
             if open_ui {
-                crate::server::open_fullscreen_ui(ui_url);
+                crate::server::open_fullscreen_ui(&ui_url);
             }
 
             if keep_alive {

@@ -346,4 +346,32 @@ mod tests {
             }
         );
     }
+
+    #[tokio::test]
+    async fn test_server_bind_with_fallback() {
+        let dir = tempdir().unwrap();
+        let svc = Arc::new(LauncherService::new(dir.path().to_path_buf()));
+
+        // 1. Basic bind with ephemeral fallback
+        let (_server, listener, bound_port) =
+            crate::server::HttpServer::bind_with_fallback(Arc::clone(&svc), 0)
+                .await
+                .unwrap();
+        assert!(bound_port > 0);
+        drop(listener);
+
+        // 2. Fallback when preferred port is occupied
+        // Bind an arbitrary port first to simulate conflict
+        let conflict_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let conflict_port = conflict_listener.local_addr().unwrap().port();
+
+        let (_server2, listener2, bound_port2) =
+            crate::server::HttpServer::bind_with_fallback(Arc::clone(&svc), conflict_port)
+                .await
+                .unwrap();
+        assert_ne!(bound_port2, conflict_port);
+        assert!(bound_port2 > 0);
+        drop(listener2);
+        drop(conflict_listener);
+    }
 }

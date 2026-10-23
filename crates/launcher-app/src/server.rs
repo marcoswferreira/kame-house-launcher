@@ -73,8 +73,61 @@ impl HttpServer {
         Self { service, addr }
     }
 
-    pub async fn run(self) -> std::io::Result<()> {
-        let listener = TcpListener::bind(self.addr).await?;
+    pub async fn bind_with_fallback(
+        service: Arc<LauncherService>,
+        preferred_port: u16,
+    ) -> std::io::Result<(Self, TcpListener, u16)> {
+        let mut ports = vec![preferred_port];
+        for p in 48080..=48095 {
+            if !ports.contains(&p) {
+                ports.push(p);
+            }
+        }
+        for p in [8080, 8081, 3000, 5000, 0] {
+            if !ports.contains(&p) {
+                ports.push(p);
+            }
+        }
+
+        let mut last_err = None;
+        for port in ports {
+            let addr = SocketAddr::from(([127, 0, 0, 1], port));
+            match TcpListener::bind(addr).await {
+                Ok(listener) => {
+                    let local_addr = listener.local_addr()?;
+                    let actual_port = local_addr.port();
+                    if actual_port != preferred_port {
+                        tracing::warn!(
+                            "Preferred port {} was unavailable. Kame House Big Picture Server bound to fallback port {}",
+                            preferred_port,
+                            actual_port
+                        );
+                    }
+                    return Ok((
+                        HttpServer {
+                            service,
+                            addr: local_addr,
+                        },
+                        listener,
+                        actual_port,
+                    ));
+                }
+                Err(e) => {
+                    tracing::debug!("Port {} unavailable: {}", port, e);
+                    last_err = Some(e);
+                }
+            }
+        }
+
+        Err(last_err.unwrap_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::AddrNotAvailable,
+                "Could not bind to any port",
+            )
+        }))
+    }
+
+    pub async fn serve(self, listener: TcpListener) -> std::io::Result<()> {
         info!(
             "Kame House Big Picture Server listening on http://{}",
             self.addr
@@ -89,6 +142,11 @@ impl HttpServer {
                 }
             });
         }
+    }
+
+    pub async fn run(self) -> std::io::Result<()> {
+        let listener = TcpListener::bind(self.addr).await?;
+        self.serve(listener).await
     }
 }
 
