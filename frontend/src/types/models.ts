@@ -25,18 +25,44 @@ export interface SteamPathConfig {
 
 export interface Game {
   id: string;
+  uuid?: string;
   title: string;
   platform?: string;
   platform_name?: string;
   path: string;
   custom_exe?: string;
+  custom_args?: string;
   shortcut_id?: number;
+  hidden?: boolean;
   art?: {
     cover?: string;
     hero?: string;
     logo?: string;
+    wide?: string;
     icon?: string;
   };
+}
+
+export interface EmulatorInfo {
+  key: string;
+  name: string;
+  download_url?: string;
+  default_args: string;
+  fullscreen_args: string;
+  detected_path?: string;
+  configured_path?: string;
+}
+
+export interface AchievementUnlockEvent {
+  id: string;
+  game_id: string;
+  achievement_id: string;
+  title: string;
+  description: string;
+  icon: string;
+  source: string;
+  unlocked_at: string;
+  steam_notified: boolean;
 }
 
 // ==========================================

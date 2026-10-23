@@ -66,6 +66,15 @@ pub struct CdpRequest<'a> {
     pub session_id: Option<&'a str>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct CdpTarget {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    #[serde(rename = "webSocketDebuggerUrl")]
+    pub websocket_url: Option<String>,
+}
+
 pub fn format_cdp_call(
     id: u64,
     method: &str,
@@ -79,4 +88,61 @@ pub fn format_cdp_call(
         session_id,
     };
     serde_json::to_string(&req).unwrap_or_default()
+}
+
+/// Dispatches a native Steam achievement toast to the running Steam client via Chrome DevTools Protocol
+pub async fn trigger_steam_toast_cdp(toast: &AchievementToast, port: u16) -> Result<bool, String> {
+    use futures_util::SinkExt;
+    use tokio_tungstenite::connect_async;
+    use tokio_tungstenite::tungstenite::Message;
+
+    let url = format!("http://127.0.0.1:{}/json", port);
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_millis(800))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let targets: Vec<CdpTarget> = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Could not reach Steam CDP on port {}: {}", port, e))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse CDP targets: {}", e))?;
+
+    let target = targets
+        .iter()
+        .find(|t| {
+            let k = classify_target(&t.title, &t.url);
+            k == TargetKind::SharedJsContext
+                || k == TargetKind::BigPicture
+                || k == TargetKind::Library
+        })
+        .or_else(|| targets.first())
+        .ok_or_else(|| "No CDP targets available in Steam client".to_string())?;
+
+    let ws_url = target
+        .websocket_url
+        .as_ref()
+        .ok_or_else(|| "Target does not have a webSocketDebuggerUrl".to_string())?;
+
+    let (mut ws_stream, _) = connect_async(ws_url)
+        .await
+        .map_err(|e| format!("WebSocket connection failed: {}", e))?;
+
+    let eval_script = toast.build_eval_script();
+    let msg_str = format_cdp_call(
+        1,
+        "Runtime.evaluate",
+        serde_json::json!({ "expression": eval_script }),
+        None,
+    );
+
+    ws_stream
+        .send(Message::Text(msg_str))
+        .await
+        .map_err(|e| format!("Failed to send CDP message: {}", e))?;
+
+    Ok(true)
 }

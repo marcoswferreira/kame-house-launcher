@@ -31,6 +31,31 @@ impl SteamGridManager {
         self.grid_dir.join(format!("{}_icon.ico", shortcut_id))
     }
 
+    pub fn copy_art_file(
+        &self,
+        shortcut_id: u32,
+        art_type: &str,
+        source_path: &std::path::Path,
+    ) -> std::io::Result<PathBuf> {
+        if !source_path.is_file() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Source art not found: {}", source_path.display()),
+            ));
+        }
+        fs::create_dir_all(&self.grid_dir)?;
+        let target = match art_type {
+            "cover" => self.cover_path(shortcut_id),
+            "hero" => self.hero_path(shortcut_id),
+            "logo" => self.logo_path(shortcut_id),
+            "wide" => self.wide_path(shortcut_id),
+            "icon" => self.icon_path(shortcut_id),
+            _ => self.cover_path(shortcut_id),
+        };
+        fs::copy(source_path, &target)?;
+        Ok(target)
+    }
+
     pub fn save_art(
         &self,
         shortcut_id: u32,

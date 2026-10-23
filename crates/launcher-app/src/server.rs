@@ -85,6 +85,31 @@ struct OpenUrlRequest {
     url: String,
 }
 
+#[derive(Serialize)]
+struct EmulatorInfoResponse {
+    key: &'static str,
+    name: &'static str,
+    download_url: Option<&'static str>,
+    default_args: &'static str,
+    fullscreen_args: &'static str,
+    detected_path: Option<String>,
+    configured_path: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ConfigureEmulatorRequest {
+    key: String,
+    path: String,
+}
+
+#[derive(Deserialize)]
+struct TestToastRequest {
+    title: String,
+    description: String,
+    icon_url: Option<String>,
+    app_id: Option<u32>,
+}
+
 pub struct HttpServer {
     service: Arc<LauncherService>,
     addr: SocketAddr,
@@ -521,6 +546,83 @@ where
                     "application/json",
                     b"{\"error\":\"invalid game id\"}".to_vec(),
                 )
+            }
+        }
+        ("POST", "/api/games/update") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(updated_game) =
+                serde_json::from_str::<launcher_core::models::Game>(&body_str)
+            {
+                if service.update_game(updated_game) {
+                    ("200 OK", "application/json", b"{\"status\":\"updated\"}".to_vec())
+                } else {
+                    ("404 Not Found", "application/json", b"{\"error\":\"game not found\"}".to_vec())
+                }
+            } else {
+                ("400 Bad Request", "application/json", b"{\"error\":\"invalid game json\"}".to_vec())
+            }
+        }
+        ("GET", "/api/emulators") => {
+            let configured = service.get_configured_emulators();
+            let mut list = Vec::new();
+            for emu in launcher_core::emulators::EMULATORS {
+                let detected = launcher_core::emulators::auto_detect_emulator_path(emu)
+                    .map(|p| p.to_string_lossy().to_string());
+                let user_cfg = configured.get(emu.key).cloned();
+                list.push(EmulatorInfoResponse {
+                    key: emu.key,
+                    name: emu.name,
+                    download_url: emu.download_url,
+                    default_args: emu.default_args,
+                    fullscreen_args: emu.fullscreen_args,
+                    detected_path: detected,
+                    configured_path: user_cfg,
+                });
+            }
+            let json = serde_json::to_vec(&list).unwrap_or_default();
+            ("200 OK", "application/json", json)
+        }
+        ("POST", "/api/emulators/configure") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<ConfigureEmulatorRequest>(&body_str) {
+                service.set_configured_emulator(req.key, req.path);
+                ("200 OK", "application/json", b"{\"status\":\"configured\"}".to_vec())
+            } else {
+                ("400 Bad Request", "application/json", b"{\"error\":\"invalid json\"}".to_vec())
+            }
+        }
+        ("GET", "/api/achievements/activity") => {
+            let activity = service.achievements.read().activity.clone();
+            let json = serde_json::to_vec(&activity).unwrap_or_default();
+            ("200 OK", "application/json", json)
+        }
+        ("POST", "/api/achievements/test-toast") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<TestToastRequest>(&body_str) {
+                let toast = launcher_steam::AchievementToast {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    title: req.title.clone(),
+                    description: req.description.clone(),
+                    icon_url: req.icon_url.unwrap_or_default(),
+                    app_id: req.app_id.unwrap_or(0),
+                };
+                let cdp_res = launcher_steam::trigger_steam_toast_cdp(&toast, 8080).await;
+                service.achievements.write().register_unlock(
+                    &format!("steam_{}", toast.app_id),
+                    &toast.id,
+                    &toast.title,
+                    &toast.description,
+                    &toast.icon_url,
+                    "Steam Companion",
+                );
+                let resp_json = match cdp_res {
+                    Ok(_) => serde_json::json!({ "status": "sent", "steam_cdp_connected": true }),
+                    Err(e) => serde_json::json!({ "status": "logged_locally", "steam_cdp_connected": false, "message": e }),
+                };
+                let json = serde_json::to_vec(&resp_json).unwrap_or_default();
+                ("200 OK", "application/json", json)
+            } else {
+                ("400 Bad Request", "application/json", b"{\"error\":\"invalid json\"}".to_vec())
             }
         }
         ("POST", "/api/scan") => {

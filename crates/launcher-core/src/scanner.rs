@@ -21,6 +21,96 @@ impl Default for ScannerOptions {
     }
 }
 
+/// Searches local directories adjacent to a game or ROM for cover art, heroes, logos and icons
+pub fn find_local_game_artwork(path: &Path) -> crate::models::ArtSet {
+    let mut art = crate::models::ArtSet::default();
+    let parent = match path.parent() {
+        Some(p) => p,
+        None => return art,
+    };
+    let stem = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or_default();
+
+    // 1. Cover / Poster (Vertical)
+    let cover_candidates = [
+        format!("{}.png", stem),
+        format!("{}.jpg", stem),
+        format!("{}_cover.png", stem),
+        format!("{}_cover.jpg", stem),
+        format!("{}_poster.png", stem),
+        "cover.png".to_string(),
+        "cover.jpg".to_string(),
+        "poster.png".to_string(),
+        "poster.jpg".to_string(),
+        "folder.jpg".to_string(),
+        "boxart.png".to_string(),
+    ];
+    for name in &cover_candidates {
+        let p = parent.join(name);
+        if p.is_file() {
+            art.cover = Some(p.to_string_lossy().to_string());
+            break;
+        }
+    }
+
+    // 2. Hero / Background (Horizontal widescreen)
+    let hero_candidates = [
+        format!("{}_hero.png", stem),
+        format!("{}_hero.jpg", stem),
+        format!("{}_background.jpg", stem),
+        "hero.png".to_string(),
+        "hero.jpg".to_string(),
+        "background.png".to_string(),
+        "background.jpg".to_string(),
+        "banner.png".to_string(),
+    ];
+    for name in &hero_candidates {
+        let p = parent.join(name);
+        if p.is_file() {
+            art.hero = Some(p.to_string_lossy().to_string());
+            break;
+        }
+    }
+
+    // 3. Logo (Transparent PNG)
+    let logo_candidates = [
+        format!("{}_logo.png", stem),
+        "logo.png".to_string(),
+        "title.png".to_string(),
+    ];
+    for name in &logo_candidates {
+        let p = parent.join(name);
+        if p.is_file() {
+            art.logo = Some(p.to_string_lossy().to_string());
+            break;
+        }
+    }
+
+    // 4. Icon (.ico or .png)
+    let icon_candidates = [
+        format!("{}_icon.ico", stem),
+        format!("{}_icon.png", stem),
+        format!("{}.ico", stem),
+        "icon.ico".to_string(),
+        "icon.png".to_string(),
+    ];
+    for name in &icon_candidates {
+        let p = parent.join(name);
+        if p.is_file() {
+            art.icon = Some(p.to_string_lossy().to_string());
+            break;
+        }
+    }
+
+    if art.icon.is_none() && path.extension().map(|e| e == "exe").unwrap_or(false) {
+        art.icon = Some(path.to_string_lossy().to_string());
+    }
+
+    art
+}
+
 pub fn scan_path_for_game(path: &Path) -> Option<Game> {
     if !path.is_file() {
         return None;
@@ -45,6 +135,7 @@ pub fn scan_path_for_game(path: &Path) -> Option<Game> {
         if !header.serial.is_empty() {
             game.serial = Some(header.serial);
         }
+        game.art = find_local_game_artwork(path);
         return Some(game);
     }
 
@@ -60,6 +151,7 @@ pub fn scan_path_for_game(path: &Path) -> Option<Game> {
             );
             game.serial = disc.serial;
             game.disc_id = Some(disc.volume_id);
+            game.art = find_local_game_artwork(path);
             return Some(game);
         }
     }
@@ -78,6 +170,7 @@ pub fn scan_path_for_game(path: &Path) -> Option<Game> {
                 game.steam_app_id = Some(steam_ev.app_id);
             }
         }
+        game.art = find_local_game_artwork(path);
         return Some(game);
     }
 
@@ -85,12 +178,13 @@ pub fn scan_path_for_game(path: &Path) -> Option<Game> {
     if let Some(parent) = path.parent() {
         if let Some(folder_name) = parent.file_name().and_then(|f| f.to_str()) {
             if let Some(platform_def) = guess_platform_by_folder_name(folder_name) {
-                let game = Game::new(
+                let mut game = Game::new(
                     file_stem,
                     path.to_string_lossy().to_string(),
                     platform_def.key,
                     platform_def.name,
                 );
+                game.art = find_local_game_artwork(path);
                 return Some(game);
             }
         }

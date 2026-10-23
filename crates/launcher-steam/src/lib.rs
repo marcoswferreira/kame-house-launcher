@@ -3,7 +3,10 @@ pub mod discovery;
 pub mod grid;
 pub mod vdf;
 
-pub use cdp::{classify_target, format_cdp_call, AchievementToast, TargetKind};
+pub use cdp::{
+    classify_target, format_cdp_call, trigger_steam_toast_cdp, AchievementToast, CdpTarget,
+    TargetKind,
+};
 pub use discovery::{
     find_all_steam_shortcuts_candidates, find_steam_shortcuts_vdf, find_steam_userdata_dirs,
     is_steam_running, resolve_steam_shortcuts_path, safe_write_shortcuts_vdf,
@@ -116,6 +119,12 @@ mod tests {
         assert!(saved_wide.exists());
         let saved_icon = manager.save_art(id, "icon", b"fake_icon").unwrap();
         assert!(saved_icon.exists());
+
+        let src_file = dir.path().join("source_cover.png");
+        std::fs::write(&src_file, b"sample bytes").unwrap();
+        let copied = manager.copy_art_file(id, "cover", &src_file).unwrap();
+        assert!(copied.exists());
+        assert_eq!(std::fs::read(copied).unwrap(), b"sample bytes");
     }
 
     #[test]

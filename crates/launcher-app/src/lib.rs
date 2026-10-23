@@ -400,6 +400,54 @@ mod tests {
         assert!(vdf_path.exists());
     }
 
+    #[test]
+    fn test_update_game_and_emulators_flow() {
+        let dir = tempdir().unwrap();
+        let svc = LauncherService::new(dir.path().to_path_buf());
+
+        let mut game = Game::new("Persona 4 Golden", "/games/p4g.iso", "ps2", "PlayStation 2");
+        svc.add_game(game.clone());
+
+        game.title = "Persona 4 Golden (Custom)".to_string();
+        game.custom_args = Some("-fullscreen".to_string());
+        let updated = svc.update_game(game);
+        assert!(updated);
+
+        let listed = svc.list_games();
+        assert_eq!(listed[0].title, "Persona 4 Golden (Custom)");
+        assert_eq!(listed[0].custom_args, Some("-fullscreen".to_string()));
+
+        // Test configuring emulator
+        svc.set_configured_emulator("ps2".to_string(), "/usr/bin/pcsx2".to_string());
+        let emus = svc.get_configured_emulators();
+        assert_eq!(emus.get("ps2"), Some(&"/usr/bin/pcsx2".to_string()));
+
+        // Test export with grid art copying
+        let cover_file = dir.path().join("p4g_cover.png");
+        std::fs::write(&cover_file, b"sample_png_bytes").unwrap();
+
+        let mut p4g = svc.list_games()[0].clone();
+        p4g.art.cover = Some(cover_file.to_string_lossy().to_string());
+        svc.update_game(p4g);
+
+        let vdf_path = dir.path().join("shortcuts.vdf");
+        let count = svc.export_games_to_steam(&vdf_path).unwrap();
+        assert_eq!(count, 1);
+
+        // Verify grid directory was created with the cover
+        let grid_dir = dir.path().join("grid");
+        assert!(grid_dir.is_dir());
+        let grid_items: Vec<_> = std::fs::read_dir(&grid_dir).unwrap().collect();
+        assert_eq!(grid_items.len(), 1);
+        let item_name = grid_items[0]
+            .as_ref()
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .to_string();
+        assert!(item_name.ends_with("p.png"));
+    }
+
     #[tokio::test]
     async fn test_dualsense_integration_from_service() {
         let dir = tempdir().unwrap();

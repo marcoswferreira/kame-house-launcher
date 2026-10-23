@@ -216,6 +216,35 @@ impl LauncherService {
         self.update_console_settings(settings);
     }
 
+    pub fn update_game(&self, updated: Game) -> bool {
+        let mut list = self.games.write();
+        if let Some(pos) = list
+            .iter()
+            .position(|g| g.id == updated.id || g.uuid == updated.uuid)
+        {
+            list[pos] = updated;
+            drop(list);
+            let _ = self.save_state();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn get_configured_emulators(&self) -> std::collections::HashMap<String, String> {
+        self.settings.read().emulator_paths.clone()
+    }
+
+    pub fn set_configured_emulator(&self, profile_key: String, path: String) {
+        let mut settings = self.settings.read().clone();
+        if path.trim().is_empty() {
+            settings.emulator_paths.remove(&profile_key);
+        } else {
+            settings.emulator_paths.insert(profile_key, path);
+        }
+        self.update_console_settings(settings);
+    }
+
     pub fn export_games_to_steam(&self, steam_shortcuts_vdf_path: &Path) -> std::io::Result<usize> {
         let mut root_nodes = if steam_shortcuts_vdf_path.is_file() {
             // Strip Read-Only flag if set before reading
@@ -253,25 +282,71 @@ impl LauncherService {
             Vec::new()
         };
 
+        let grid_dir = steam_shortcuts_vdf_path
+            .parent()
+            .map(|p| p.join("grid"))
+            .unwrap_or_else(|| steam_shortcuts_vdf_path.with_file_name("grid"));
+        let grid_mgr = launcher_steam::SteamGridManager::new(grid_dir);
+
         let games = self.games.read().clone();
+        let emulator_map = self.settings.read().emulator_paths.clone();
         let mut exported = 0;
         for game in &games {
             if game.hidden {
                 continue;
             }
+
+            let (exe, launch_options, start_dir) =
+                launcher_core::emulators::resolve_game_launch_command(game, &emulator_map);
+
+            let mut icon_path = game.art.icon.clone().unwrap_or_default();
+            if icon_path.is_empty() && exe.to_ascii_lowercase().ends_with(".exe") {
+                icon_path = exe.clone();
+            }
+
             let shortcut = SteamShortcut {
                 appid: game.shortcut_id.unwrap_or(0),
                 app_name: game.title.clone(),
-                exe: game.custom_exe.clone().unwrap_or_else(|| game.path.clone()),
-                start_dir: Path::new(&game.path)
-                    .parent()
-                    .map(|p| p.to_string_lossy().to_string())
-                    .unwrap_or_default(),
-                launch_options: game.custom_args.clone().unwrap_or_default(),
-                icon: game.art.icon.clone().unwrap_or_default(),
+                exe,
+                start_dir,
+                launch_options,
+                icon: icon_path,
                 tags: vec!["Steam Companion".to_string(), game.platform_name.clone()],
             };
-            upsert_shortcut(&mut root_nodes, shortcut);
+            let shortcut_id = upsert_shortcut(&mut root_nodes, shortcut);
+
+            // Export artwork to steam grid
+            if let Some(cover) = &game.art.cover {
+                let p = Path::new(cover);
+                if p.is_file() {
+                    let _ = grid_mgr.copy_art_file(shortcut_id, "cover", p);
+                }
+            }
+            if let Some(hero) = &game.art.hero {
+                let p = Path::new(hero);
+                if p.is_file() {
+                    let _ = grid_mgr.copy_art_file(shortcut_id, "hero", p);
+                }
+            }
+            if let Some(logo) = &game.art.logo {
+                let p = Path::new(logo);
+                if p.is_file() {
+                    let _ = grid_mgr.copy_art_file(shortcut_id, "logo", p);
+                }
+            }
+            if let Some(wide) = &game.art.wide {
+                let p = Path::new(wide);
+                if p.is_file() {
+                    let _ = grid_mgr.copy_art_file(shortcut_id, "wide", p);
+                }
+            }
+            if let Some(icon) = &game.art.icon {
+                let p = Path::new(icon);
+                if p.is_file() && !icon.to_ascii_lowercase().ends_with(".exe") {
+                    let _ = grid_mgr.copy_art_file(shortcut_id, "icon", p);
+                }
+            }
+
             exported += 1;
         }
 

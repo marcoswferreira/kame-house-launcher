@@ -24,6 +24,9 @@ pub struct ConsoleSettings {
     /// Caminho personalizado da Steam ou do arquivo shortcuts.vdf apontado pelo usuário
     #[serde(default)]
     pub steam_shortcuts_path: Option<String>,
+    /// Caminhos de executáveis de emuladores configurados pelo usuário (ex: "pcsx2" -> "C:\...\pcsx2-qt.exe")
+    #[serde(default)]
+    pub emulator_paths: std::collections::HashMap<String, String>,
 }
 
 impl Default for ConsoleSettings {
@@ -38,6 +41,7 @@ impl Default for ConsoleSettings {
                 .map(|h| h.join("Games").to_string_lossy().to_string())
                 .unwrap_or_else(|| "./games".to_string())],
             steam_shortcuts_path: None,
+            emulator_paths: std::collections::HashMap::new(),
         }
     }
 }

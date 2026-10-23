@@ -325,6 +325,8 @@ export function App() {
               onUpdateScanDirectories={handleUpdateScanDirectories}
               onRemoveGame={handleRemoveGame}
               onConfigureSteamPath={handleConfigureSteamPath}
+              onRefreshGames={fetchGames}
+              onShowToast={(msg, type) => showToast(msg, type || 'info')}
             />
           )}
 
