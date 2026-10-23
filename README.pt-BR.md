@@ -1,7 +1,7 @@
-# Kame House Launcher 🐢🎮
+# Steam Companion 🎮
 
 > **Companheiro para o Ecossistema Steam & Extensão DualSense Studio de Alta Performance.**  
-> Desenvolvido do zero em **100% Rust Nativo**, o Kame House conecta jogos fora da Steam e emuladores diretamente ao ecossistema da Valve com sincronização atômica do `shortcuts.vdf`, notificações nativas de conquistas da Steam, gerenciamento na Bandeja do Sistema (`System Tray`) e a extensão opcional **DualSense Studio**.
+> Desenvolvido do zero em **100% Rust Nativo**, o Steam Companion conecta jogos fora da Steam e emuladores diretamente ao ecossistema da Valve com sincronização atômica do `shortcuts.vdf`, notificações nativas de conquistas da Steam, gerenciamento na Bandeja do Sistema (`System Tray`) e a extensão opcional **DualSense Studio**.
 
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)

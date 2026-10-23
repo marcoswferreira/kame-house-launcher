@@ -1,6 +1,6 @@
-# System Architecture: Kame House Launcher 🐢
+# System Architecture: Steam Companion 🎮
 
-This document outlines the system design, crate separation of concerns, data flows, and external integrations for **Kame House Launcher**.
+This document outlines the system design, crate separation of concerns, data flows, and external integrations for **Steam Companion**.
 
 <p align="center">
   <b>English</b> · <a href="ARCHITECTURE.pt-BR.md">Português (Brasil)</a>
@@ -10,7 +10,7 @@ This document outlines the system design, crate separation of concerns, data flo
 
 ## 1. Architectural Overview
 
-Kame House Launcher is built as an event-driven, modular Rust application organized into specialized crates:
+Steam Companion is built as an event-driven, modular Rust application organized into specialized crates:
 
 ```mermaid
 flowchart TD

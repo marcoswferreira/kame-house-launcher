@@ -156,10 +156,10 @@ impl HidDeviceWorker {
                         }
                     }
 
-                    manager.set_connected(true, controller_name);
-
                     let mut in_buf = [0u8; 128];
                     let mut last_send = std::time::Instant::now();
+                    let mut last_input_time = std::time::Instant::now();
+                    let mut is_currently_connected = false;
                     let mut bt_seq: u8 = 0;
                     let mut logged_first_input = false;
                     let mut last_logged_state: Option<String> = None;
@@ -170,6 +170,16 @@ impl HidDeviceWorker {
                         match device.read_timeout(&mut in_buf, 10) {
                             Ok(bytes_read) if bytes_read > 0 => {
                                 let slice = &in_buf[..bytes_read];
+                                last_input_time = std::time::Instant::now();
+
+                                if !is_currently_connected {
+                                    is_currently_connected = true;
+                                    manager.set_connected(true, controller_name);
+                                    info!(
+                                        "DualSense/Sony controller connection verified and active: {}",
+                                        controller_name
+                                    );
+                                }
 
                                 if let Some(detected) = detect_connection_from_input_report(slice) {
                                     if detected != connection {
@@ -201,10 +211,21 @@ impl HidDeviceWorker {
                                 }
                             }
                             Ok(_) => {
-                                // Timeout expired with no report, proceed to check output send
+                                // Timeout expired with no report read
+                                if is_currently_connected && last_input_time.elapsed() > Duration::from_millis(1500) {
+                                    warn!("DualSense input report timeout (>1.5s). Controller disconnected or turned off.");
+                                    is_currently_connected = false;
+                                    manager.set_connected(false, "Disconnected");
+                                    break;
+                                } else if !is_currently_connected && last_input_time.elapsed() > Duration::from_millis(1000) {
+                                    debug!("Device opened but did not produce any input reports in 1s. Closing device.");
+                                    break;
+                                }
                             }
                             Err(e) => {
-                                warn!("HID device read error: {}. Re-enumerating...", e);
+                                warn!("HID device read error: {}. Disconnecting controller.", e);
+                                is_currently_connected = false;
+                                manager.set_connected(false, "Disconnected");
                                 break;
                             }
                         }
@@ -282,12 +303,20 @@ impl HidDeviceWorker {
                                             write_error_count
                                         );
                                     }
+                                    if write_error_count >= 5 {
+                                        warn!("DualSense write error threshold reached ({} consecutive errors). Disconnecting.", write_error_count);
+                                        is_currently_connected = false;
+                                        manager.set_connected(false, "Disconnected");
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    manager.set_connected(false, "Disconnected");
+                    if is_currently_connected {
+                        manager.set_connected(false, "Disconnected");
+                    }
                     info!("Controller disconnected or worker resetting.");
                     thread::sleep(Duration::from_secs(1));
                 }

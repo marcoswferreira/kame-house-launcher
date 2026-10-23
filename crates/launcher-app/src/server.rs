@@ -105,7 +105,7 @@ impl HttpServer {
                     let actual_port = local_addr.port();
                     if actual_port != preferred_port {
                         tracing::warn!(
-                            "Preferred port {} was unavailable. Kame House Big Picture Server bound to fallback port {}",
+                            "Preferred port {} was unavailable. Steam Companion Big Picture Server bound to fallback port {}",
                             preferred_port,
                             actual_port
                         );
@@ -136,7 +136,7 @@ impl HttpServer {
 
     pub async fn serve(self, listener: TcpListener) -> std::io::Result<()> {
         info!(
-            "Kame House Big Picture Server listening on http://{}",
+            "Steam Companion Big Picture Server listening on http://{}",
             self.addr
         );
 

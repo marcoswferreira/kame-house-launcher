@@ -275,7 +275,7 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
                     Ok(res) => res,
                     Err(err) => {
                         tracing::error!(
-                            "FATAL: Failed to bind Kame House Big Picture Server: {}",
+                            "FATAL: Failed to bind Steam Companion Big Picture Server: {}",
                             err
                         );
                         eprintln!("Error starting HTTP server: {}", err);
@@ -286,13 +286,13 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
             // Spawn the accept loop
             tokio::spawn(async move {
                 if let Err(e) = server.serve(listener).await {
-                    tracing::error!("Kame House HTTP server error: {}", e);
+                    tracing::error!("Steam Companion HTTP server error: {}", e);
                 }
             });
 
             let ui_url = format!("http://127.0.0.1:{}", bound_port);
             service.lifecycle.set_ui_url(ui_url.clone());
-            tracing::info!("Kame House Big Picture UI: {}", ui_url);
+            tracing::info!("Steam Companion Big Picture UI: {}", ui_url);
             println!("\n{}", i18n.daemon_running_prompt());
 
             if keep_alive {

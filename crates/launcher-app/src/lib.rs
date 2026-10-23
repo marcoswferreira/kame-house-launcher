@@ -37,7 +37,7 @@ mod tests {
         let i18n_en = I18n::new(Language::En);
         assert!(i18n_en
             .starting_banner("0.1.0")
-            .contains("Starting Kame House Launcher"));
+            .contains("Starting Steam Companion"));
         assert!(i18n_en.games_loaded(5).contains("5 games"));
         assert!(i18n_en
             .dualsense_and_console_ready()
@@ -54,7 +54,7 @@ mod tests {
         let i18n_pt = I18n::new(Language::PtBr);
         assert!(i18n_pt
             .starting_banner("0.1.0")
-            .contains("Iniciando Kame House Launcher"));
+            .contains("Iniciando Steam Companion"));
         assert!(i18n_pt.games_loaded(5).contains("5 jogos"));
         assert!(i18n_pt
             .dualsense_and_console_ready()
@@ -196,7 +196,7 @@ mod tests {
 
         let resp_str = String::from_utf8_lossy(&response);
         assert!(resp_str.contains("200 OK"));
-        assert!(resp_str.contains("Kame House Launcher"));
+        assert!(resp_str.contains("Steam Companion"));
 
         // 2. Test CSS route
         let (mut client2, server2) = tokio::io::duplex(4096);

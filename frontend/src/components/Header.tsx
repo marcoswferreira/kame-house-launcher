@@ -31,9 +31,9 @@ export function Header({
   return (
     <header className="deck-header">
       <div className="header-branding">
-        <img src="/logo.svg" alt="Kame House" className="brand-logo" />
+        <img src="/logo.svg" alt="Steam Companion" className="brand-logo" />
         <div className="brand-meta">
-          <span className="brand-title">KAME HOUSE</span>
+          <span className="brand-title">STEAM COMPANION</span>
           <span className="brand-subtitle">{t.app_subtitle}</span>
         </div>
       </div>

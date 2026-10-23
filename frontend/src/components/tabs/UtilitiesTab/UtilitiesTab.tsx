@@ -65,8 +65,8 @@ const UTILITIES_DATA: UtilityItem[] = [
       pt: 'O principal emulador de PlayStation 3 do mundo para PC, capaz de rodar grandes clássicos do PS3 com resolução 4K e 60 FPS.',
     },
     kameTip: {
-      en: 'Kame House automatically parses RPCS3 logs to trigger official Steam achievement toast overlays with audio in real time.',
-      pt: 'O Kame House monitora os logs do RPCS3 para disparar as notificações oficiais de conquistas da Steam com som e arte na sua tela.',
+      en: 'Steam Companion automatically parses RPCS3 logs to trigger official Steam achievement toast overlays with audio in real time.',
+      pt: 'O Steam Companion monitora os logs do RPCS3 para disparar as notificações oficiais de conquistas da Steam com som e arte na sua tela.',
     },
   },
   {
@@ -81,8 +81,8 @@ const UTILITIES_DATA: UtilityItem[] = [
       pt: 'Emulador open-source de ponta para Microsoft Xbox 360, focado em alta compatibilidade gráfica e suporte a Vulkan e DirectX 12.',
     },
     kameTip: {
-      en: 'Place your Xbox 360 ROMs/ISOs in your configured scan directories; Kame House will index and link them into Steam Big Picture.',
-      pt: 'Coloque seus jogos de Xbox 360 nas pastas cadastradas do Kame House para sincronizar os atalhos diretamente na Steam.',
+      en: 'Place your Xbox 360 ROMs/ISOs in your configured scan directories; Steam Companion will index and link them into Steam Big Picture.',
+      pt: 'Coloque seus jogos de Xbox 360 nas pastas cadastradas do Steam Companion para sincronizar os atalhos diretamente na Steam.',
     },
   },
   {
@@ -97,8 +97,8 @@ const UTILITIES_DATA: UtilityItem[] = [
       pt: 'O mais avançado emulador de PlayStation 2, com suporte a upscaling para 4K, patches de tela widescreen 16:9 e melhorias visuais.',
     },
     kameTip: {
-      en: 'Kame House identifies PS2 ISOs by inspecting SYSTEM.CNF sectors and synchronizes them directly into shortcuts.vdf.',
-      pt: 'O scanner do Kame House inspeciona o setor SYSTEM.CNF das ISOs de PS2 para identificar os jogos e gerar atalhos perfeitos na Steam.',
+      en: 'Steam Companion identifies PS2 ISOs by inspecting SYSTEM.CNF sectors and synchronizes them directly into shortcuts.vdf.',
+      pt: 'O scanner do Steam Companion inspeciona o setor SYSTEM.CNF das ISOs de PS2 para identificar os jogos e gerar atalhos perfeitos na Steam.',
     },
   },
   {
@@ -113,8 +113,8 @@ const UTILITIES_DATA: UtilityItem[] = [
       pt: 'Emulador de PlayStation 1 focado em precisão e melhorias gráficas, eliminando as deformações de textura 3D originais com PGXP.',
     },
     kameTip: {
-      en: 'Pairs great with Kame House automatic disc inspection for .bin, .cue, and .chd PlayStation format archives.',
-      pt: 'Totalmente compatível com as imagens .iso, .cue e .chd indexadas pelo Kame House com capas automáticas no grid da Steam.',
+      en: 'Pairs great with Steam Companion automatic disc inspection for .bin, .cue, and .chd PlayStation format archives.',
+      pt: 'Totalmente compatível com as imagens .iso, .cue e .chd indexadas pelo Steam Companion com capas automáticas no grid da Steam.',
     },
   },
   {
@@ -130,7 +130,7 @@ const UTILITIES_DATA: UtilityItem[] = [
     },
     kameTip: {
       en: 'Use the DualSense Studio tab to configure authentic GameCube trigger click barrier emulation for racing games.',
-      pt: 'Use a aba DualSense Studio do Kame House para emular a barreira mecânica de clique do gatilho analógico do GameCube.',
+      pt: 'Use a aba DualSense Studio do Steam Companion para emular a barreira mecânica de clique do gatilho analógico do GameCube.',
     },
   },
   {
@@ -145,8 +145,8 @@ const UTILITIES_DATA: UtilityItem[] = [
       pt: 'Frontend universal para emuladores e motores de jogos. Reúne núcleos para GBA, SNES, Mega Drive, N64 e suporte ao RetroAchievements.',
     },
     kameTip: {
-      en: 'Kame House scans all your cartridge headers and maps them directly into Steam with categoric tags for each console generation.',
-      pt: 'O Kame House analisa o cabeçalho dos cartuchos e os adiciona à Steam com tags categorizadas por console.',
+      en: 'Steam Companion scans all your cartridge headers and maps them directly into Steam with categoric tags for each console generation.',
+      pt: 'O Steam Companion analisa o cabeçalho dos cartuchos e os adiciona à Steam com tags categorizadas por console.',
     },
   },
   {

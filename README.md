@@ -1,7 +1,7 @@
-# Kame House Launcher 🐢🎮
+# Steam Companion 🎮
 
 > **High-performance Steam Ecosystem Companion & DualSense Studio Extension.**  
-> Built from scratch in **100% Native Rust**, Kame House connects non-Steam games and emulators into Valve's Steam ecosystem with atomic `shortcuts.vdf` synchronization, native Steam achievement notifications, System Tray lifecycle management, and an opt-in **DualSense Studio** hardware extension.
+> Built from scratch in **100% Native Rust**, Steam Companion connects non-Steam games and emulators into Valve's Steam ecosystem with atomic `shortcuts.vdf` synchronization, native Steam achievement notifications, System Tray lifecycle management, and an opt-in **DualSense Studio** hardware extension.
 
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)

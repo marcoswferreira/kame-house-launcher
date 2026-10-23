@@ -206,10 +206,7 @@ impl LauncherService {
                     .unwrap_or_default(),
                 launch_options: game.custom_args.clone().unwrap_or_default(),
                 icon: game.art.icon.clone().unwrap_or_default(),
-                tags: vec![
-                    "Kame House Launcher".to_string(),
-                    game.platform_name.clone(),
-                ],
+                tags: vec!["Steam Companion".to_string(), game.platform_name.clone()],
             };
             upsert_shortcut(&mut root_nodes, shortcut);
             exported += 1;

@@ -1,6 +1,6 @@
 use launcher_core::models::{Language, LaunchBehavior};
 
-/// Central Internationalization engine for Kame House Launcher.
+/// Central Internationalization engine for Steam Companion.
 /// Default: English (en) with full Portuguese (pt-BR) support.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct I18n {
@@ -22,21 +22,15 @@ impl I18n {
 
     pub fn starting_banner(&self, version: &str) -> String {
         match self.language {
-            Language::En => format!("Starting Kame House Launcher v{}...", version),
-            Language::PtBr => format!("Iniciando Kame House Launcher v{}...", version),
+            Language::En => format!("Starting Steam Companion v{}...", version),
+            Language::PtBr => format!("Iniciando Steam Companion v{}...", version),
         }
     }
 
     pub fn games_loaded(&self, count: usize) -> String {
         match self.language {
-            Language::En => format!(
-                "Kame House Launcher loaded with {} games in catalog.",
-                count
-            ),
-            Language::PtBr => format!(
-                "Kame House Launcher carregado com {} jogos no catálogo.",
-                count
-            ),
+            Language::En => format!("Steam Companion loaded with {} games in catalog.", count),
+            Language::PtBr => format!("Steam Companion carregado com {} jogos no catálogo.", count),
         }
     }
 
@@ -90,7 +84,7 @@ impl I18n {
     pub fn cli_help(&self) -> String {
         match self.language {
             Language::En => [
-                "Kame House Launcher - Living Room Console Game Launcher",
+                "Steam Companion - Living Room Console Utility & Controller Hub",
                 "",
                 "USAGE:",
                 "    kame-house-launcher [OPTIONS] [COMMAND]",
@@ -112,7 +106,7 @@ impl I18n {
             ]
             .join("\n"),
             Language::PtBr => [
-                "Kame House Launcher - Launcher Gamer de Sala de Estar em Modo Console",
+                "Steam Companion - Utilitário Gamer de Sala de Estar e Hub de Controles",
                 "",
                 "USO:",
                 "    kame-house-launcher [OPÇÕES] [COMANDO]",
@@ -194,8 +188,8 @@ impl I18n {
 
     pub fn status_title(&self) -> &'static str {
         match self.language {
-            Language::En => "=== Kame House Launcher Status ===",
-            Language::PtBr => "=== Status do Kame House Launcher ===",
+            Language::En => "=== Steam Companion Status ===",
+            Language::PtBr => "=== Status do Steam Companion ===",
         }
     }
 
@@ -229,15 +223,17 @@ impl I18n {
 
     pub fn daemon_running_prompt(&self) -> &'static str {
         match self.language {
-            Language::En => "🏝️  Kame House Launcher is running. Press Ctrl+C to stop.",
-            Language::PtBr => "🏝️  O serviço do Kame House Launcher está em execução. Pressione Ctrl+C para encerrar.",
+            Language::En => "🎮  Steam Companion is running. Press Ctrl+C to stop.",
+            Language::PtBr => {
+                "🎮  O serviço do Steam Companion está em execução. Pressione Ctrl+C para encerrar."
+            }
         }
     }
 
     pub fn daemon_shutting_down(&self) -> &'static str {
         match self.language {
-            Language::En => "Shutting down Kame House Launcher gracefully...",
-            Language::PtBr => "Encerrando o Kame House Launcher com segurança...",
+            Language::En => "Shutting down Steam Companion gracefully...",
+            Language::PtBr => "Encerrando o Steam Companion com segurança...",
         }
     }
 }

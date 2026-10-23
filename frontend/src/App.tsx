@@ -326,12 +326,12 @@ export function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#fff' }}>
-              {lang === 'pt' ? 'Fechar Kame House Launcher' : 'Close Kame House Launcher'}
+              {lang === 'pt' ? 'Fechar Steam Companion' : 'Close Steam Companion'}
             </h3>
             <p style={{ margin: '0 0 20px 0', fontSize: '13.5px', lineHeight: 1.5, color: 'var(--deck-text-muted, #9ca3af)' }}>
               {lang === 'pt'
-                ? 'Deseja minimizar o Kame House para continuar online na bandeja do sistema (System Tray) ou encerrar completamente a aplicação?'
-                : 'Do you want to minimize Kame House to stay online in the System Tray or quit the application completely?'}
+                ? 'Deseja minimizar o Steam Companion para continuar online na bandeja do sistema (System Tray) ou encerrar completamente a aplicação?'
+                : 'Do you want to minimize Steam Companion to stay online in the System Tray or quit the application completely?'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button

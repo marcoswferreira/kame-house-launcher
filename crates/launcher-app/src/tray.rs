@@ -114,30 +114,30 @@ impl TrayLabels {
     pub fn for_language(lang: Language) -> Self {
         match lang {
             Language::PtBr => Self {
-                tooltip: "Kame House Launcher (Online)",
-                open_ui: "Abrir Kame House (Frontend)",
+                tooltip: "Steam Companion (Online)",
+                open_ui: "Abrir Steam Companion (Frontend)",
                 show_console: "Abrir Terminal de Debug (Logs)",
                 hide_console: "Ocultar Terminal de Debug",
-                quit_app: "Encerrar Kame House",
-                minimized_title: "Kame House Minimizado",
+                quit_app: "Encerrar Steam Companion",
+                minimized_title: "Steam Companion Minimizado",
                 minimized_body:
-                    "O Kame House continua online na bandeja do sistema. Clique no ícone para restaurar ou abrir o terminal de debug.",
-                close_prompt_title: "Fechar Kame House Launcher",
+                    "O Steam Companion continua online na bandeja do sistema. Clique no ícone para restaurar ou abrir o terminal de debug.",
+                close_prompt_title: "Fechar Steam Companion",
                 close_prompt_body:
-                    "Deseja minimizar o Kame House Launcher para a bandeja do sistema (System Tray) ou encerrar a aplicação?\n\n• Clique em [Sim] para MINIMIZAR e continuar online no System Tray.\n• Clique em [Não] para ENCERRAR completamente a aplicação.\n• Clique em [Cancelar] para reabrir a janela do frontend.",
+                    "Deseja minimizar o Steam Companion para a bandeja do sistema (System Tray) ou encerrar a aplicação?\n\n• Clique em [Sim] para MINIMIZAR e continuar online no System Tray.\n• Clique em [Não] para ENCERRAR completamente a aplicação.\n• Clique em [Cancelar] para reabrir a janela do frontend.",
             },
             Language::En => Self {
-                tooltip: "Kame House Launcher (Online)",
-                open_ui: "Open Kame House (Frontend)",
+                tooltip: "Steam Companion (Online)",
+                open_ui: "Open Steam Companion (Frontend)",
                 show_console: "Open Debug Terminal (Logs)",
                 hide_console: "Hide Debug Terminal",
-                quit_app: "Quit Kame House",
-                minimized_title: "Kame House Minimized",
+                quit_app: "Quit Steam Companion",
+                minimized_title: "Steam Companion Minimized",
                 minimized_body:
-                    "Kame House is still running in the system tray. Click the tray icon to restore or open the debug terminal.",
-                close_prompt_title: "Close Kame House Launcher",
+                    "Steam Companion is still running in the system tray. Click the tray icon to restore or open the debug terminal.",
+                close_prompt_title: "Close Steam Companion",
                 close_prompt_body:
-                    "Do you want to minimize Kame House Launcher to the System Tray or quit the application?\n\n• Click [Yes] to MINIMIZE and stay online in the System Tray.\n• Click [No] to QUIT the application completely.\n• Click [Cancel] to reopen the frontend window.",
+                    "Do you want to minimize Steam Companion to the System Tray or quit the application?\n\n• Click [Yes] to MINIMIZE and stay online in the System Tray.\n• Click [No] to QUIT the application completely.\n• Click [Cancel] to reopen the frontend window.",
             },
         }
     }
@@ -467,8 +467,8 @@ mod win32 {
 
         let escaped_path = log_path.to_string_lossy().replace('\'', "''");
         let ps_script = format!(
-            "$Host.UI.RawUI.WindowTitle = 'Kame House Launcher - Debug Logs'; \
-             Write-Host '=== Kame House Launcher — Live Debug Terminal ===' -ForegroundColor Cyan; \
+            "$Host.UI.RawUI.WindowTitle = 'Steam Companion - Debug Logs'; \
+             Write-Host '=== Steam Companion — Live Debug Terminal ===' -ForegroundColor Cyan; \
              Write-Host 'Log file: {}' -ForegroundColor DarkGray; \
              Write-Host ''; \
              Get-Content -Path '{}' -Wait -Tail 250",
@@ -726,7 +726,7 @@ mod win32 {
                 let labels = TrayLabels::for_language(lang);
                 let _ = GLOBAL_TRAY_CTX.set((service, lifecycle));
 
-                let class_name = to_wide("KameHouseTrayWindowClass");
+                let class_name = to_wide("SteamCompanionTrayWindowClass");
                 let h_instance = GetModuleHandleW(null());
 
                 let wc = WNDCLASSW {
@@ -743,7 +743,7 @@ mod win32 {
                 };
 
                 let _ = RegisterClassW(&wc);
-                let wnd_title = to_wide("KameHouseTrayHiddenWindow");
+                let wnd_title = to_wide("SteamCompanionTrayHiddenWindow");
                 let hwnd = CreateWindowExW(
                     0,
                     class_name.as_ptr(),
