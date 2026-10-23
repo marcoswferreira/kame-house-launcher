@@ -92,30 +92,42 @@ impl HidDeviceWorker {
                         }
                     };
 
-                    let mut target_device = None;
-                    let mut is_ds = true;
-                    let mut controller_name = "Sony DualSense Wireless Controller";
+                    let mut candidates: Vec<_> = api
+                        .device_list()
+                        .filter(|d| is_supported_sony_controller(d.vendor_id(), d.product_id()))
+                        .cloned()
+                        .collect();
 
-                    for dev_info in api.device_list() {
-                        if is_supported_sony_controller(dev_info.vendor_id(), dev_info.product_id())
-                        {
-                            let (name, is_dualsense) = identify_controller(dev_info.product_id());
-                            controller_name = name;
-                            is_ds = is_dualsense;
-                            target_device = Some(dev_info.clone());
-                            break;
-                        }
+                    if candidates.is_empty() {
+                        manager.set_connected(false, "Disconnected");
+                        // No physical device visible directly in this OS environment
+                        thread::sleep(Duration::from_secs(2));
+                        continue;
                     }
 
-                    let dev_info = match target_device {
-                        Some(d) => d,
-                        None => {
-                            manager.set_connected(false, "Disconnected");
-                            // No physical device visible directly in this OS environment
-                            thread::sleep(Duration::from_secs(2));
-                            continue;
+                    // Prioritize Gamepad / Joystick interfaces:
+                    // 1. Generic Desktop Gamepad (usage_page = 0x01, usage = 0x05) or Joystick (0x04)
+                    // 2. Generic Desktop Page (usage_page = 0x01)
+                    // 3. Fallback / unspecified (usage_page = 0)
+                    // 4. Other collections (audio, touchpad, vendor)
+                    candidates.sort_by_key(|d| {
+                        let up = d.usage_page();
+                        let u = d.usage();
+                        if up == 0x01 && (u == 0x05 || u == 0x04) {
+                            0
+                        } else if up == 0x01 {
+                            1
+                        } else if up == 0 {
+                            2
+                        } else {
+                            3
                         }
-                    };
+                    });
+
+                    let dev_info = &candidates[0];
+                    let (name, is_dualsense) = identify_controller(dev_info.product_id());
+                    let controller_name = name;
+                    let is_ds = is_dualsense;
 
                     let path_str = dev_info.path().to_string_lossy().to_string();
                     let mut connection =
@@ -170,6 +182,7 @@ impl HidDeviceWorker {
                     let mut logged_first_input = false;
                     let mut last_logged_state: Option<String> = None;
                     let mut write_error_count: u32 = 0;
+                    let mut read_error_count: u32 = 0;
 
                     while worker_running.load(Ordering::Relaxed) {
                         if !manager.is_extension_enabled() {
@@ -181,6 +194,7 @@ impl HidDeviceWorker {
                         // Read incoming input report (timeout 10ms for 100Hz responsiveness)
                         match device.read_timeout(&mut in_buf, 10) {
                             Ok(bytes_read) if bytes_read > 0 => {
+                                read_error_count = 0;
                                 let slice = &in_buf[..bytes_read];
                                 last_input_time = std::time::Instant::now();
 
@@ -224,21 +238,24 @@ impl HidDeviceWorker {
                             }
                             Ok(_) => {
                                 // Timeout expired with no report read
-                                if is_currently_connected && last_input_time.elapsed() > Duration::from_millis(1500) {
-                                    warn!("DualSense input report timeout (>1.5s). Controller disconnected or turned off.");
+                                if is_currently_connected && last_input_time.elapsed() > Duration::from_millis(3000) {
+                                    warn!("DualSense input report timeout (>3s). Controller disconnected or turned off.");
                                     is_currently_connected = false;
                                     manager.set_connected(false, "Disconnected");
                                     break;
-                                } else if !is_currently_connected && last_input_time.elapsed() > Duration::from_millis(1000) {
-                                    debug!("Device opened but did not produce any input reports in 1s. Closing device.");
+                                } else if !is_currently_connected && last_input_time.elapsed() > Duration::from_millis(3000) {
+                                    debug!("Device opened but did not produce any input reports in 3s. Closing device.");
                                     break;
                                 }
                             }
                             Err(e) => {
-                                warn!("HID device read error: {}. Disconnecting controller.", e);
-                                is_currently_connected = false;
-                                manager.set_connected(false, "Disconnected");
-                                break;
+                                read_error_count += 1;
+                                if read_error_count >= 3 {
+                                    warn!("HID device consecutive read errors ({}): {}. Disconnecting controller.", read_error_count, e);
+                                    is_currently_connected = false;
+                                    manager.set_connected(false, "Disconnected");
+                                    break;
+                                }
                             }
                         }
 
@@ -305,9 +322,9 @@ impl HidDeviceWorker {
                                 }
                                 Err(e) => {
                                     write_error_count += 1;
-                                    if write_error_count <= 5 || write_error_count.is_multiple_of(40) {
+                                    if write_error_count <= 3 || write_error_count.is_multiple_of(100) {
                                         warn!(
-                                            "Failed to write {:?} output report (id=0x{:02x}, len={}B) to DualSense: {} (consecutive_errors={})",
+                                            "Failed to write {:?} output report (id=0x{:02x}, len={}B) to DualSense: {} (consecutive_errors={}). Pausing output writes temporarily.",
                                             connection,
                                             report[0],
                                             report.len(),
@@ -315,12 +332,8 @@ impl HidDeviceWorker {
                                             write_error_count
                                         );
                                     }
-                                    if write_error_count >= 5 {
-                                        warn!("DualSense write error threshold reached ({} consecutive errors). Disconnecting.", write_error_count);
-                                        is_currently_connected = false;
-                                        manager.set_connected(false, "Disconnected");
-                                        break;
-                                    }
+                                    // Never disconnect the controller on write error! Input polling and gamepad emulation continue running.
+                                    last_send = std::time::Instant::now() + Duration::from_secs(2);
                                 }
                             }
                         }

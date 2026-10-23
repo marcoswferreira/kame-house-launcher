@@ -261,6 +261,108 @@ impl OutputReportBuilder {
 
 /// Parses raw HID input reports from USB (0x01) or Bluetooth (0x01 / 0x31)
 pub fn parse_input_report(buf: &[u8], connection: ConnectionType) -> Option<DualSenseInputState> {
+    if buf.is_empty() {
+        return None;
+    }
+
+    // Bluetooth Compact Report (Report ID 0x01, standard ~10-byte report over Bluetooth)
+    if connection == ConnectionType::Bluetooth && buf[0] == 0x01 && buf.len() < 40 {
+        if buf.len() < 7 {
+            return None;
+        }
+
+        let lx = buf[1];
+        let ly = buf[2];
+        let rx = buf[3];
+        let ry = buf[4];
+
+        let buttons1 = buf[5];
+        let buttons2 = if buf.len() > 6 { buf[6] } else { 0 };
+        let buttons3 = if buf.len() > 7 { buf[7] } else { 0 };
+
+        let dpad_val = buttons1 & 0x0F;
+        let (dpad_up, dpad_right, dpad_down, dpad_left) = match dpad_val {
+            0 => (true, false, false, false),
+            1 => (true, true, false, false),
+            2 => (false, true, false, false),
+            3 => (false, true, true, false),
+            4 => (false, false, true, false),
+            5 => (false, false, true, true),
+            6 => (false, false, false, true),
+            7 => (true, false, false, true),
+            _ => (false, false, false, false),
+        };
+
+        let square = (buttons1 & 0x10) != 0;
+        let cross = (buttons1 & 0x20) != 0;
+        let circle = (buttons1 & 0x40) != 0;
+        let triangle = (buttons1 & 0x80) != 0;
+
+        let l1 = (buttons2 & 0x01) != 0;
+        let r1 = (buttons2 & 0x02) != 0;
+        let l2_click = (buttons2 & 0x04) != 0;
+        let r2_click = (buttons2 & 0x08) != 0;
+        let create = (buttons2 & 0x10) != 0;
+        let options = (buttons2 & 0x20) != 0;
+        let l3 = (buttons2 & 0x40) != 0;
+        let r3 = (buttons2 & 0x80) != 0;
+
+        let ps_button = (buttons3 & 0x01) != 0;
+        let touchpad_click = (buttons3 & 0x02) != 0;
+        let mic_mute = (buttons3 & 0x04) != 0;
+
+        let l2_trigger = if buf.len() > 8 {
+            buf[8]
+        } else if l2_click {
+            255
+        } else {
+            0
+        };
+
+        let r2_trigger = if buf.len() > 9 {
+            buf[9]
+        } else if r2_click {
+            255
+        } else {
+            0
+        };
+
+        return Some(DualSenseInputState {
+            connection,
+            left_stick_x: lx,
+            left_stick_y: ly,
+            right_stick_x: rx,
+            right_stick_y: ry,
+            l2_trigger,
+            r2_trigger,
+            cross,
+            circle,
+            square,
+            triangle,
+            dpad_up,
+            dpad_down,
+            dpad_left,
+            dpad_right,
+            l1,
+            r1,
+            l2_click,
+            r2_click,
+            l3,
+            r3,
+            create,
+            options,
+            ps_button,
+            touchpad_click,
+            mic_mute,
+            battery: BatteryState {
+                percentage: 100,
+                is_charging: false,
+                is_full: true,
+            },
+            ..Default::default()
+        });
+    }
+
     if buf.len() < 10 {
         return None;
     }
@@ -491,5 +593,71 @@ mod tests {
         assert!(!state.circle);
         assert!(state.l1);
         assert!(!state.r1);
+    }
+
+    #[test]
+    fn test_parse_input_report_bluetooth_compact() {
+        // Bluetooth compact report (10 bytes)
+        // [0x01, lx, ly, rx, ry, buttons1, buttons2, buttons3, l2, r2]
+        let mut raw = [0u8; 10];
+        raw[0] = 0x01;
+        raw[1] = 64; // lx
+        raw[2] = 192; // ly
+        raw[3] = 220; // rx
+        raw[4] = 40; // ry
+        raw[5] = 0x20; // Cross (0x20) + Dpad Up (0)
+        raw[6] = 0x01 | 0x10; // L1 (0x01) + Create (0x10)
+        raw[7] = 0x01; // PS button (0x01)
+        raw[8] = 150; // l2 analog
+        raw[9] = 230; // r2 analog
+
+        let state = parse_input_report(&raw, ConnectionType::Bluetooth).unwrap();
+        assert_eq!(state.left_stick_x, 64);
+        assert_eq!(state.left_stick_y, 192);
+        assert_eq!(state.right_stick_x, 220);
+        assert_eq!(state.right_stick_y, 40);
+        assert!(state.cross);
+        assert!(!state.circle);
+        assert!(state.dpad_up);
+        assert!(!state.dpad_down);
+        assert!(state.l1);
+        assert!(!state.r1);
+        assert!(state.create);
+        assert!(!state.options);
+        assert!(state.ps_button);
+        assert_eq!(state.l2_trigger, 150);
+        assert_eq!(state.r2_trigger, 230);
+    }
+
+    #[test]
+    fn test_parse_input_report_bluetooth_extended_0x31() {
+        let mut raw = [0u8; 78];
+        raw[0] = 0x31;
+        raw[1] = 0x00;
+        raw[2] = 128; // lx
+        raw[3] = 128; // ly
+        raw[4] = 210; // rx
+        raw[5] = 90; // ry
+        raw[6] = 80; // l2
+        raw[7] = 220; // r2
+        raw[8] = 5; // seq
+        raw[9] = 0x40 | 0x02; // Circle (0x40) + Dpad Right (2)
+        raw[10] = 0x02 | 0x20; // R1 (0x02) + Options (0x20)
+        raw[11] = 0x02 | 0x04; // Touchpad click (0x02) + Mic mute (0x04)
+
+        let state = parse_input_report(&raw, ConnectionType::Bluetooth).unwrap();
+        assert_eq!(state.left_stick_x, 128);
+        assert_eq!(state.right_stick_x, 210);
+        assert_eq!(state.l2_trigger, 80);
+        assert_eq!(state.r2_trigger, 220);
+        assert!(state.circle);
+        assert!(!state.cross);
+        assert!(state.dpad_right);
+        assert!(!state.dpad_up);
+        assert!(state.r1);
+        assert!(!state.l1);
+        assert!(state.options);
+        assert!(state.touchpad_click);
+        assert!(state.mic_mute);
     }
 }
