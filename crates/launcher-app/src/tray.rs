@@ -124,14 +124,11 @@ impl TrayLabels {
 
 /// Hides the console window on startup when running the GUI daemon on Windows
 pub fn hide_console_on_startup_if_daemon(hide: bool) {
-    if !hide {
-        return;
+    let force_show = std::env::var("KAME_HOUSE_SHOW_CONSOLE").ok().as_deref() == Some("1");
+    if hide && !force_show {
+        #[cfg(target_os = "windows")]
+        win32::set_console_visible(false);
     }
-    if std::env::var("KAME_HOUSE_SHOW_CONSOLE").ok().as_deref() == Some("1") {
-        return;
-    }
-    #[cfg(target_os = "windows")]
-    win32::set_console_visible(false);
 }
 
 /// Toggles or sets the visibility of the Windows Debug Console window
@@ -204,9 +201,9 @@ mod win32 {
     };
     use crate::LauncherService;
     use std::mem::{size_of, zeroed};
-    use std::ptr::{null, null_mut};
+    use std::ptr::null;
     use std::sync::atomic::{AtomicIsize, Ordering};
-    use std::sync::Arc;
+    use std::sync::{Arc, OnceLock};
     use tracing::info;
 
     const SW_HIDE: i32 = 0;
@@ -258,7 +255,8 @@ mod win32 {
     const IDNO: i32 = 7;
 
     static TRAY_HWND: AtomicIsize = AtomicIsize::new(0);
-    static mut GLOBAL_TRAY_CTX: Option<(Arc<LauncherService>, Arc<WindowLifecycleState>)> = None;
+    static GLOBAL_TRAY_CTX: OnceLock<(Arc<LauncherService>, Arc<WindowLifecycleState>)> =
+        OnceLock::new();
 
     #[repr(C)]
     #[derive(Copy, Clone)]
@@ -549,14 +547,14 @@ mod win32 {
             WM_TRAYICON => {
                 let event = (l_param as u32) & 0xFFFF;
                 if event == WM_LBUTTONDBLCLK {
-                    if let Some((_, ref lifecycle)) = GLOBAL_TRAY_CTX {
+                    if let Some((_, lifecycle)) = GLOBAL_TRAY_CTX.get() {
                         let url = lifecycle.get_ui_url();
                         crate::server::open_fullscreen_ui(&url);
                     }
                     return 0;
                 } else if event == WM_RBUTTONUP || event == WM_LBUTTONUP || event == WM_CONTEXTMENU
                 {
-                    if let Some((ref service, ref lifecycle)) = GLOBAL_TRAY_CTX {
+                    if let Some((service, lifecycle)) = GLOBAL_TRAY_CTX.get() {
                         let lang = service.language();
                         let labels = TrayLabels::for_language(lang);
                         let h_menu = CreatePopupMenu();
@@ -600,7 +598,7 @@ mod win32 {
             }
             WM_COMMAND => {
                 let cmd_id = w_param & 0xFFFF;
-                if let Some((ref _service, ref lifecycle)) = GLOBAL_TRAY_CTX {
+                if let Some((_service, lifecycle)) = GLOBAL_TRAY_CTX.get() {
                     match cmd_id {
                         ID_TRAY_OPEN_UI => {
                             let url = lifecycle.get_ui_url();
@@ -646,7 +644,7 @@ mod win32 {
             .spawn(move || unsafe {
                 let lang = service.language();
                 let labels = TrayLabels::for_language(lang);
-                GLOBAL_TRAY_CTX = Some((service, lifecycle));
+                let _ = GLOBAL_TRAY_CTX.set((service, lifecycle));
 
                 let class_name = to_wide("KameHouseTrayWindowClass");
                 let h_instance = GetModuleHandleW(null());
