@@ -78,11 +78,6 @@ impl Default for ConsoleSettings {
             scan_directories: vec![dirs::home_dir()
                 .map(|h| h.join("Games").to_string_lossy().to_string())
                 .unwrap_or_else(|| "./games".to_string())],
-            scan_directories: vec![
-                dirs::home_dir()
-                    .map(|h| h.join("Games").to_string_lossy().to_string())
-                    .unwrap_or_else(|| "./games".to_string()),
-            ],
         }
     }
 }
