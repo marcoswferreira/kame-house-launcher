@@ -4,6 +4,7 @@ export const pt = {
   tab_overview: "Visão Geral",
   tab_steam: "Ponte Steam",
   tab_dualsense: "DualSense Studio",
+  tab_utilities: "Utilitários",
 
   // Overview
   overview_title: "Visão Geral do Sistema",
@@ -164,6 +165,21 @@ export const pt = {
   dualsense_profiles_title: "Perfis Selecionados por Gênero",
   dualsense_profiles_subtitle: "Configurações prontas para simuladores de corrida, jogos táticos de tiro e simuladores de voo.",
   dualsense_apply_profile: "Aplicar Perfil no Controle",
+
+  // Utilities Tab
+  utilities_title: "Central de Utilitários & Emuladores",
+  utilities_desc: "Ferramentas essenciais recomendadas para streaming na TV, emulação de consoles e otimização do seu PC Console.",
+  utilities_filter_all: "Todos",
+  utilities_filter_streaming: "Streaming",
+  utilities_filter_emulators: "Emuladores",
+  utilities_filter_tools: "Ferramentas & Otimização",
+  utilities_search_placeholder: "Buscar utilitário ou emulador (ex: Moonlight, RPCS3, Xenia...)",
+  utilities_btn_visit: "Acessar Site Oficial",
+  utilities_btn_steam: "Ver na Steam Store",
+  utilities_what_is_it: "O que é:",
+  utilities_how_to_use: "Dica Kame House:",
+  toast_url_opened: "Link aberto no navegador padrão.",
+  toast_url_failed: "Não foi possível abrir o link.",
 
   loading: "Carregando",
   btn_cancel: "Cancelar",

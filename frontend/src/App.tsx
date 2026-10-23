@@ -6,6 +6,7 @@ import { FooterLegend } from './components/FooterLegend';
 import { OverviewTab } from './components/tabs/OverviewTab';
 import { SteamBridgeTab } from './components/tabs/SteamBridgeTab';
 import { DualSenseTab } from './components/tabs/DualSenseTab/DualSenseTab';
+import { UtilitiesTab } from './components/tabs/UtilitiesTab/UtilitiesTab';
 import { StatusResponse, Game } from './types/models';
 
 interface Toast {
@@ -14,7 +15,7 @@ interface Toast {
   type: 'info' | 'success' | 'error';
 }
 
-const TABS_LIST = ['overview', 'steam-bridge', 'dualsense'];
+const TABS_LIST = ['overview', 'steam-bridge', 'dualsense', 'utilities'];
 
 export function App() {
   const { t, lang, toggleLang } = useTranslation();
@@ -287,6 +288,10 @@ export function App() {
               onShowToast={(msg) => showToast(msg, 'success')}
               onRefreshAppStatus={fetchStatus}
             />
+          )}
+
+          {activeTab === 'utilities' && (
+            <UtilitiesTab onShowToast={(msg) => showToast(msg, 'info')} />
           )}
         </main>
       </div>

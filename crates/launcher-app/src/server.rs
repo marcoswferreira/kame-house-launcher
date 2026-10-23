@@ -64,6 +64,11 @@ struct SettingsUpdateRequest {
     launch_behavior: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct OpenUrlRequest {
+    url: String,
+}
+
 pub struct HttpServer {
     service: Arc<LauncherService>,
     addr: SocketAddr,
@@ -545,6 +550,32 @@ where
                 )
             }
         }
+        ("POST", "/api/open-url") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<OpenUrlRequest>(&body_str) {
+                let url = req.url.trim();
+                if url.starts_with("http://") || url.starts_with("https://") {
+                    open_system_browser(url);
+                    (
+                        "200 OK",
+                        "application/json",
+                        b"{\"status\":\"opened\"}".to_vec(),
+                    )
+                } else {
+                    (
+                        "400 Bad Request",
+                        "application/json",
+                        b"{\"error\":\"invalid protocol, must be http or https\"}".to_vec(),
+                    )
+                }
+            } else {
+                (
+                    "400 Bad Request",
+                    "application/json",
+                    b"{\"error\":\"invalid json\"}".to_vec(),
+                )
+            }
+        }
         ("POST", "/api/window/toggle-console") => {
             let visible = crate::tray::toggle_debug_console(&service.lifecycle);
             let resp = format!("{{\"debug_console_visible\":{}}}", visible);
@@ -636,6 +667,43 @@ fn extract_body(request: &str) -> String {
         request[pos + 2..].to_string()
     } else {
         String::new()
+    }
+}
+
+/// Opens a standard web URL in the user's default external browser.
+pub fn open_system_browser(url: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        let _ = Command::new("cmd")
+            .creation_flags(CREATE_NO_WINDOW)
+            .args(["/c", "start", "", url])
+            .spawn();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let is_wsl = std::fs::read_to_string("/proc/version")
+            .map(|v| {
+                let lower = v.to_lowercase();
+                lower.contains("microsoft") || lower.contains("wsl")
+            })
+            .unwrap_or(false);
+
+        if is_wsl {
+            if Command::new("cmd.exe")
+                .args(["/c", "start", url])
+                .spawn()
+                .is_err()
+                && Command::new("wslview").arg(url).spawn().is_err()
+            {
+                tracing::info!("WSL detected. Please open URL in host: {}", url);
+            }
+            return;
+        }
+
+        let _ = Command::new("xdg-open").arg(url).spawn();
     }
 }
 

@@ -1,5 +1,5 @@
 import { useTranslation } from '../i18n';
-import { BarChart3, Zap, Gamepad2 } from 'lucide-react';
+import { BarChart3, Zap, Gamepad2, Compass } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -26,6 +26,7 @@ export function Sidebar({
       badge: !dualsenseExtensionEnabled ? 'OFF' : dualsenseConnected ? 'READY' : 'ON',
       badgeActive: Boolean(dualsenseExtensionEnabled && dualsenseConnected),
     },
+    { id: 'utilities', label: t.tab_utilities, icon: Compass },
   ];
 
   return (

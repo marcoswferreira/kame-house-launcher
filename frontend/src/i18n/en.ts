@@ -4,6 +4,7 @@ export const en = {
   tab_overview: "Overview",
   tab_steam: "Steam Bridge",
   tab_dualsense: "DualSense Studio",
+  tab_utilities: "Utilities",
 
   // Overview
   overview_title: "System Overview",
@@ -164,6 +165,21 @@ export const en = {
   dualsense_profiles_title: "Curated Game & Genre Profiles",
   dualsense_profiles_subtitle: "One-click presets tailored for racing telemetry, tactical shooters, and flight simulators.",
   dualsense_apply_profile: "Apply Preset to Controller",
+
+  // Utilities Tab
+  utilities_title: "Utilities & Emulator Hub",
+  utilities_desc: "Essential recommended tools for TV streaming, console emulation, and PC gaming optimization.",
+  utilities_filter_all: "All",
+  utilities_filter_streaming: "Streaming",
+  utilities_filter_emulators: "Emulators",
+  utilities_filter_tools: "Tools & Optimization",
+  utilities_search_placeholder: "Search utility or emulator (e.g. Moonlight, RPCS3, Xenia...)",
+  utilities_btn_visit: "Visit Official Site",
+  utilities_btn_steam: "View on Steam Store",
+  utilities_what_is_it: "What it is:",
+  utilities_how_to_use: "Kame House Tip:",
+  toast_url_opened: "Link opened in default browser.",
+  toast_url_failed: "Failed to open link.",
 
   loading: "Loading",
   btn_cancel: "Cancel",
