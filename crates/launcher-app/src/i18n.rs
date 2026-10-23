@@ -262,4 +262,18 @@ impl I18n {
             Language::PtBr => "Ponto de Acesso Sunshine",
         }
     }
+
+    pub fn daemon_running_prompt(&self) -> &'static str {
+        match self.language {
+            Language::En => "🏝️  Kame House Launcher is running. Press Ctrl+C to stop.",
+            Language::PtBr => "🏝️  O serviço do Kame House Launcher está em execução. Pressione Ctrl+C para encerrar.",
+        }
+    }
+
+    pub fn daemon_shutting_down(&self) -> &'static str {
+        match self.language {
+            Language::En => "Shutting down Kame House Launcher gracefully...",
+            Language::PtBr => "Encerrando o Kame House Launcher com segurança...",
+        }
+    }
 }

@@ -91,4 +91,49 @@ impl SunshineClient {
         let _ = req.send().await;
         Ok(())
     }
+
+    pub async fn get_clients(&self) -> anyhow::Result<Value> {
+        let url = format!("{}/api/clients/list", self.base_url);
+        let resp = self.client.get(&url).send().await?.error_for_status()?;
+        let json: Value = resp.json().await?;
+        Ok(json)
+    }
+
+    pub async fn unpair_client(&self, client_id: &str) -> anyhow::Result<()> {
+        let url = format!("{}/api/clients/unpair", self.base_url);
+        let payload = serde_json::json!({ "uuid": client_id });
+        let mut req = self.client.post(&url).json(&payload);
+        if let Some(token) = &self.csrf_token {
+            req = req.header("X-CSRF-Token", token);
+        }
+        let _ = req.send().await;
+        Ok(())
+    }
+
+    pub async fn unpair_all_clients(&self) -> anyhow::Result<()> {
+        let url = format!("{}/api/clients/unpair-all", self.base_url);
+        let mut req = self.client.post(&url);
+        if let Some(token) = &self.csrf_token {
+            req = req.header("X-CSRF-Token", token);
+        }
+        let _ = req.send().await;
+        Ok(())
+    }
+
+    pub async fn get_logs(&self) -> anyhow::Result<String> {
+        let url = format!("{}/api/logs", self.base_url);
+        let resp = self.client.get(&url).send().await?.error_for_status()?;
+        let text = resp.text().await?;
+        Ok(text)
+    }
+
+    pub async fn reset_display_persistence(&self) -> anyhow::Result<()> {
+        let url = format!("{}/api/reset-display-device-persistence", self.base_url);
+        let mut req = self.client.post(&url);
+        if let Some(token) = &self.csrf_token {
+            req = req.header("X-CSRF-Token", token);
+        }
+        let _ = req.send().await;
+        Ok(())
+    }
 }

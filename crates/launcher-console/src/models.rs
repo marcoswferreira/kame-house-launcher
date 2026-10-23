@@ -51,6 +51,9 @@ pub struct ConsoleSettings {
     pub prevent_sleep: bool,
     /// Wake-on-LAN para ligar o PC via Moonlight
     pub wake_on_lan_enabled: bool,
+    /// Serviço de streaming Sunshine ativado (Padrão: false, opt-in do usuário)
+    #[serde(default)]
+    pub sunshine_enabled: bool,
 }
 
 impl Default for ConsoleSettings {
@@ -68,6 +71,7 @@ impl Default for ConsoleSettings {
             suppress_notifications: true,
             prevent_sleep: true,
             wake_on_lan_enabled: true,
+            sunshine_enabled: false,
         }
     }
 }

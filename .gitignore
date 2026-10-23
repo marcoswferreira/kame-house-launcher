@@ -2,3 +2,6 @@
 /data/
 .DS_Store
 *.log
+*.vdf
+apps.json
+frontend/node_modules/**/**

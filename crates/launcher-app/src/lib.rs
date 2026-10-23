@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod i18n;
+pub mod server;
 pub mod service;
 
 pub use i18n::I18n;
@@ -11,6 +12,7 @@ mod tests {
     use crate::cli::{execute_cli, CliArgs, CliCommand};
     use launcher_console::{ConsoleSettings, WindowState};
     use launcher_core::models::{Game, Language, LaunchBehavior};
+    use std::sync::Arc;
     use tempfile::tempdir;
 
     #[test]
@@ -105,12 +107,24 @@ mod tests {
 
         let invalid = CliArgs::parse_from(vec!["kame-house-launcher", "--lang"]);
         assert!(invalid.is_err());
+
+        let once = CliArgs::parse_from(vec!["kame-house-launcher", "--once"]).unwrap();
+        assert_eq!(
+            once.command,
+            CliCommand::RunDaemon {
+                keep_alive: false,
+                open_ui: false
+            }
+        );
     }
 
-    #[test]
-    fn test_cli_execution_and_language_switching() {
+    #[tokio::test]
+    async fn test_cli_execution_and_language_switching() {
         let dir = tempdir().unwrap();
-        let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
+        let svc = Arc::new(LauncherService::new(
+            dir.path().to_path_buf(),
+            "https://127.0.0.1:47990",
+        ));
 
         // Por padrão o idioma é Inglês
         assert_eq!(svc.language(), Language::En);
@@ -122,7 +136,7 @@ mod tests {
                 lang: Language::PtBr,
             },
         };
-        execute_cli(&svc, set_pt).unwrap();
+        execute_cli(Arc::clone(&svc), set_pt).await.unwrap();
         assert_eq!(svc.language(), Language::PtBr);
 
         // Trocar de volta para Inglês
@@ -130,7 +144,7 @@ mod tests {
             language_override: None,
             command: CliCommand::SetLanguage { lang: Language::En },
         };
-        execute_cli(&svc, set_en).unwrap();
+        execute_cli(Arc::clone(&svc), set_en).await.unwrap();
         assert_eq!(svc.language(), Language::En);
 
         // Status execution
@@ -138,7 +152,7 @@ mod tests {
             language_override: Some(Language::PtBr),
             command: CliCommand::Status,
         };
-        assert!(execute_cli(&svc, status).is_ok());
+        assert!(execute_cli(Arc::clone(&svc), status).await.is_ok());
 
         // Mode switch execution
         let mode = CliArgs {
@@ -147,11 +161,108 @@ mod tests {
                 behavior: LaunchBehavior::KeepOpen,
             },
         };
-        assert!(execute_cli(&svc, mode).is_ok());
+        assert!(execute_cli(Arc::clone(&svc), mode).await.is_ok());
         assert_eq!(
             svc.settings.read().launch_behavior,
             LaunchBehavior::KeepOpen
         );
+
+        // RunDaemon execution with keep_alive = false (once mode)
+        let daemon = CliArgs {
+            language_override: None,
+            command: CliCommand::RunDaemon {
+                keep_alive: false,
+                open_ui: false,
+            },
+        };
+        assert!(execute_cli(Arc::clone(&svc), daemon).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_server_static_and_status_routes() {
+        let dir = tempdir().unwrap();
+        let svc = Arc::new(LauncherService::new(
+            dir.path().to_path_buf(),
+            "https://127.0.0.1:47990",
+        ));
+
+        // 1. Test static HTML response
+        let (client, server) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server, svc_clone).await;
+        });
+
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let mut client = client;
+        client.write_all(b"GET / HTTP/1.1\r\n\r\n").await.unwrap();
+        let mut response = Vec::new();
+        let mut buf = [0u8; 1024];
+        let n = client.read(&mut buf).await.unwrap();
+        response.extend_from_slice(&buf[..n]);
+
+        let resp_str = String::from_utf8_lossy(&response);
+        assert!(resp_str.contains("200 OK"));
+        assert!(resp_str.contains("Kame House Launcher"));
+
+        // 2. Test CSS route
+        let (mut client2, server2) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server2, svc_clone).await;
+        });
+        client2
+            .write_all(b"GET /style.css HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut resp2 = [0u8; 512];
+        let n2 = client2.read(&mut resp2).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp2[..n2]).contains("200 OK"));
+
+        // 3. Test API status route
+        let (mut client3, server3) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server3, svc_clone).await;
+        });
+        client3
+            .write_all(b"GET /api/status HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut resp3 = [0u8; 512];
+        let n3 = client3.read(&mut resp3).await.unwrap();
+        let resp3_str = String::from_utf8_lossy(&resp3[..n3]);
+        assert!(resp3_str.contains("200 OK"));
+        assert!(resp3_str.contains("games_count"));
+
+        // 4. Test API steam sync route
+        let (mut client4, server4) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server4, svc_clone).await;
+        });
+        client4
+            .write_all(b"POST /api/steam/sync HTTP/1.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut resp4 = [0u8; 512];
+        let n4 = client4.read(&mut resp4).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp4[..n4]).contains("200 OK"));
+
+        // 5. Test API settings route
+        let (mut client5, server5) = tokio::io::duplex(4096);
+        let svc_clone = Arc::clone(&svc);
+        tokio::spawn(async move {
+            let _ = crate::server::handle_connection(server5, svc_clone).await;
+        });
+        client5
+            .write_all(b"POST /api/settings HTTP/1.1\r\n\r\n{\"language\":\"pt-BR\"}")
+            .await
+            .unwrap();
+        let mut resp5 = [0u8; 512];
+        let n5 = client5.read(&mut resp5).await.unwrap();
+        assert!(String::from_utf8_lossy(&resp5[..n5]).contains("200 OK"));
+        assert_eq!(svc.language(), Language::PtBr);
     }
 
     #[test]
