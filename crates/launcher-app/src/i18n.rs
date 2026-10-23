@@ -1,4 +1,3 @@
-use launcher_console::TvResolution;
 use launcher_core::models::{Language, LaunchBehavior};
 
 /// Central Internationalization engine for Kame House Launcher.
@@ -85,33 +84,6 @@ impl I18n {
         match self.language {
             Language::En => format!("Configured launch behavior: {}", desc),
             Language::PtBr => format!("Comportamento de inicialização configurado: {}", desc),
-        }
-    }
-
-    pub fn power_action_name(&self, action: &str) -> &'static str {
-        match self.language {
-            Language::En => match action {
-                "sleep" => "Sleep",
-                "hibernate" => "Hibernate",
-                "restart" => "Restart",
-                "shutdown" => "Shutdown",
-                _ => "Unknown",
-            },
-            Language::PtBr => match action {
-                "sleep" => "Suspender",
-                "hibernate" => "Hibernar",
-                "restart" => "Reiniciar",
-                "shutdown" => "Desligar",
-                _ => "Desconhecido",
-            },
-        }
-    }
-
-    pub fn tv_resolution_desc(&self, res: TvResolution) -> String {
-        let (w, h, hz) = res.dimensions();
-        match self.language {
-            Language::En => format!("{}x{} @ {}Hz (TV Preset)", w, h, hz),
-            Language::PtBr => format!("{}x{} a {}Hz (Perfil de TV)", w, h, hz),
         }
     }
 

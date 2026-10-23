@@ -1,6 +1,6 @@
 import { useTranslation } from '../../i18n';
 import { StatusResponse } from '../../types/models';
-import { Zap, Gamepad2, Search, Sliders, Info } from 'lucide-react';
+import { Zap, Gamepad2, Search, Info } from 'lucide-react';
 
 interface OverviewTabProps {
   status: StatusResponse | null;
@@ -17,6 +17,7 @@ export function OverviewTab({
 }: OverviewTabProps) {
   const { t, lang } = useTranslation();
 
+  const isDualSenseExtensionEnabled = status?.dualsense_extension_enabled;
   const isDualSenseConnected = status?.dualsense_connected;
 
   return (
@@ -36,28 +37,36 @@ export function OverviewTab({
 
         <div className="metric-card">
           <div className="metric-label">{t.metric_dualsense_status}</div>
-          <div className={`metric-value ${isDualSenseConnected ? 'text-green' : ''}`}>
-            {isDualSenseConnected ? 'Ready' : 'Standby'}
+          <div
+            className={`metric-value ${
+              !isDualSenseExtensionEnabled
+                ? ''
+                : isDualSenseConnected
+                  ? 'text-green'
+                  : 'text-accent'
+            }`}
+          >
+            {!isDualSenseExtensionEnabled
+              ? lang === 'pt'
+                ? 'Extensão Desativada'
+                : 'Extension Disabled'
+              : isDualSenseConnected
+                ? lang === 'pt'
+                  ? 'Conectado'
+                  : 'Connected'
+                : lang === 'pt'
+                  ? 'Aguardando Controle'
+                  : 'Waiting Controller'}
           </div>
           <div className="metric-sub">
-            {status?.dualsense_udp_enabled ? 'Port 6969 • Link Active' : 'Native HID Mode'}
+            {!isDualSenseExtensionEnabled
+              ? lang === 'pt'
+                ? 'Ative na aba DualSense Studio'
+                : 'Enable in DualSense Studio tab'
+              : status?.dualsense_udp_enabled
+                ? 'Port 6969 • Link Active'
+                : 'Native HID Mode'}
           </div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">{t.metric_tv_profile}</div>
-          <div className="metric-value">4K @ 120Hz</div>
-          <div className="metric-sub">{t.metric_hdr_active}</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">{t.metric_launch_supervisor}</div>
-          <div className="metric-value text-accent">
-            {status?.launch_behavior === 'keep_open'
-              ? (lang === 'pt' ? 'Segundo Plano' : 'Keep Open')
-              : t.mode_hide_restore}
-          </div>
-          <div className="metric-sub">{t.mode_restore_sub}</div>
         </div>
       </div>
 

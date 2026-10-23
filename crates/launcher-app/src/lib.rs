@@ -49,7 +49,6 @@ mod tests {
         assert!(i18n_en
             .launch_behavior_desc(LaunchBehavior::KeepOpen)
             .contains("Keep launcher open"));
-        assert_eq!(i18n_en.power_action_name("sleep"), "Sleep");
         assert!(i18n_en.cli_help().contains("USAGE:"));
 
         let i18n_pt = I18n::new(Language::PtBr);
@@ -67,7 +66,6 @@ mod tests {
         assert!(i18n_pt
             .launch_behavior_desc(LaunchBehavior::KeepOpen)
             .contains("segundo plano"));
-        assert_eq!(i18n_pt.power_action_name("sleep"), "Suspender");
         assert!(i18n_pt.cli_help().contains("USO:"));
     }
 

@@ -1,5 +1,5 @@
 import { useTranslation } from '../i18n';
-import { BarChart3, Zap, Gamepad2, Tv, Power } from 'lucide-react';
+import { BarChart3, Zap, Gamepad2 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -26,8 +26,6 @@ export function Sidebar({
       badge: !dualsenseExtensionEnabled ? 'OFF' : dualsenseConnected ? 'READY' : 'ON',
       badgeActive: Boolean(dualsenseExtensionEnabled && dualsenseConnected),
     },
-    { id: 'display', label: t.tab_display, icon: Tv },
-    { id: 'power', label: t.tab_power, icon: Power },
   ];
 
   return (

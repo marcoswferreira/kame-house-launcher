@@ -1,7 +1,5 @@
 pub mod audio;
-pub mod boot;
 pub mod models;
-pub mod power;
 pub mod supervisor;
 
 pub use audio::{
@@ -9,18 +7,13 @@ pub use audio::{
     get_switch_playback_device_command, get_toggle_mic_command,
 };
 
-pub use boot::{
-    generate_linux_autostart_desktop_file, generate_windows_autologin_reg, save_linux_autostart,
-};
-pub use models::{ConsoleSettings, PowerAction, TvResolution};
-pub use power::get_power_command;
+pub use models::ConsoleSettings;
 pub use supervisor::{LaunchSupervisor, WindowState};
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use launcher_core::models::LaunchBehavior;
-    use tempfile::tempdir;
 
     #[test]
     fn test_launch_behavior_default_hide_and_restore() {
@@ -53,39 +46,5 @@ mod tests {
 
         let state_after2 = supervisor2.on_game_exit();
         assert_eq!(state_after2, WindowState::Normal);
-    }
-
-    #[test]
-    fn test_tv_resolutions() {
-        let (w, h, hz) = TvResolution::Res4k120.dimensions();
-        assert_eq!((w, h, hz), (3840, 2160, 120));
-
-        let (w1080, h1080, hz1080) = TvResolution::Res1080p120.dimensions();
-        assert_eq!((w1080, h1080, hz1080), (1920, 1080, 120));
-    }
-
-    #[test]
-    fn test_autostart_generation() {
-        let dir = tempdir().unwrap();
-        let saved_path = save_linux_autostart(dir.path(), "/usr/bin/kame-house-launcher").unwrap();
-        assert!(saved_path.exists());
-
-        let content = std::fs::read_to_string(&saved_path).unwrap();
-        assert!(content.contains("Kame House Launcher"));
-        assert!(content.contains("/usr/bin/kame-house-launcher --fullscreen"));
-    }
-
-    #[test]
-    fn test_windows_autologin_reg() {
-        let reg = generate_windows_autologin_reg("Gamer", None);
-        assert!(reg.contains(r#""AutoAdminLogon"="1""#));
-        assert!(reg.contains(r#""DefaultUserName"="Gamer""#));
-    }
-
-    #[test]
-    fn test_power_commands() {
-        let (cmd, args) = get_power_command(PowerAction::Shutdown);
-        assert!(!cmd.is_empty());
-        assert!(!args.is_empty());
     }
 }

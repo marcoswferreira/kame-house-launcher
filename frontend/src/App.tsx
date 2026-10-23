@@ -6,8 +6,6 @@ import { FooterLegend } from './components/FooterLegend';
 import { OverviewTab } from './components/tabs/OverviewTab';
 import { SteamBridgeTab } from './components/tabs/SteamBridgeTab';
 import { DualSenseTab } from './components/tabs/DualSenseTab/DualSenseTab';
-import { DisplayTab } from './components/tabs/DisplayTab';
-import { PowerTab } from './components/tabs/PowerTab';
 import { StatusResponse, Game } from './types/models';
 
 interface Toast {
@@ -16,7 +14,7 @@ interface Toast {
   type: 'info' | 'success' | 'error';
 }
 
-const TABS_LIST = ['overview', 'steam-bridge', 'dualsense', 'display', 'power'];
+const TABS_LIST = ['overview', 'steam-bridge', 'dualsense'];
 
 export function App() {
   const { t, lang, toggleLang } = useTranslation();
@@ -28,12 +26,6 @@ export function App() {
 
   // Gamepad state
   const [isGamepadActive, setIsGamepadActive] = useState(false);
-  const [gamepadTelemetry, setGamepadTelemetry] = useState({
-    name: 'No Gamepad Detected (Press any button)',
-    connected: false,
-    leftStick: { x: 0, y: 0 },
-    rightStick: { x: 0, y: 0 },
-  });
 
   const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     const id = Date.now() + Math.random();
@@ -198,66 +190,6 @@ export function App() {
     }
   };
 
-  // Power actions
-  const handlePowerAction = async (action: 'sleep' | 'restart' | 'shutdown') => {
-    const actionLabel = t[`power_${action}_title` as keyof typeof t] || action;
-    const confirmMsg = lang === 'pt'
-      ? `Confirmar ação de energia: ${actionLabel}?`
-      : `Confirm power action: ${actionLabel}?`;
-
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const res = await fetch('/api/power', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      if (res.ok) {
-        const msg = t.toast_power_dispatched.replace('{action}', action);
-        showToast(msg, 'success');
-      } else {
-        showToast('Power command failed', 'error');
-      }
-    } catch (_) {
-      showToast('Failed to send power command', 'error');
-    }
-  };
-
-  // Display & OS settings
-  const handleUpdateLaunchBehavior = async (behavior: string) => {
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ launch_behavior: behavior }),
-      });
-      if (res.ok) {
-        showToast(t.toast_settings_saved, 'success');
-        fetchStatus();
-      }
-    } catch (_) {}
-  };
-
-  const handleDownloadAutoLoginReg = () => {
-    const regContent = `Windows Registry Editor Version 5.00
-
-[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon]
-"AutoAdminLogon"="1"
-"DefaultUserName"="Gamer"
-"DefaultPassword"=""
-"DefaultDomainName"=""
-`;
-    const blob = new Blob([regContent], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'kame-house-autologon.reg';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast(t.toast_reg_downloaded, 'success');
-  };
-
   // Passive Gamepad Telemetry (No button hijacking or tab switching)
   useEffect(() => {
     let animId: number;
@@ -272,18 +204,6 @@ export function App() {
 
         foundActive = true;
         setIsGamepadActive(true);
-        setGamepadTelemetry({
-          name: gp.id,
-          connected: gp.connected,
-          leftStick: {
-            x: Math.round(gp.axes[0] * 100),
-            y: Math.round(gp.axes[1] * 100),
-          },
-          rightStick: {
-            x: Math.round((gp.axes[2] || 0) * 100),
-            y: Math.round((gp.axes[3] || 0) * 100),
-          },
-        });
         break;
       }
 
@@ -366,21 +286,6 @@ export function App() {
             <DualSenseTab
               onShowToast={(msg) => showToast(msg, 'success')}
               onRefreshAppStatus={fetchStatus}
-            />
-          )}
-
-          {activeTab === 'display' && (
-            <DisplayTab
-              status={status}
-              onUpdateLaunchBehavior={handleUpdateLaunchBehavior}
-              onDownloadAutoLoginReg={handleDownloadAutoLoginReg}
-            />
-          )}
-
-          {activeTab === 'power' && (
-            <PowerTab
-              onPowerAction={handlePowerAction}
-              gamepadTelemetry={gamepadTelemetry}
             />
           )}
         </main>

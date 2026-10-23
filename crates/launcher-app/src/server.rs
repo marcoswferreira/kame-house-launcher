@@ -1,6 +1,4 @@
 use crate::LauncherService;
-use launcher_console::power::get_power_command;
-use launcher_console::PowerAction;
 use launcher_core::models::{Language, LaunchBehavior};
 use launcher_dualsense::{DualTriggerConfig, EmulationConfig, LightingConfig};
 use serde::{Deserialize, Serialize};
@@ -64,11 +62,6 @@ struct ToggleExtensionRequest {
 struct SettingsUpdateRequest {
     language: Option<String>,
     launch_behavior: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct PowerRequest {
-    action: String,
 }
 
 pub struct HttpServer {
@@ -549,30 +542,6 @@ where
                     "400 Bad Request",
                     "application/json",
                     b"{\"error\":\"invalid json\"}".to_vec(),
-                )
-            }
-        }
-        ("POST", "/api/power") => {
-            let body_str = extract_body(&request_str);
-            if let Ok(req) = serde_json::from_str::<PowerRequest>(&body_str) {
-                let action = match req.action.as_str() {
-                    "sleep" => PowerAction::Sleep,
-                    "restart" => PowerAction::Restart,
-                    "shutdown" => PowerAction::Shutdown,
-                    _ => PowerAction::Sleep,
-                };
-                let (cmd, args) = get_power_command(action);
-                let _ = Command::new(cmd).args(args).spawn();
-                (
-                    "200 OK",
-                    "application/json",
-                    b"{\"status\":\"power_dispatched\"}".to_vec(),
-                )
-            } else {
-                (
-                    "400 Bad Request",
-                    "application/json",
-                    b"{\"error\":\"invalid action\"}".to_vec(),
                 )
             }
         }
