@@ -251,8 +251,8 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
                 i18n.launch_behavior_configured(settings.launch_behavior)
             );
 
-            // Start DualSense UDP Link Server if enabled
-            if settings.dualsense_udp_enabled {
+            // Start DualSense UDP Link Server only if the DualSense extension is enabled on startup
+            if settings.dualsense_extension_enabled && settings.dualsense_udp_enabled {
                 let ds = Arc::clone(&service.dualsense);
                 tokio::spawn(async move {
                     if let Err(e) = ds.start_udp().await {

@@ -337,6 +337,7 @@ export function App() {
         <Sidebar
           activeTab={activeTab}
           onSelectTab={setActiveTab}
+          dualsenseExtensionEnabled={status?.dualsense_extension_enabled}
           dualsenseConnected={status?.dualsense_connected}
         />
 
@@ -362,7 +363,10 @@ export function App() {
           )}
 
           {activeTab === 'dualsense' && (
-            <DualSenseTab onShowToast={(msg) => showToast(msg, 'success')} />
+            <DualSenseTab
+              onShowToast={(msg) => showToast(msg, 'success')}
+              onRefreshAppStatus={fetchStatus}
+            />
           )}
 
           {activeTab === 'display' && (

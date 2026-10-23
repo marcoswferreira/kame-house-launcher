@@ -16,7 +16,7 @@ pub struct LauncherService {
     pub achievements: Arc<RwLock<AchievementManager>>,
     pub dualsense: Arc<DualSenseManager>,
     pub lifecycle: Arc<crate::tray::WindowLifecycleState>,
-    pub _dualsense_worker: Option<launcher_dualsense::HidDeviceWorker>,
+    pub dualsense_worker: RwLock<Option<launcher_dualsense::HidDeviceWorker>>,
 }
 
 impl LauncherService {
@@ -29,7 +29,6 @@ impl LauncherService {
         dualsense.set_mic_toggle_handler(Arc::new(|muted| {
             let _ = launcher_console::audio::execute_set_microphone_mute(muted);
         }));
-        let hid_worker = launcher_dualsense::HidDeviceWorker::start(dualsense.clone());
 
         let mut svc = Self {
             data_dir: data_dir.clone(),
@@ -38,10 +37,36 @@ impl LauncherService {
             achievements,
             dualsense,
             lifecycle: Arc::new(crate::tray::WindowLifecycleState::default()),
-            _dualsense_worker: Some(hid_worker),
+            dualsense_worker: RwLock::new(None),
         };
         svc.load_state();
+
+        let autostart_ds = svc.settings.read().dualsense_extension_enabled;
+        svc.dualsense.set_autostart_enabled(autostart_ds);
+        if autostart_ds {
+            svc.set_dualsense_extension_active(true);
+        }
+
         svc
+    }
+
+    pub fn set_dualsense_extension_active(&self, active: bool) {
+        self.dualsense.set_extension_enabled(active);
+        let mut worker_slot = self.dualsense_worker.write();
+        if active {
+            if worker_slot.is_none() {
+                let worker = launcher_dualsense::HidDeviceWorker::start(self.dualsense.clone());
+                *worker_slot = Some(worker);
+            }
+        } else if let Some(worker) = worker_slot.take() {
+            worker.stop();
+        }
+    }
+
+    pub fn set_dualsense_autostart(&self, autostart: bool) {
+        self.settings.write().dualsense_extension_enabled = autostart;
+        self.dualsense.set_autostart_enabled(autostart);
+        let _ = self.save_state();
     }
 
     fn games_file(&self) -> PathBuf {

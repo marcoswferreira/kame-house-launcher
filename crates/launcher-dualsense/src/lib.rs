@@ -29,7 +29,9 @@ mod tests {
     async fn test_full_crate_exports() {
         let manager = DualSenseManager::new();
         let status = manager.get_status().await;
-        assert!(status.connected);
+        assert!(!status.extension_enabled);
+        assert!(!status.connected);
+        assert_eq!(status.battery.percentage, 0);
         assert_eq!(status.connection_type, ConnectionType::Usb);
     }
 }

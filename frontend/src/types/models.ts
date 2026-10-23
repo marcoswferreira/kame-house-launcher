@@ -5,6 +5,8 @@ export interface StatusResponse {
   language: string;
   games_count: number;
   launch_behavior: string;
+  dualsense_extension_enabled?: boolean;
+  dualsense_autostart?: boolean;
   dualsense_connected: boolean;
   dualsense_udp_enabled: boolean;
   scan_directories?: string[];
@@ -116,6 +118,8 @@ export interface UdpServerStats {
 }
 
 export interface DualSenseStatus {
+  extension_enabled: boolean;
+  autostart_on_launch: boolean;
   connected: boolean;
   name: string;
   connection_type: 'usb' | 'bluetooth';

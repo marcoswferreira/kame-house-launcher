@@ -40,15 +40,21 @@ export function Header({
 
       <div className="header-hud">
         {/* DualSense status chip */}
-        <div className="hud-chip" title="DualSense Controller & UDP Link">
-          <span className={`chip-dot ${status?.dualsense_connected ? '' : 'off'}`} />
+        <div className="hud-chip" title="DualSense Extension Status">
+          <span
+            className={`chip-dot ${
+              status?.dualsense_extension_enabled && status?.dualsense_connected ? '' : 'off'
+            }`}
+          />
           <span className="chip-label">DUALSENSE</span>
           <span className="chip-val">
-            {status?.dualsense_connected
-              ? status?.dualsense_udp_enabled
-                ? ':6969'
-                : 'READY'
-              : 'STANDBY'}
+            {!status?.dualsense_extension_enabled
+              ? 'OFF'
+              : status?.dualsense_connected
+                ? status?.dualsense_udp_enabled
+                  ? ':6969'
+                  : 'READY'
+                : 'ON'}
           </span>
         </div>
 

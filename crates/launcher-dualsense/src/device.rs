@@ -104,7 +104,8 @@ impl HidDeviceWorker {
                     let dev_info = match target_device {
                         Some(d) => d,
                         None => {
-                            // No physical device visible directly in this OS environment (e.g. WSL without usbipd)
+                            manager.set_connected(false, "Disconnected");
+                            // No physical device visible directly in this OS environment
                             thread::sleep(Duration::from_secs(2));
                             continue;
                         }

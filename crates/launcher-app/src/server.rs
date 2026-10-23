@@ -26,6 +26,8 @@ struct StatusResponse {
     language: String,
     games_count: usize,
     launch_behavior: String,
+    dualsense_extension_enabled: bool,
+    dualsense_autostart: bool,
     dualsense_connected: bool,
     dualsense_udp_enabled: bool,
     scan_directories: Vec<String>,
@@ -50,6 +52,12 @@ struct TriggerProfileRequest {
 #[derive(Deserialize)]
 struct ToggleUdpRequest {
     enabled: bool,
+}
+
+#[derive(Deserialize)]
+struct ToggleExtensionRequest {
+    enabled: Option<bool>,
+    autostart: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -210,6 +218,8 @@ where
                 language: settings.language.code().to_string(),
                 games_count: games.len(),
                 launch_behavior: behavior_str.to_string(),
+                dualsense_extension_enabled: ds_status.extension_enabled,
+                dualsense_autostart: ds_status.autostart_on_launch,
                 dualsense_connected: ds_status.connected,
                 dualsense_udp_enabled: settings.dualsense_udp_enabled,
                 scan_directories: settings.scan_directories.clone(),
@@ -358,6 +368,34 @@ where
                     "400 Bad Request",
                     "application/json",
                     b"{\"error\":\"invalid profile request\"}".to_vec(),
+                )
+            }
+        }
+        ("POST", "/api/dualsense/extension/toggle") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<ToggleExtensionRequest>(&body_str) {
+                if let Some(autostart) = req.autostart {
+                    service.set_dualsense_autostart(autostart);
+                }
+                if let Some(enabled) = req.enabled {
+                    service.set_dualsense_extension_active(enabled);
+                    if !enabled {
+                        service.dualsense.stop_udp().await;
+                    } else if service.settings.read().dualsense_udp_enabled {
+                        let _ = service.dualsense.start_udp().await;
+                    }
+                }
+                let resp = format!(
+                    "{{\"extension_enabled\":{},\"autostart_on_launch\":{}}}",
+                    service.dualsense.is_extension_enabled(),
+                    service.dualsense.is_autostart_enabled()
+                );
+                ("200 OK", "application/json", resp.into_bytes())
+            } else {
+                (
+                    "400 Bad Request",
+                    "application/json",
+                    b"{\"error\":\"invalid extension toggle request\"}".to_vec(),
                 )
             }
         }

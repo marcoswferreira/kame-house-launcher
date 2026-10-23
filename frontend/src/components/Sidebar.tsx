@@ -4,10 +4,16 @@ import { BarChart3, Zap, Gamepad2, Tv, Power } from 'lucide-react';
 interface SidebarProps {
   activeTab: string;
   onSelectTab: (tab: string) => void;
+  dualsenseExtensionEnabled?: boolean;
   dualsenseConnected?: boolean;
 }
 
-export function Sidebar({ activeTab, onSelectTab, dualsenseConnected }: SidebarProps) {
+export function Sidebar({
+  activeTab,
+  onSelectTab,
+  dualsenseExtensionEnabled,
+  dualsenseConnected,
+}: SidebarProps) {
   const { t } = useTranslation();
 
   const tabs = [
@@ -17,8 +23,8 @@ export function Sidebar({ activeTab, onSelectTab, dualsenseConnected }: SidebarP
       id: 'dualsense',
       label: t.tab_dualsense,
       icon: Gamepad2,
-      badge: dualsenseConnected ? 'READY' : 'STANDBY',
-      badgeActive: dualsenseConnected,
+      badge: !dualsenseExtensionEnabled ? 'OFF' : dualsenseConnected ? 'READY' : 'ON',
+      badgeActive: Boolean(dualsenseExtensionEnabled && dualsenseConnected),
     },
     { id: 'display', label: t.tab_display, icon: Tv },
     { id: 'power', label: t.tab_power, icon: Power },

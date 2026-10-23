@@ -14,6 +14,8 @@ use crate::udp_server::{
 /// Comprehensive controller status report for UI and API clients
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DualSenseStatus {
+    pub extension_enabled: bool,
+    pub autostart_on_launch: bool,
     pub connected: bool,
     pub name: String,
     pub connection_type: ConnectionType,
@@ -32,6 +34,8 @@ pub struct DualSenseStatus {
 pub type MicToggleHandler = Arc<dyn Fn(bool) + Send + Sync>;
 
 pub struct DualSenseManager {
+    extension_enabled: RwLock<bool>,
+    autostart_on_launch: RwLock<bool>,
     shared_state: Arc<SharedControllerState>,
     lighting: RwLock<LightingConfig>,
     emulation: RwLock<EmulationConfig>,
@@ -55,7 +59,7 @@ impl DualSenseManager {
         let initial_input = DualSenseInputState {
             connection: ConnectionType::Usb,
             battery: BatteryState {
-                percentage: 90,
+                percentage: 0,
                 is_charging: false,
                 is_full: false,
             },
@@ -63,20 +67,43 @@ impl DualSenseManager {
         };
 
         Self {
+            extension_enabled: RwLock::new(false),
+            autostart_on_launch: RwLock::new(false),
             shared_state,
             lighting: RwLock::new(LightingConfig::default()),
             emulation: RwLock::new(EmulationConfig::default()),
             input_state: RwLock::new(initial_input),
-            connected: RwLock::new(true),
-            controller_name: RwLock::new("Sony DualSense Wireless Controller".to_string()),
+            connected: RwLock::new(false),
+            controller_name: RwLock::new("Disconnected".to_string()),
             udp_server: tokio::sync::Mutex::new(udp_server),
             profiles: RwLock::new(TriggerProfile::default_profiles()),
             mic_muted: RwLock::new(false),
             prev_mic_btn: RwLock::new(false),
-            audio_device_detected: RwLock::new(true),
+            audio_device_detected: RwLock::new(false),
             speaker_volume: RwLock::new(80),
             mic_toggle_callback: RwLock::new(None),
         }
+    }
+
+    pub fn is_extension_enabled(&self) -> bool {
+        *self.extension_enabled.read()
+    }
+
+    pub fn set_extension_enabled(&self, enabled: bool) {
+        *self.extension_enabled.write() = enabled;
+        if !enabled {
+            self.set_connected(false, "Disconnected");
+        }
+        tracing::info!("DualSense extension enabled state set to: {}", enabled);
+    }
+
+    pub fn is_autostart_enabled(&self) -> bool {
+        *self.autostart_on_launch.read()
+    }
+
+    pub fn set_autostart_enabled(&self, autostart: bool) {
+        *self.autostart_on_launch.write() = autostart;
+        tracing::info!("DualSense extension autostart set to: {}", autostart);
     }
 
     pub async fn start_udp(&self) -> Result<(), std::io::Error> {
@@ -99,18 +126,31 @@ impl DualSenseManager {
         let triggers = self.shared_state.triggers.read().clone();
         let lighting = self.lighting.read().clone();
         let emulation = self.emulation.read().clone();
-        let connected = *self.connected.read();
-        let name = self.controller_name.read().clone();
+        let extension_enabled = *self.extension_enabled.read();
+        let autostart_on_launch = *self.autostart_on_launch.read();
+        let connected = extension_enabled && *self.connected.read();
+        let name = if connected {
+            self.controller_name.read().clone()
+        } else {
+            "Disconnected".to_string()
+        };
+        let battery = if connected {
+            input.battery
+        } else {
+            BatteryState::default()
+        };
         let profiles = self.profiles.read().clone();
         let mic_muted = *self.mic_muted.read();
-        let audio_device_detected = *self.audio_device_detected.read();
+        let audio_device_detected = connected && *self.audio_device_detected.read();
         let speaker_volume = *self.speaker_volume.read();
 
         DualSenseStatus {
+            extension_enabled,
+            autostart_on_launch,
             connected,
             name,
             connection_type: input.connection,
-            battery: input.battery,
+            battery,
             triggers,
             lighting,
             emulation,
@@ -255,6 +295,10 @@ impl DualSenseManager {
     pub fn set_connected(&self, connected: bool, name: &str) {
         *self.connected.write() = connected;
         *self.controller_name.write() = name.to_string();
+        *self.audio_device_detected.write() = connected;
+        if !connected {
+            self.input_state.write().battery = BatteryState::default();
+        }
     }
 
     pub fn set_mic_toggle_handler(&self, handler: MicToggleHandler) {
@@ -303,8 +347,18 @@ mod tests {
     async fn test_manager_status_and_updates() {
         let manager = DualSenseManager::new();
         let status = manager.get_status().await;
-        assert!(status.connected);
-        assert_eq!(status.battery.percentage, 90);
+        assert!(!status.extension_enabled);
+        assert!(!status.autostart_on_launch);
+        assert!(!status.connected);
+        assert_eq!(status.battery.percentage, 0);
+
+        manager.set_extension_enabled(true);
+        manager.set_autostart_enabled(true);
+        manager.set_connected(true, "Sony DualSense Wireless Controller");
+        let active_status = manager.get_status().await;
+        assert!(active_status.extension_enabled);
+        assert!(active_status.autostart_on_launch);
+        assert!(active_status.connected);
 
         // Update triggers
         manager.set_triggers(DualTriggerConfig {

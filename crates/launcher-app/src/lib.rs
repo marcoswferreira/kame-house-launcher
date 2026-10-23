@@ -360,8 +360,16 @@ mod tests {
         let svc = LauncherService::new(dir.path().to_path_buf());
 
         let status = svc.dualsense.get_status().await;
-        assert!(status.connected);
+        assert!(!status.extension_enabled);
+        assert!(!status.autostart_on_launch);
+        assert!(!status.connected);
+        assert_eq!(status.battery.percentage, 0);
         assert!(!status.profiles.is_empty());
+
+        svc.set_dualsense_extension_active(true);
+        svc.set_dualsense_autostart(true);
+        assert!(svc.dualsense.is_extension_enabled());
+        assert!(svc.dualsense.is_autostart_enabled());
 
         let applied = svc.dualsense.apply_profile("racing_abs");
         assert!(applied);
@@ -373,6 +381,9 @@ mod tests {
                 color: launcher_dualsense::RgbColor::RED
             }
         );
+
+        svc.set_dualsense_extension_active(false);
+        assert!(!svc.dualsense.is_extension_enabled());
     }
 
     #[tokio::test]

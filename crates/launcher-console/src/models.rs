@@ -51,16 +51,15 @@ pub struct ConsoleSettings {
     pub prevent_sleep: bool,
     /// Wake-on-LAN para ligar o PC
     pub wake_on_lan_enabled: bool,
-    /// DualSenseX Link UDP server enabled (port 6969)
-    #[serde(default = "default_true")]
+    /// Se a extensão DualSense deve iniciar automaticamente junto com a aplicação (Padrão: false)
+    #[serde(default)]
+    pub dualsense_extension_enabled: bool,
+    /// DualSenseX Link UDP server enabled (port 6969, Padrão: false)
+    #[serde(default)]
     pub dualsense_udp_enabled: bool,
     /// Pastas configuradas pelo usuário para busca de jogos e ROMs
     #[serde(default)]
     pub scan_directories: Vec<String>,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 impl Default for ConsoleSettings {
@@ -78,7 +77,8 @@ impl Default for ConsoleSettings {
             suppress_notifications: true,
             prevent_sleep: true,
             wake_on_lan_enabled: true,
-            dualsense_udp_enabled: true,
+            dualsense_extension_enabled: false,
+            dualsense_udp_enabled: false,
             scan_directories: vec![dirs::home_dir()
                 .map(|h| h.join("Games").to_string_lossy().to_string())
                 .unwrap_or_else(|| "./games".to_string())],
