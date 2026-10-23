@@ -125,10 +125,14 @@ export function App() {
     }
   };
 
-  const handleScanGames = async () => {
+  const handleScanGames = async (paths?: string[]) => {
     try {
       showToast(lang === 'pt' ? 'Varrendo diretórios de jogos e ROMs...' : 'Scanning game and ROM directories...', 'info');
-      const res = await fetch('/api/scan', { method: 'POST' });
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths }),
+      });
       const data = await res.json();
       if (res.ok) {
         const msg = t.toast_scanned.replace('{count}', String(data.added || 0));
@@ -140,6 +144,20 @@ export function App() {
       }
     } catch (e) {
       showToast('Error connecting to scanner', 'error');
+    }
+  };
+
+  const handleUpdateScanDirectories = async (paths: string[]) => {
+    try {
+      await fetch('/api/scan/paths', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths }),
+      });
+      setStatus((prev) => (prev ? { ...prev, scan_directories: paths } : null));
+      showToast(t.toast_paths_saved, 'success');
+    } catch (_) {
+      showToast('Failed to update scan directories.', 'error');
     }
   };
 
@@ -556,8 +574,10 @@ export function App() {
           {activeTab === 'steam-bridge' && (
             <SteamBridgeTab
               games={games}
+              scanDirectories={status?.scan_directories || []}
               onSyncSteam={handleSyncSteam}
               onScanGames={handleScanGames}
+              onUpdateScanDirectories={handleUpdateScanDirectories}
               onLaunchGame={handleLaunchGame}
             />
           )}

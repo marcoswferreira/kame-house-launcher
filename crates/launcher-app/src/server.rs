@@ -27,11 +27,17 @@ struct StatusResponse {
     launch_behavior: String,
     sunshine_url: String,
     sunshine_enabled: bool,
+    scan_directories: Vec<String>,
 }
 
 #[derive(Deserialize)]
 struct LaunchRequest {
     id: String,
+}
+
+#[derive(Deserialize)]
+struct ScanRequest {
+    paths: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -143,6 +149,7 @@ where
                 launch_behavior: behavior_str.to_string(),
                 sunshine_url: service.sunshine.base_url.clone(),
                 sunshine_enabled: settings.sunshine_enabled,
+                scan_directories: settings.scan_directories.clone(),
             };
             let json = serde_json::to_vec(&resp).unwrap_or_default();
             ("200 OK", "application/json", json)
@@ -412,12 +419,94 @@ where
             }
         }
         ("POST", "/api/scan") => {
-            let roots = vec![dirs::home_dir()
-                .map(|h| h.join("Games"))
-                .unwrap_or_else(|| PathBuf::from("./games"))];
+            let body_str = extract_body(&request_str);
+            let mut settings = service.settings.read().clone();
+            let roots: Vec<PathBuf> =
+                if let Ok(req) = serde_json::from_str::<ScanRequest>(&body_str) {
+                    if let Some(user_paths) = req.paths {
+                        if !user_paths.is_empty() {
+                            settings.scan_directories = user_paths.clone();
+                            service.update_console_settings(settings);
+                            user_paths.into_iter().map(PathBuf::from).collect()
+                        } else if !settings.scan_directories.is_empty() {
+                            settings
+                                .scan_directories
+                                .into_iter()
+                                .map(PathBuf::from)
+                                .collect()
+                        } else {
+                            vec![dirs::home_dir()
+                                .map(|h| h.join("Games"))
+                                .unwrap_or_else(|| PathBuf::from("./games"))]
+                        }
+                    } else if !settings.scan_directories.is_empty() {
+                        settings
+                            .scan_directories
+                            .into_iter()
+                            .map(PathBuf::from)
+                            .collect()
+                    } else {
+                        vec![dirs::home_dir()
+                            .map(|h| h.join("Games"))
+                            .unwrap_or_else(|| PathBuf::from("./games"))]
+                    }
+                } else if !settings.scan_directories.is_empty() {
+                    settings
+                        .scan_directories
+                        .into_iter()
+                        .map(PathBuf::from)
+                        .collect()
+                } else {
+                    vec![dirs::home_dir()
+                        .map(|h| h.join("Games"))
+                        .unwrap_or_else(|| PathBuf::from("./games"))]
+                };
+
             let found = service.scan_and_add(&roots, 4);
-            let resp = format!("{{\"status\":\"scanned\",\"added\":{}}}", found);
+            let paths_json = serde_json::to_string(
+                &roots
+                    .iter()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap_or_else(|_| "[]".to_string());
+            let resp = format!(
+                "{{\"status\":\"scanned\",\"added\":{},\"paths\":{}}}",
+                found, paths_json
+            );
             ("200 OK", "application/json", resp.into_bytes())
+        }
+        ("GET", "/api/scan/paths") => {
+            let settings = service.settings.read().clone();
+            let json = serde_json::to_vec(&settings.scan_directories).unwrap_or_default();
+            ("200 OK", "application/json", json)
+        }
+        ("POST", "/api/scan/paths") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<ScanRequest>(&body_str) {
+                if let Some(user_paths) = req.paths {
+                    let mut settings = service.settings.read().clone();
+                    settings.scan_directories = user_paths;
+                    service.update_console_settings(settings);
+                    (
+                        "200 OK",
+                        "application/json",
+                        b"{\"status\":\"paths_saved\"}".to_vec(),
+                    )
+                } else {
+                    (
+                        "400 Bad Request",
+                        "application/json",
+                        b"{\"error\":\"missing paths\"}".to_vec(),
+                    )
+                }
+            } else {
+                (
+                    "400 Bad Request",
+                    "application/json",
+                    b"{\"error\":\"invalid json\"}".to_vec(),
+                )
+            }
         }
         ("POST", "/api/power") => {
             let body_str = extract_body(&request_str);

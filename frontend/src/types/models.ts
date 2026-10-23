@@ -8,6 +8,7 @@ export interface StatusResponse {
   sunshine_url: string;
   sunshine_enabled?: boolean;
   sunshine_running?: boolean;
+  scan_directories?: string[];
 }
 
 export interface Game {

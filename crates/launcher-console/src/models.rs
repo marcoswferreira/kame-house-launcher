@@ -54,6 +54,9 @@ pub struct ConsoleSettings {
     /// Serviço de streaming Sunshine ativado (Padrão: false, opt-in do usuário)
     #[serde(default)]
     pub sunshine_enabled: bool,
+    /// Pastas configuradas pelo usuário para busca de jogos e ROMs
+    #[serde(default)]
+    pub scan_directories: Vec<String>,
 }
 
 impl Default for ConsoleSettings {
@@ -72,6 +75,14 @@ impl Default for ConsoleSettings {
             prevent_sleep: true,
             wake_on_lan_enabled: true,
             sunshine_enabled: false,
+            scan_directories: vec![dirs::home_dir()
+                .map(|h| h.join("Games").to_string_lossy().to_string())
+                .unwrap_or_else(|| "./games".to_string())],
+            scan_directories: vec![
+                dirs::home_dir()
+                    .map(|h| h.join("Games").to_string_lossy().to_string())
+                    .unwrap_or_else(|| "./games".to_string()),
+            ],
         }
     }
 }
