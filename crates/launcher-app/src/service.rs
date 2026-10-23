@@ -30,13 +30,16 @@ impl LauncherService {
             let _ = launcher_console::audio::execute_set_microphone_mute(muted);
         }));
 
+        let lifecycle = crate::tray::WindowLifecycleState::default();
+        lifecycle.set_log_file_path(data_dir.join("kame-house-debug.log"));
+
         let mut svc = Self {
             data_dir: data_dir.clone(),
             games: Arc::new(RwLock::new(Vec::new())),
             settings: Arc::new(RwLock::new(ConsoleSettings::default())),
             achievements,
             dualsense,
-            lifecycle: Arc::new(crate::tray::WindowLifecycleState::default()),
+            lifecycle: Arc::new(lifecycle),
             dualsense_worker: RwLock::new(None),
         };
         svc.load_state();

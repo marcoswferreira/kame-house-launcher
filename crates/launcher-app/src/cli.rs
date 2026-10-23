@@ -307,7 +307,9 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
             }
 
             if keep_alive {
-                tokio::signal::ctrl_c().await.ok();
+                if tokio::signal::ctrl_c().await.is_err() {
+                    std::future::pending::<()>().await;
+                }
                 crate::tray::cleanup_system_tray();
                 println!("\n{}", i18n.daemon_shutting_down());
             }

@@ -1,6 +1,8 @@
 use crate::LauncherService;
 use launcher_core::models::Language;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
+use std::path::PathBuf;
+use std::process::Child;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use tracing::info;
@@ -16,7 +18,9 @@ pub enum CloseDecision {
 /// Shared state for window lifecycle, debug console visibility, and close confirmation
 pub struct WindowLifecycleState {
     pub ui_url: RwLock<String>,
+    pub log_file_path: RwLock<PathBuf>,
     pub debug_console_visible: AtomicBool,
+    pub debug_viewer_process: Mutex<Option<Child>>,
     pub last_page_activity_ms: AtomicU64,
     pub last_explicit_action_ms: AtomicU64,
     pub shutdown_requested: AtomicBool,
@@ -32,7 +36,9 @@ impl WindowLifecycleState {
     pub fn new(ui_url: String) -> Self {
         Self {
             ui_url: RwLock::new(ui_url),
+            log_file_path: RwLock::new(PathBuf::from("./data/kame-house-debug.log")),
             debug_console_visible: AtomicBool::new(false),
+            debug_viewer_process: Mutex::new(None),
             last_page_activity_ms: AtomicU64::new(current_time_ms()),
             last_explicit_action_ms: AtomicU64::new(0),
             shutdown_requested: AtomicBool::new(false),
@@ -45,6 +51,14 @@ impl WindowLifecycleState {
 
     pub fn get_ui_url(&self) -> String {
         self.ui_url.read().clone()
+    }
+
+    pub fn set_log_file_path(&self, path: PathBuf) {
+        *self.log_file_path.write() = path;
+    }
+
+    pub fn get_log_file_path(&self) -> PathBuf {
+        self.log_file_path.read().clone()
     }
 
     pub fn record_page_activity(&self) {
@@ -64,6 +78,13 @@ impl WindowLifecycleState {
     }
 
     pub fn is_debug_console_visible(&self) -> bool {
+        let mut proc_guard = self.debug_viewer_process.lock();
+        if let Some(ref mut child) = *proc_guard {
+            if let Ok(Some(_)) = child.try_wait() {
+                *proc_guard = None;
+                self.debug_console_visible.store(false, Ordering::SeqCst);
+            }
+        }
         self.debug_console_visible.load(Ordering::SeqCst)
     }
 }
@@ -122,13 +143,17 @@ impl TrayLabels {
     }
 }
 
-/// Hides the console window on startup when running the GUI daemon on Windows
-pub fn hide_console_on_startup_if_daemon(hide: bool) {
-    let force_show = std::env::var("KAME_HOUSE_SHOW_CONSOLE").ok().as_deref() == Some("1");
-    if hide && !force_show {
-        #[cfg(target_os = "windows")]
-        win32::set_console_visible(false);
+/// Attaches to the parent terminal console when running one-shot CLI commands on Windows
+pub fn attach_parent_console_for_cli() {
+    #[cfg(target_os = "windows")]
+    {
+        win32::attach_parent_console();
     }
+}
+
+/// Ensures no console window is visible on startup when running the GUI daemon on Windows
+pub fn hide_console_on_startup_if_daemon(hide: bool) {
+    let _ = hide;
 }
 
 /// Toggles or sets the visibility of the Windows Debug Console window
@@ -139,7 +164,7 @@ pub fn set_debug_console_visible(lifecycle: &WindowLifecycleState, visible: bool
     info!("Debug terminal visibility set to: {}", visible);
     #[cfg(target_os = "windows")]
     {
-        win32::set_console_visible(visible);
+        win32::set_console_visible(lifecycle, visible);
     }
     visible
 }
@@ -206,10 +231,6 @@ mod win32 {
     use std::sync::{Arc, OnceLock};
     use tracing::info;
 
-    const SW_HIDE: i32 = 0;
-    const SW_RESTORE: i32 = 9;
-    const SW_SHOW: i32 = 5;
-
     const WS_OVERLAPPEDWINDOW: u32 = 0x00CF0000;
     const CW_USEDEFAULT: i32 = -2147483648i32;
 
@@ -235,12 +256,9 @@ mod win32 {
 
     const MF_STRING: u32 = 0x00000000;
     const MF_SEPARATOR: u32 = 0x00000800;
-    const MF_BYCOMMAND: u32 = 0x00000000;
     const TPM_BOTTOMALIGN: u32 = 0x0020;
     const TPM_LEFTALIGN: u32 = 0x0000;
     const TPM_RIGHTBUTTON: u32 = 0x0002;
-
-    const SC_CLOSE: u32 = 0xF060;
 
     const ID_TRAY_OPEN_UI: usize = 1001;
     const ID_TRAY_TOGGLE_CONSOLE: usize = 1002;
@@ -320,18 +338,13 @@ mod win32 {
 
     #[link(name = "kernel32")]
     extern "system" {
-        fn GetConsoleWindow() -> isize;
-        fn AllocConsole() -> i32;
-        fn SetConsoleTitleW(lp_console_title: *const u16) -> i32;
+        fn AttachConsole(dw_process_id: u32) -> i32;
         fn GetModuleHandleW(lp_module_name: *const u16) -> isize;
     }
 
     #[link(name = "user32")]
     extern "system" {
-        fn ShowWindow(hwnd: isize, n_cmd_show: i32) -> i32;
         fn SetForegroundWindow(hwnd: isize) -> i32;
-        fn GetSystemMenu(hwnd: isize, b_revert: i32) -> isize;
-        fn DeleteMenu(h_menu: isize, u_position: u32, u_flags: u32) -> i32;
         fn RegisterClassW(lp_wnd_class: *const WNDCLASSW) -> u16;
         fn CreateWindowExW(
             dw_ex_style: u32,
@@ -409,28 +422,92 @@ mod win32 {
         dest[len] = 0;
     }
 
-    pub fn set_console_visible(visible: bool) {
+    pub fn attach_parent_console() {
+        const ATTACH_PARENT_PROCESS: u32 = 0xFFFFFFFF;
         unsafe {
-            let mut hwnd = GetConsoleWindow();
-            if hwnd == 0 && visible {
-                let _ = AllocConsole();
-                hwnd = GetConsoleWindow();
+            let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+        }
+    }
+
+    pub fn set_console_visible(lifecycle: &WindowLifecycleState, visible: bool) {
+        use std::os::windows::process::CommandExt;
+        use std::process::Command;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let mut proc_guard = lifecycle.debug_viewer_process.lock();
+
+        if !visible {
+            if let Some(mut child) = proc_guard.take() {
+                let pid = child.id();
+                let _ = Command::new("taskkill")
+                    .creation_flags(CREATE_NO_WINDOW)
+                    .args(["/F", "/T", "/PID", &pid.to_string()])
+                    .status();
+                let _ = child.kill();
+                let _ = child.wait();
             }
-            if hwnd != 0 {
-                let title = to_wide("Kame House Launcher — Debug Terminal");
-                let _ = SetConsoleTitleW(title.as_ptr());
-                // Prevent accidental termination via console X button; users hide it via Tray or UI
-                let sys_menu = GetSystemMenu(hwnd, 0);
-                if sys_menu != 0 {
-                    let _ = DeleteMenu(sys_menu, SC_CLOSE, MF_BYCOMMAND);
-                }
-                if visible {
-                    let _ = ShowWindow(hwnd, SW_RESTORE);
-                    let _ = ShowWindow(hwnd, SW_SHOW);
-                    let _ = SetForegroundWindow(hwnd);
-                } else {
-                    let _ = ShowWindow(hwnd, SW_HIDE);
-                }
+            return;
+        }
+
+        // Check if an existing viewer process is still alive
+        if let Some(ref mut child) = *proc_guard {
+            if let Ok(None) = child.try_wait() {
+                return;
+            }
+            *proc_guard = None;
+        }
+
+        let log_path = lifecycle.get_log_file_path();
+        if let Some(parent) = log_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        if !log_path.exists() {
+            let _ = std::fs::File::create(&log_path);
+        }
+
+        let escaped_path = log_path.to_string_lossy().replace('\'', "''");
+        let ps_script = format!(
+            "$Host.UI.RawUI.WindowTitle = 'Kame House Launcher - Debug Logs'; \
+             Write-Host '=== Kame House Launcher — Live Debug Terminal ===' -ForegroundColor Cyan; \
+             Write-Host 'Log file: {}' -ForegroundColor DarkGray; \
+             Write-Host ''; \
+             Get-Content -Path '{}' -Wait -Tail 250",
+            escaped_path, escaped_path
+        );
+
+        let spawned = Command::new("conhost.exe")
+            .args([
+                "powershell.exe",
+                "-NoLogo",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                &ps_script,
+            ])
+            .spawn()
+            .or_else(|_| {
+                Command::new("powershell.exe")
+                    .args([
+                        "-NoLogo",
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command",
+                        &ps_script,
+                    ])
+                    .spawn()
+            });
+
+        match spawned {
+            Ok(child) => {
+                *proc_guard = Some(child);
+            }
+            Err(e) => {
+                tracing::warn!("Failed to spawn on-demand debug log console: {}", e);
+                lifecycle
+                    .debug_console_visible
+                    .store(false, Ordering::SeqCst);
             }
         }
     }
@@ -507,6 +584,9 @@ mod win32 {
     }
 
     pub fn remove_tray_icon() {
+        if let Some((_, lifecycle)) = GLOBAL_TRAY_CTX.get() {
+            set_console_visible(lifecycle, false);
+        }
         let hwnd = TRAY_HWND.swap(0, Ordering::SeqCst);
         if hwnd != 0 {
             unsafe {
