@@ -30,6 +30,27 @@ struct StatusResponse {
     dualsense_udp_enabled: bool,
     scan_directories: Vec<String>,
     debug_console_visible: bool,
+    steam_shortcuts_path: String,
+    steam_vdf_is_real: bool,
+    steam_vdf_is_custom: bool,
+}
+
+#[derive(Serialize)]
+struct SteamPathConfigResponse {
+    path: String,
+    is_real: bool,
+    is_custom: bool,
+    candidates: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct SetSteamPathRequest {
+    path: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct DeleteGameRequest {
+    id: String,
 }
 
 #[derive(Deserialize)]
@@ -206,6 +227,7 @@ where
                 LaunchBehavior::KeepOpen => "keep_open",
             };
             let ds_status = service.dualsense.get_status().await;
+            let (vdf_path, is_real, is_custom) = service.get_steam_shortcuts_info();
             let resp = StatusResponse {
                 version: env!("CARGO_PKG_VERSION"),
                 language: settings.language.code().to_string(),
@@ -217,6 +239,9 @@ where
                 dualsense_udp_enabled: settings.dualsense_udp_enabled,
                 scan_directories: settings.scan_directories.clone(),
                 debug_console_visible: service.lifecycle.is_debug_console_visible(),
+                steam_shortcuts_path: vdf_path.to_string_lossy().to_string(),
+                steam_vdf_is_real: is_real,
+                steam_vdf_is_custom: is_custom,
             };
             let json = serde_json::to_vec(&resp).unwrap_or_default();
             ("200 OK", "application/json", json)
@@ -401,19 +426,23 @@ where
             ("200 OK", "application/json", resp.into_bytes())
         }
         ("POST", "/api/steam/sync") => {
-            let vdf_path = service.get_steam_shortcuts_path();
+            let (vdf_path, is_real, is_custom) = service.get_steam_shortcuts_info();
 
             match service.export_games_to_steam(&vdf_path) {
                 Ok(count) => {
                     tracing::info!(
-                        "Successfully synchronized {} shortcuts into Steam VDF at: {}",
+                        "Successfully synchronized {} shortcuts into Steam VDF at: {} (real={}, custom={})",
                         count,
-                        vdf_path.display()
+                        vdf_path.display(),
+                        is_real,
+                        is_custom
                     );
                     let resp = format!(
-                        "{{\"status\":\"synchronized\",\"count\":{},\"path\":\"{}\"}}",
+                        "{{\"status\":\"synchronized\",\"count\":{},\"path\":\"{}\",\"is_real\":{},\"is_custom\":{}}}",
                         count,
-                        vdf_path.to_string_lossy().replace('\\', "\\\\")
+                        vdf_path.to_string_lossy().replace('\\', "\\\\"),
+                        is_real,
+                        is_custom
                     );
                     ("200 OK", "application/json", resp.into_bytes())
                 }
@@ -429,6 +458,69 @@ where
                     .unwrap_or_else(|_| "{\"error\":\"Failed to sync shortcuts\"}".to_string());
                     ("500 Internal Error", "application/json", resp.into_bytes())
                 }
+            }
+        }
+        ("GET", "/api/steam/path") => {
+            let (path, is_real, is_custom) = service.get_steam_shortcuts_info();
+            let raw_candidates = launcher_steam::find_all_steam_shortcuts_candidates();
+            let candidates: Vec<String> = raw_candidates
+                .into_iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
+            let resp = SteamPathConfigResponse {
+                path: path.to_string_lossy().to_string(),
+                is_real,
+                is_custom,
+                candidates,
+            };
+            let json = serde_json::to_vec(&resp).unwrap_or_default();
+            ("200 OK", "application/json", json)
+        }
+        ("POST", "/api/steam/path") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<SetSteamPathRequest>(&body_str) {
+                let clean = req.path.filter(|s| !s.trim().is_empty());
+                service.set_steam_shortcuts_path(clean);
+                let (path, is_real, is_custom) = service.get_steam_shortcuts_info();
+                let raw_candidates = launcher_steam::find_all_steam_shortcuts_candidates();
+                let candidates: Vec<String> = raw_candidates
+                    .into_iter()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .collect();
+                let resp = SteamPathConfigResponse {
+                    path: path.to_string_lossy().to_string(),
+                    is_real,
+                    is_custom,
+                    candidates,
+                };
+                let json = serde_json::to_vec(&resp).unwrap_or_default();
+                ("200 OK", "application/json", json)
+            } else {
+                (
+                    "400 Bad Request",
+                    "application/json",
+                    b"{\"error\":\"invalid request\"}".to_vec(),
+                )
+            }
+        }
+        ("POST", "/api/games/delete") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<DeleteGameRequest>(&body_str) {
+                let removed = service.remove_game(&req.id);
+                let remaining = service.list_games().len();
+                let resp = format!(
+                    "{{\"status\":\"{}\",\"id\":\"{}\",\"remaining_count\":{}}}",
+                    if removed { "deleted" } else { "not_found" },
+                    req.id.replace('"', "\\\""),
+                    remaining
+                );
+                ("200 OK", "application/json", resp.into_bytes())
+            } else {
+                (
+                    "400 Bad Request",
+                    "application/json",
+                    b"{\"error\":\"invalid game id\"}".to_vec(),
+                )
             }
         }
         ("POST", "/api/scan") => {

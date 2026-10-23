@@ -11,6 +11,16 @@ export interface StatusResponse {
   dualsense_udp_enabled: boolean;
   scan_directories?: string[];
   debug_console_visible?: boolean;
+  steam_shortcuts_path?: string;
+  steam_vdf_is_real?: boolean;
+  steam_vdf_is_custom?: boolean;
+}
+
+export interface SteamPathConfig {
+  path: string;
+  is_real: boolean;
+  is_custom: boolean;
+  candidates: string[];
 }
 
 export interface Game {

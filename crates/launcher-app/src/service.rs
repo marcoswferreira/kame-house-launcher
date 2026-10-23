@@ -178,14 +178,42 @@ impl LauncherService {
         self.settings.read().language
     }
 
+    pub fn remove_game(&self, game_id: &str) -> bool {
+        let mut list = self.games.write();
+        let initial_len = list.len();
+        list.retain(|g| g.id != game_id && g.uuid.to_string() != game_id);
+        let removed = list.len() < initial_len;
+        drop(list);
+        if removed {
+            let _ = self.save_state();
+        }
+        removed
+    }
+
     pub fn set_language(&self, lang: Language) {
         self.settings.write().language = lang;
         let _ = self.save_state();
     }
 
     pub fn get_steam_shortcuts_path(&self) -> PathBuf {
-        let (path, _) = find_steam_shortcuts_vdf(&self.data_dir);
-        path
+        self.get_steam_shortcuts_info().0
+    }
+
+    pub fn get_steam_shortcuts_info(&self) -> (PathBuf, bool, bool) {
+        // Returns (resolved_path, is_real_steam, is_custom_user_path)
+        if let Some(custom) = &self.settings.read().steam_shortcuts_path {
+            if let Some(resolved) = launcher_steam::resolve_steam_shortcuts_path(custom) {
+                return (resolved, true, true);
+            }
+        }
+        let (path, is_real) = find_steam_shortcuts_vdf(&self.data_dir);
+        (path, is_real, false)
+    }
+
+    pub fn set_steam_shortcuts_path(&self, custom: Option<String>) {
+        let mut settings = self.settings.read().clone();
+        settings.steam_shortcuts_path = custom;
+        self.update_console_settings(settings);
     }
 
     pub fn export_games_to_steam(&self, steam_shortcuts_vdf_path: &Path) -> std::io::Result<usize> {

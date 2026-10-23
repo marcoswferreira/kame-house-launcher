@@ -172,6 +172,98 @@ pub fn find_steam_shortcuts_vdf(fallback_dir: &Path) -> (PathBuf, bool) {
     (app_fallback, false)
 }
 
+/// Returns all detected candidate shortcuts.vdf paths found across all Steam userdata directories
+pub fn find_all_steam_shortcuts_candidates() -> Vec<PathBuf> {
+    let userdata_dirs = find_steam_userdata_dirs();
+    let mut candidates = Vec::new();
+
+    for u_dir in userdata_dirs {
+        if !u_dir.is_dir() {
+            continue;
+        }
+
+        let entries = match fs::read_dir(&u_dir) {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        for entry in entries.flatten() {
+            let user_folder = entry.path();
+            if !user_folder.is_dir() {
+                continue;
+            }
+
+            let folder_name = user_folder
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            if folder_name == "0" {
+                continue;
+            }
+
+            let vdf = user_folder.join("config").join("shortcuts.vdf");
+            if vdf.is_file() || user_folder.join("config").is_dir() {
+                candidates.push(vdf);
+            }
+        }
+    }
+    candidates
+}
+
+/// Resolves user-provided input path (can be a Steam root directory, userdata directory, or shortcuts.vdf)
+pub fn resolve_steam_shortcuts_path(raw_path: &str) -> Option<PathBuf> {
+    let trimmed = raw_path.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let p = PathBuf::from(trimmed);
+
+    // 1. Direct shortcuts.vdf or custom .vdf file
+    if p.is_file() || trimmed.ends_with(".vdf") {
+        return Some(p);
+    }
+
+    // 2. Pointed to a user account directory: <...>/<account_id>
+    let as_config_vdf = p.join("config").join("shortcuts.vdf");
+    if as_config_vdf.is_file() || p.join("config").is_dir() {
+        return Some(as_config_vdf);
+    }
+
+    // 3. Pointed to <...>/userdata or Steam root containing userdata
+    if p.join("userdata").is_dir() {
+        if let Ok(entries) = fs::read_dir(p.join("userdata")) {
+            for entry in entries.flatten() {
+                let candidate = entry.path().join("config").join("shortcuts.vdf");
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+        }
+    }
+
+    // 4. Pointed to a folder named userdata itself
+    if p.file_name().map(|f| f.to_string_lossy().to_lowercase()) == Some("userdata".to_string())
+        && p.is_dir()
+    {
+        if let Ok(entries) = fs::read_dir(&p) {
+            for entry in entries.flatten() {
+                let candidate = entry.path().join("config").join("shortcuts.vdf");
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+        }
+    }
+
+    // 5. Fallback directory: if it's a directory, return p.join("shortcuts.vdf")
+    if p.is_dir() {
+        Some(p.join("shortcuts.vdf"))
+    } else {
+        Some(p)
+    }
+}
+
 /// Checks if the Steam client process is actively running in the OS
 pub fn is_steam_running() -> bool {
     #[cfg(target_os = "windows")]

@@ -123,13 +123,21 @@ export function App() {
       const res = await fetch('/api/steam/sync', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        const msg = t.toast_steam_synced.replace('{count}', String(data.count || 0));
-        showToast(msg, 'success');
+        if (!data.is_real && !data.is_custom) {
+          const warnMsg =
+            lang === 'pt'
+              ? `Atenção: Steam não encontrada automaticamente. Atalhos salvos no local temporário. Clique em "Apontar Pasta da Steam" para salvar na sua biblioteca Steam real.`
+              : `Warning: Steam was not detected automatically. Shortcuts saved to local fallback. Use "Point Steam Folder" to save to your real Steam library.`;
+          showToast(warnMsg, 'info');
+        } else {
+          const msg = t.toast_steam_synced.replace('{count}', String(data.count || 0));
+          showToast(msg, 'success');
+        }
         fetchStatus();
       } else {
         showToast(data.error || 'Steam sync failed', 'error');
       }
-    } catch (e) {
+    } catch {
       showToast('Error syncing shortcuts.vdf', 'error');
     }
   };
@@ -171,6 +179,56 @@ export function App() {
       }
     } catch (e) {
       showToast('Failed to update scan directories.', 'error');
+    }
+  };
+
+  const handleRemoveGame = async (id: string, title: string) => {
+    try {
+      const res = await fetch('/api/games/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        showToast(
+          lang === 'pt'
+            ? `"${title}" foi removido do índice.`
+            : `"${title}" was removed from index.`,
+          'info'
+        );
+        fetchGames();
+        fetchStatus();
+      } else {
+        showToast('Failed to remove game', 'error');
+      }
+    } catch {
+      showToast('Error removing game', 'error');
+    }
+  };
+
+  const handleConfigureSteamPath = async (path: string | null) => {
+    try {
+      const res = await fetch('/api/steam/path', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      });
+      if (res.ok) {
+        showToast(
+          path
+            ? t.toast_steam_path_saved
+            : t.toast_steam_path_reset,
+          'success'
+        );
+        fetchStatus();
+        return true;
+      } else {
+        showToast('Failed to update Steam path', 'error');
+        return false;
+      }
+    } catch {
+      showToast('Error configuring Steam path', 'error');
+      return false;
     }
   };
 
@@ -259,9 +317,14 @@ export function App() {
             <SteamBridgeTab
               games={games}
               scanDirectories={status?.scan_directories || []}
+              steamShortcutsPath={status?.steam_shortcuts_path}
+              steamVdfIsReal={status?.steam_vdf_is_real}
+              steamVdfIsCustom={status?.steam_vdf_is_custom}
               onSyncSteam={handleSyncSteam}
               onScanGames={() => handleScanGames()}
               onUpdateScanDirectories={handleUpdateScanDirectories}
+              onRemoveGame={handleRemoveGame}
+              onConfigureSteamPath={handleConfigureSteamPath}
             />
           )}
 

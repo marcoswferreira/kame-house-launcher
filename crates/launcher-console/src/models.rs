@@ -21,6 +21,9 @@ pub struct ConsoleSettings {
     /// Pastas configuradas pelo usuário para busca de jogos e ROMs
     #[serde(default)]
     pub scan_directories: Vec<String>,
+    /// Caminho personalizado da Steam ou do arquivo shortcuts.vdf apontado pelo usuário
+    #[serde(default)]
+    pub steam_shortcuts_path: Option<String>,
 }
 
 impl Default for ConsoleSettings {
@@ -34,6 +37,7 @@ impl Default for ConsoleSettings {
             scan_directories: vec![dirs::home_dir()
                 .map(|h| h.join("Games").to_string_lossy().to_string())
                 .unwrap_or_else(|| "./games".to_string())],
+            steam_shortcuts_path: None,
         }
     }
 }
