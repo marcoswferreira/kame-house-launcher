@@ -47,4 +47,3 @@ impl LaunchSupervisor {
         self.current_window_state
     }
 }
-

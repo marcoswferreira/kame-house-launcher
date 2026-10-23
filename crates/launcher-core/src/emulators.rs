@@ -15,7 +15,12 @@ pub static EMULATORS: &[EmulatorProfile] = &[
     EmulatorProfile {
         key: "psp",
         name: "PPSSPP",
-        files: &["PPSSPPWindows64.exe", "PPSSPPWindows.exe", "PPSSPPDL.exe", "ppsspp"],
+        files: &[
+            "PPSSPPWindows64.exe",
+            "PPSSPPWindows.exe",
+            "PPSSPPDL.exe",
+            "ppsspp",
+        ],
         default_args: r#""{game}""#,
         fullscreen_args: r#"--fullscreen "{game}""#,
         download_url: Some("https://www.ppsspp.org/"),
@@ -23,7 +28,13 @@ pub static EMULATORS: &[EmulatorProfile] = &[
     EmulatorProfile {
         key: "ps2",
         name: "PCSX2",
-        files: &["pcsx2-qtx64.exe", "pcsx2-qt.exe", "pcsx2x64.exe", "pcsx2.exe", "pcsx2"],
+        files: &[
+            "pcsx2-qtx64.exe",
+            "pcsx2-qt.exe",
+            "pcsx2x64.exe",
+            "pcsx2.exe",
+            "pcsx2",
+        ],
         default_args: r#"-batch "{game}""#,
         fullscreen_args: r#"-batch -fullscreen "{game}""#,
         download_url: Some("https://pcsx2.net/"),
@@ -31,7 +42,12 @@ pub static EMULATORS: &[EmulatorProfile] = &[
     EmulatorProfile {
         key: "ps1",
         name: "DuckStation",
-        files: &["duckstation-qt-x64-ReleaseLTCG.exe", "duckstation-nogui-x64-ReleaseLTCG.exe", "duckstation-qt.exe", "duckstation"],
+        files: &[
+            "duckstation-qt-x64-ReleaseLTCG.exe",
+            "duckstation-nogui-x64-ReleaseLTCG.exe",
+            "duckstation-qt.exe",
+            "duckstation",
+        ],
         default_args: r#"-batch "{game}""#,
         fullscreen_args: r#"-batch -fullscreen "{game}""#,
         download_url: Some("https://www.duckstation.org/"),
@@ -63,7 +79,16 @@ pub static EMULATORS: &[EmulatorProfile] = &[
     EmulatorProfile {
         key: "switch",
         name: "Ryujinx / Yuzu / Citron",
-        files: &["Ryujinx.exe", "yuzu.exe", "citron.exe", "suyu.exe", "eden.exe", "sudachi.exe", "Ryujinx", "yuzu"],
+        files: &[
+            "Ryujinx.exe",
+            "yuzu.exe",
+            "citron.exe",
+            "suyu.exe",
+            "eden.exe",
+            "sudachi.exe",
+            "Ryujinx",
+            "yuzu",
+        ],
         default_args: r#""{game}""#,
         fullscreen_args: r#"-f -g "{game}""#,
         download_url: None,
@@ -108,9 +133,9 @@ pub fn find_emulator_by_key(key: &str) -> Option<&'static EmulatorProfile> {
 
 pub fn guess_profile_from_exe(exe_path: &Path) -> Option<&'static EmulatorProfile> {
     let file_name = exe_path.file_name()?.to_str()?.to_ascii_lowercase();
-    EMULATORS.iter().find(|e| {
-        e.files.iter().any(|f| f.eq_ignore_ascii_case(&file_name))
-    })
+    EMULATORS
+        .iter()
+        .find(|e| e.files.iter().any(|f| f.eq_ignore_ascii_case(&file_name)))
 }
 
 pub fn detected_arguments(profile_key: &str, _exe_path: &Path) -> String {

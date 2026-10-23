@@ -35,4 +35,3 @@ pub fn generate_windows_autologin_reg(username: &str, domain: Option<&str>) -> S
         domain.unwrap_or(".")
     )
 }
-

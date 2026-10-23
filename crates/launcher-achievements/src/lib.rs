@@ -46,4 +46,3 @@ mod tests {
         assert!(mgr2.activity[0].steam_notified);
     }
 }
-

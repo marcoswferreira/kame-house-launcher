@@ -20,4 +20,3 @@ pub fn get_power_command(action: PowerAction) -> (&'static str, &'static [&'stat
         }
     }
 }
-

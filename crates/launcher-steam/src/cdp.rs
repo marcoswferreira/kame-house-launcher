@@ -66,7 +66,12 @@ pub struct CdpRequest<'a> {
     pub session_id: Option<&'a str>,
 }
 
-pub fn format_cdp_call(id: u64, method: &str, params: serde_json::Value, session_id: Option<&str>) -> String {
+pub fn format_cdp_call(
+    id: u64,
+    method: &str,
+    params: serde_json::Value,
+    session_id: Option<&str>,
+) -> String {
     let req = CdpRequest {
         id,
         method,
@@ -75,4 +80,3 @@ pub fn format_cdp_call(id: u64, method: &str, params: serde_json::Value, session
     };
     serde_json::to_string(&req).unwrap_or_default()
 }
-

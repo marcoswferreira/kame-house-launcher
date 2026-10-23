@@ -103,7 +103,10 @@ impl LauncherService {
 
     pub fn prepare_launch(&self, game_id: &str) -> Option<(Game, WindowState)> {
         let games = self.games.read();
-        let game = games.iter().find(|g| g.id == game_id || g.uuid.to_string() == game_id)?.clone();
+        let game = games
+            .iter()
+            .find(|g| g.id == game_id || g.uuid.to_string() == game_id)?
+            .clone();
         drop(games);
 
         let mut supervisor = LaunchSupervisor::new(self.settings.read().clone());
@@ -113,7 +116,10 @@ impl LauncherService {
 
     pub fn finish_launch(&self, game_id: &str, played_seconds: u64) -> WindowState {
         let mut games = self.games.write();
-        if let Some(g) = games.iter_mut().find(|g| g.id == game_id || g.uuid.to_string() == game_id) {
+        if let Some(g) = games
+            .iter_mut()
+            .find(|g| g.id == game_id || g.uuid.to_string() == game_id)
+        {
             g.playtime_seconds += played_seconds;
             g.last_played_at = Some(chrono::Utc::now().to_rfc3339());
         }
@@ -147,10 +153,16 @@ impl LauncherService {
                 appid: game.shortcut_id.unwrap_or(0),
                 app_name: game.title.clone(),
                 exe: game.custom_exe.clone().unwrap_or_else(|| game.path.clone()),
-                start_dir: Path::new(&game.path).parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default(),
+                start_dir: Path::new(&game.path)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_default(),
                 launch_options: game.custom_args.clone().unwrap_or_default(),
                 icon: game.art.icon.clone().unwrap_or_default(),
-                tags: vec!["Kame House Launcher".to_string(), game.platform_name.clone()],
+                tags: vec![
+                    "Kame House Launcher".to_string(),
+                    game.platform_name.clone(),
+                ],
             };
             upsert_shortcut(&mut root_nodes, shortcut);
             exported += 1;
@@ -164,10 +176,13 @@ impl LauncherService {
         Ok(exported)
     }
 
-    pub fn sync_sunshine_catalog(&self, apps_json_path: &Path, launcher_bin: &str) -> std::io::Result<usize> {
+    pub fn sync_sunshine_catalog(
+        &self,
+        apps_json_path: &Path,
+        launcher_bin: &str,
+    ) -> std::io::Result<usize> {
         let games = self.games.read().clone();
         let list = sync_games_to_apps_json(apps_json_path, &games, launcher_bin)?;
         Ok(list.apps.len())
     }
 }
-

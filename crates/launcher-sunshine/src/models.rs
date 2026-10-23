@@ -63,4 +63,3 @@ pub fn attribution_notice() -> &'static str {
     "Streaming powered by Sunshine - Copyright (C) LizardByte & Sunshine Contributors (GPL-3.0). \
     Kame House Launcher extends Sunshine headless infrastructure and credits the upstream authors."
 }
-

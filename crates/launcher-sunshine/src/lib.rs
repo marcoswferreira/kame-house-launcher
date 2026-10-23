@@ -3,7 +3,10 @@ pub mod models;
 pub mod sync;
 
 pub use client::SunshineClient;
-pub use models::{attribution_notice, PairPinRequest, SunshineApp, SunshineAppsList, SunshineClientInfo, SunshineStatus};
+pub use models::{
+    attribution_notice, PairPinRequest, SunshineApp, SunshineAppsList, SunshineClientInfo,
+    SunshineStatus,
+};
 pub use sync::sync_games_to_apps_json;
 
 #[cfg(test)]
@@ -61,7 +64,8 @@ mod tests {
             g_hidden,
         ];
 
-        let result = sync_games_to_apps_json(&apps_path, &games, "/opt/kame-house-launcher").unwrap();
+        let result =
+            sync_games_to_apps_json(&apps_path, &games, "/opt/kame-house-launcher").unwrap();
 
         // 1 app principal + 3 jogos visíveis = 4 apps
         assert_eq!(result.apps.len(), 4);
@@ -69,7 +73,10 @@ mod tests {
         assert_eq!(result.apps[1].name, "Super Mario 64");
         assert_eq!(result.apps[2].name, "Chrono Trigger");
         assert_eq!(result.apps[3].name, "Custom Port");
-        assert_eq!(result.apps[3].cmd, Some(r#""/games/launch.exe" -windowed"#.to_string()));
+        assert_eq!(
+            result.apps[3].cmd,
+            Some(r#""/games/launch.exe" -windowed"#.to_string())
+        );
         assert!(apps_path.exists());
     }
 }

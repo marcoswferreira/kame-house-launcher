@@ -25,6 +25,7 @@ fn clean_ascii(bytes: &[u8]) -> String {
     s.trim().to_string()
 }
 
+#[allow(clippy::chunks_exact_to_as_chunks)]
 pub fn read_cartridge_header(path: &Path, ext: &str) -> Option<CartridgeHeader> {
     let mut file = File::open(path).ok()?;
     let mut buf = [0u8; 0x10200];
@@ -109,8 +110,16 @@ pub fn read_cartridge_header(path: &Path, ext: &str) -> Option<CartridgeHeader> 
         let domestic = clean_ascii(&data[0x120..0x150]);
         let overseas = clean_ascii(&data[0x150..0x180]);
         let serial = clean_ascii(&data[0x180..0x18e]);
-        let title = if !overseas.is_empty() { overseas } else { domestic };
-        let platform = if sys.contains("32X") { "sega32x" } else { "genesis" };
+        let title = if !overseas.is_empty() {
+            overseas
+        } else {
+            domestic
+        };
+        let platform = if sys.contains("32X") {
+            "sega32x"
+        } else {
+            "genesis"
+        };
         return Some(CartridgeHeader {
             platform,
             title,

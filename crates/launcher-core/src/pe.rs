@@ -40,7 +40,9 @@ pub fn detect_steam_app_id_in_dir(dir: &Path) -> Option<SteamEvidence> {
         "steam_settings/configs.main.ini",
     ];
 
-    let re_appid = regex::Regex::new(r#"(?im)^\s*(?:Real)?App[_ ]?I[Dd]\s*=\s*"?([1-9]\d{0,9})"?\s*$"#).ok()?;
+    let re_appid =
+        regex::Regex::new(r#"(?im)^\s*(?:Real)?App[_ ]?I[Dd]\s*=\s*"?([1-9]\d{0,9})"?\s*$"#)
+            .ok()?;
 
     for name in ini_files {
         let file = dir.join(name);

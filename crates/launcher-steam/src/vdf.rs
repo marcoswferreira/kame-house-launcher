@@ -23,7 +23,7 @@ pub fn calculate_shortcut_id(exe: &str, app_name: &str) -> u32 {
     hasher.update(exe.as_bytes());
     hasher.update(app_name.as_bytes());
     let crc = hasher.finalize();
-    (crc | 0x8000_0000) as u32
+    crc | 0x8000_0000
 }
 
 pub fn read_cstring<R: Read>(reader: &mut R) -> std::io::Result<String> {
@@ -51,7 +51,10 @@ pub fn parse_binary_vdf(bytes: &[u8]) -> std::io::Result<Vec<VdfNode>> {
 
 fn parse_nodes<R: Read>(reader: &mut R, depth: usize) -> std::io::Result<Vec<VdfNode>> {
     if depth > 32 {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "VDF recursão excessiva"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "VDF recursão excessiva",
+        ));
     }
     let mut nodes = Vec::new();
     loop {
@@ -143,7 +146,10 @@ pub struct SteamShortcut {
 }
 
 pub fn upsert_shortcut(root_nodes: &mut Vec<VdfNode>, shortcut: SteamShortcut) -> u32 {
-    let shortcuts_idx = match root_nodes.iter().position(|n| n.key.eq_ignore_ascii_case("shortcuts")) {
+    let shortcuts_idx = match root_nodes
+        .iter()
+        .position(|n| n.key.eq_ignore_ascii_case("shortcuts"))
+    {
         Some(idx) => idx,
         None => {
             root_nodes.push(VdfNode {

@@ -33,13 +33,21 @@ pub fn sync_games_to_apps_json(
         }
         let (cmd, working_dir) = if let Some(custom) = &game.custom_exe {
             (
-                Some(format!(r#""{}" {}"#, custom, game.custom_args.as_deref().unwrap_or(""))),
-                Path::new(custom).parent().map(|p| p.to_string_lossy().to_string()),
+                Some(format!(
+                    r#""{}" {}"#,
+                    custom,
+                    game.custom_args.as_deref().unwrap_or("")
+                )),
+                Path::new(custom)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string()),
             )
         } else {
             (
                 Some(format!(r#""{}""#, game.path)),
-                Path::new(&game.path).parent().map(|p| p.to_string_lossy().to_string()),
+                Path::new(&game.path)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string()),
             )
         };
 
@@ -59,10 +67,7 @@ pub fn sync_games_to_apps_json(
         });
     }
 
-    let list = SunshineAppsList {
-        env: None,
-        apps,
-    };
+    let list = SunshineAppsList { env: None, apps };
 
     if let Some(parent) = apps_json_path.parent() {
         fs::create_dir_all(parent)?;
@@ -72,4 +77,3 @@ pub fn sync_games_to_apps_json(
 
     Ok(list)
 }
-

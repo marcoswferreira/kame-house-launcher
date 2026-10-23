@@ -12,7 +12,7 @@ pub enum LaunchBehavior {
     KeepOpen,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ArtSet {
     /// Capa vertical (600x900)
     pub cover: Option<String>,
@@ -24,18 +24,6 @@ pub struct ArtSet {
     pub wide: Option<String>,
     /// Ícone executável (.ico ou .png 256x256)
     pub icon: Option<String>,
-}
-
-impl Default for ArtSet {
-    fn default() -> Self {
-        Self {
-            cover: None,
-            hero: None,
-            logo: None,
-            wide: None,
-            icon: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

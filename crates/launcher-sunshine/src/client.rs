@@ -92,4 +92,3 @@ impl SunshineClient {
         Ok(())
     }
 }
-

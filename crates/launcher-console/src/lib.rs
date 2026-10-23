@@ -3,7 +3,9 @@ pub mod models;
 pub mod power;
 pub mod supervisor;
 
-pub use boot::{generate_linux_autostart_desktop_file, generate_windows_autologin_reg, save_linux_autostart};
+pub use boot::{
+    generate_linux_autostart_desktop_file, generate_windows_autologin_reg, save_linux_autostart,
+};
 pub use models::{ConsoleSettings, PowerAction, TvResolution};
 pub use power::get_power_command;
 pub use supervisor::{LaunchSupervisor, WindowState};
@@ -17,10 +19,16 @@ mod tests {
     #[test]
     fn test_launch_behavior_default_hide_and_restore() {
         let mut settings = ConsoleSettings::default();
-        assert_eq!(settings.launch_behavior, LaunchBehavior::HideAndRestoreFullscreen);
+        assert_eq!(
+            settings.launch_behavior,
+            LaunchBehavior::HideAndRestoreFullscreen
+        );
 
         let mut supervisor = LaunchSupervisor::new(settings.clone());
-        assert_eq!(supervisor.current_window_state, WindowState::FullscreenFocused);
+        assert_eq!(
+            supervisor.current_window_state,
+            WindowState::FullscreenFocused
+        );
 
         // Ao preparar para lançar o jogo, deve ocultar/minimizar
         let state_before = supervisor.on_game_launch_prepare();
@@ -75,4 +83,3 @@ mod tests {
         assert!(!args.is_empty());
     }
 }
-

@@ -7,11 +7,17 @@ pub mod platforms;
 pub mod scanner;
 
 pub use disc::{inspect_disc, DiscInfo};
-pub use emulators::{detected_arguments, find_emulator_by_key, guess_profile_from_exe, standard_discovery_roots, EmulatorProfile, EMULATORS};
+pub use emulators::{
+    detected_arguments, find_emulator_by_key, guess_profile_from_exe, standard_discovery_roots,
+    EmulatorProfile, EMULATORS,
+};
 pub use headers::{read_cartridge_header, CartridgeHeader};
 pub use models::{ArtSet, Game, LaunchBehavior, StoreInfo};
 pub use pe::{detect_steam_app_id_in_dir, find_steam_app_id_near, SteamEvidence};
-pub use platforms::{find_platform_by_key, guess_platform_by_ext, guess_platform_by_folder_name, PlatformDef, PLATFORMS};
+pub use platforms::{
+    find_platform_by_key, guess_platform_by_ext, guess_platform_by_folder_name, PlatformDef,
+    PLATFORMS,
+};
 pub use scanner::{scan_path_for_game, scan_roots_parallel};
 
 #[cfg(test)]
@@ -34,7 +40,8 @@ mod tests {
         let ext_def = guess_platform_by_ext("cso").expect("CSO deve ser PSP");
         assert_eq!(ext_def.key, "psp");
 
-        let folder_def = guess_platform_by_folder_name("switch").expect("Pasta switch deve ser reconhecida");
+        let folder_def =
+            guess_platform_by_folder_name("switch").expect("Pasta switch deve ser reconhecida");
         assert_eq!(folder_def.key, "switch");
     }
 
@@ -46,7 +53,8 @@ mod tests {
         let ppsspp = find_emulator_by_key("psp").expect("PPSSPP deve estar configurado");
         assert!(ppsspp.fullscreen_args.contains("--fullscreen"));
 
-        let guessed = guess_profile_from_exe(Path::new("Dolphin.exe")).expect("Dolphin deve ser reconhecido");
+        let guessed =
+            guess_profile_from_exe(Path::new("Dolphin.exe")).expect("Dolphin deve ser reconhecido");
         assert_eq!(guessed.key, "dolphin");
 
         let roots = standard_discovery_roots();
@@ -67,7 +75,8 @@ mod tests {
         let mut file = std::fs::File::create(&rom_path).unwrap();
         file.write_all(&rom_bytes).unwrap();
 
-        let header = read_cartridge_header(&rom_path, "gba").expect("Deve reconhecer cabeçalho GBA");
+        let header =
+            read_cartridge_header(&rom_path, "gba").expect("Deve reconhecer cabeçalho GBA");
         assert_eq!(header.platform, "gba");
         assert_eq!(header.title, "POKEMON EMER");
         assert_eq!(header.serial, "BPEE");
@@ -140,7 +149,10 @@ mod tests {
         let snes_path = dir.path().join("smw.sfc");
         let mut snes_bytes = vec![0u8; 0x8000];
         LittleEndian::write_u16(&mut snes_bytes[0x7fc0 + 0x1c..0x7fc0 + 0x1e], 0x1234);
-        LittleEndian::write_u16(&mut snes_bytes[0x7fc0 + 0x1e..0x7fc0 + 0x20], 0x1234 ^ 0xffff);
+        LittleEndian::write_u16(
+            &mut snes_bytes[0x7fc0 + 0x1e..0x7fc0 + 0x20],
+            0x1234 ^ 0xffff,
+        );
         snes_bytes[0x7fc0..0x7fc0 + 11].copy_from_slice(b"SUPER MARIO");
         std::fs::write(&snes_path, &snes_bytes).unwrap();
         let snes_head = read_cartridge_header(&snes_path, "sfc").expect("SNES");

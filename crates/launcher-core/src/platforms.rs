@@ -25,10 +25,19 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: Some(41),
         libretro_name: "Sony - PlayStation Portable",
         family: "sony",
-        aliases: &["psp", "playstation portable", "sony playstation portable", "ppsspp", "umd"],
+        aliases: &[
+            "psp",
+            "playstation portable",
+            "sony playstation portable",
+            "ppsspp",
+            "umd",
+        ],
         extensions: &["iso", "cso", "pbp"],
         default_profiles: &["psp", "retroarch"],
-        dat_sources: &[("redump", "Sony - PlayStation Portable"), ("no-intro", "Sony - PlayStation Portable (PSN)")],
+        dat_sources: &[
+            ("redump", "Sony - PlayStation Portable"),
+            ("no-intro", "Sony - PlayStation Portable (PSN)"),
+        ],
         serial_regex: Some(r"^(?:UL|UC|NP|ND)[A-Z]{2}[-_ ]?\d{5}$"),
     },
     PlatformDef {
@@ -39,7 +48,13 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: Some(21),
         libretro_name: "Sony - PlayStation 2",
         family: "sony",
-        aliases: &["ps2", "playstation 2", "playstation2", "sony playstation 2", "pcsx2"],
+        aliases: &[
+            "ps2",
+            "playstation 2",
+            "playstation2",
+            "sony playstation 2",
+            "pcsx2",
+        ],
         extensions: &["iso", "bin", "chd", "cso", "gz"],
         default_profiles: &["ps2", "retroarch"],
         dat_sources: &[("redump", "Sony - PlayStation 2")],
@@ -53,7 +68,16 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: Some(12),
         libretro_name: "Sony - PlayStation",
         family: "sony",
-        aliases: &["psx", "ps1", "psone", "playstation", "playstation 1", "sony playstation", "duckstation", "swanstation"],
+        aliases: &[
+            "psx",
+            "ps1",
+            "psone",
+            "playstation",
+            "playstation 1",
+            "sony playstation",
+            "duckstation",
+            "swanstation",
+        ],
         extensions: &["cue", "bin", "chd", "iso", "pbp", "m3u"],
         default_profiles: &["ps1", "duckstation", "bizhawk", "retroarch"],
         dat_sources: &[("redump", "Sony - PlayStation")],
@@ -67,7 +91,13 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: None,
         libretro_name: "Sony - PlayStation 3",
         family: "sony",
-        aliases: &["ps3", "playstation 3", "playstation3", "sony playstation 3", "rpcs3"],
+        aliases: &[
+            "ps3",
+            "playstation 3",
+            "playstation3",
+            "sony playstation 3",
+            "rpcs3",
+        ],
         extensions: &["iso"],
         default_profiles: &["ps3", "rpcs3"],
         dat_sources: &[("redump", "Sony - PlayStation 3")],
@@ -109,7 +139,14 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: Some(16),
         libretro_name: "Nintendo - GameCube",
         family: "nintendo",
-        aliases: &["gc", "gamecube", "ngc", "nintendo gamecube", "game cube", "dolphin"],
+        aliases: &[
+            "gc",
+            "gamecube",
+            "ngc",
+            "nintendo gamecube",
+            "game cube",
+            "dolphin",
+        ],
         extensions: &["iso", "gcm", "gcz", "rvz", "ciso"],
         default_profiles: &["dolphin", "retroarch"],
         dat_sources: &[("redump", "Nintendo - GameCube")],
@@ -151,7 +188,16 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: None,
         libretro_name: "Nintendo - Switch",
         family: "nintendo",
-        aliases: &["switch", "nintendo switch", "nsw", "ryujinx", "yuzu", "citron", "eden", "sudachi"],
+        aliases: &[
+            "switch",
+            "nintendo switch",
+            "nsw",
+            "ryujinx",
+            "yuzu",
+            "citron",
+            "eden",
+            "sudachi",
+        ],
         extensions: &["xci", "nsp", "nsz", "xcz"],
         default_profiles: &["switch"],
         dat_sources: &[],
@@ -249,7 +295,14 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: Some(3),
         libretro_name: "Nintendo - Super Nintendo Entertainment System",
         family: "nintendo",
-        aliases: &["snes", "super nintendo", "sfc", "super famicom", "snes9x", "mesen"],
+        aliases: &[
+            "snes",
+            "super nintendo",
+            "sfc",
+            "super famicom",
+            "snes9x",
+            "mesen",
+        ],
         extensions: &["sfc", "smc", "fig"],
         default_profiles: &["snes9x", "mesen", "ares", "retroarch"],
         dat_sources: &[("no-intro", "Nintendo - Super Nintendo Entertainment System")],
@@ -277,7 +330,14 @@ pub static PLATFORMS: &[PlatformDef] = &[
         ra_id: Some(1),
         libretro_name: "Sega - Mega Drive - Genesis",
         family: "sega",
-        aliases: &["genesis", "megadrive", "mega drive", "sega genesis", "sega mega drive", "fusion"],
+        aliases: &[
+            "genesis",
+            "megadrive",
+            "mega drive",
+            "sega genesis",
+            "sega mega drive",
+            "fusion",
+        ],
         extensions: &["md", "gen", "smd", "bin"],
         default_profiles: &["fusion", "ares", "retroarch"],
         dat_sources: &[("no-intro", "Sega - Mega Drive - Genesis")],
@@ -333,12 +393,14 @@ pub fn find_platform_by_key(key: &str) -> Option<&'static PlatformDef> {
 
 pub fn guess_platform_by_ext(ext: &str) -> Option<&'static PlatformDef> {
     let clean = ext.trim_start_matches('.').to_ascii_lowercase();
-    PLATFORMS.iter().find(|p| p.extensions.contains(&clean.as_str()))
+    PLATFORMS
+        .iter()
+        .find(|p| p.extensions.contains(&clean.as_str()))
 }
 
 pub fn guess_platform_by_folder_name(name: &str) -> Option<&'static PlatformDef> {
     let lower = name.to_ascii_lowercase();
-    PLATFORMS.iter().find(|p| {
-        p.key == lower || p.aliases.iter().any(|alias| *alias == lower)
-    })
+    PLATFORMS
+        .iter()
+        .find(|p| p.key == lower || p.aliases.iter().any(|alias| *alias == lower))
 }

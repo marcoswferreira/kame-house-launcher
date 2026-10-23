@@ -5,8 +5,8 @@ pub mod vdf;
 pub use cdp::{classify_target, format_cdp_call, AchievementToast, TargetKind};
 pub use grid::SteamGridManager;
 pub use vdf::{
-    calculate_shortcut_id, encode_binary_vdf, parse_binary_vdf, upsert_shortcut, SteamShortcut, VdfNode,
-    VdfValue,
+    calculate_shortcut_id, encode_binary_vdf, parse_binary_vdf, upsert_shortcut, SteamShortcut,
+    VdfNode, VdfValue,
 };
 
 #[cfg(test)]
@@ -19,7 +19,10 @@ mod tests {
         let exe = r#""C:\Emulators\ppsspp.exe""#;
         let title = "Crisis Core";
         let id = calculate_shortcut_id(exe, title);
-        assert!(id >= 0x8000_0000, "Shortcut ID da Steam deve ter o bit 31 setado");
+        assert!(
+            id >= 0x8000_0000,
+            "Shortcut ID da Steam deve ter o bit 31 setado"
+        );
     }
 
     #[test]
@@ -84,10 +87,19 @@ mod tests {
         let id = 3000000000;
 
         assert_eq!(manager.cover_path(id), dir.path().join("3000000000p.png"));
-        assert_eq!(manager.hero_path(id), dir.path().join("3000000000_hero.png"));
-        assert_eq!(manager.logo_path(id), dir.path().join("3000000000_logo.png"));
+        assert_eq!(
+            manager.hero_path(id),
+            dir.path().join("3000000000_hero.png")
+        );
+        assert_eq!(
+            manager.logo_path(id),
+            dir.path().join("3000000000_logo.png")
+        );
         assert_eq!(manager.wide_path(id), dir.path().join("3000000000.png"));
-        assert_eq!(manager.icon_path(id), dir.path().join("3000000000_icon.ico"));
+        assert_eq!(
+            manager.icon_path(id),
+            dir.path().join("3000000000_icon.ico")
+        );
 
         let saved = manager.save_art(id, "cover", b"fake_png").unwrap();
         assert!(saved.exists());
@@ -119,7 +131,10 @@ mod tests {
             classify_target("", "https://steamcommunity.com/profiles/123"),
             TargetKind::Community
         );
-        assert_eq!(classify_target("DevTools", "about:blank"), TargetKind::Other);
+        assert_eq!(
+            classify_target("DevTools", "about:blank"),
+            TargetKind::Other
+        );
     }
 
     #[test]
@@ -137,7 +152,12 @@ mod tests {
         assert!(script.contains("Got all stars"));
         assert!(script.contains("12345"));
 
-        let cdp_msg = format_cdp_call(1, "Runtime.evaluate", serde_json::json!({"expression": script}), Some("session123"));
+        let cdp_msg = format_cdp_call(
+            1,
+            "Runtime.evaluate",
+            serde_json::json!({"expression": script}),
+            Some("session123"),
+        );
         assert!(cdp_msg.contains(r#""id":1"#));
         assert!(cdp_msg.contains(r#""method":"Runtime.evaluate""#));
         assert!(cdp_msg.contains(r#""sessionId":"session123""#));

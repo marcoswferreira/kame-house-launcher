@@ -31,7 +31,12 @@ impl SteamGridManager {
         self.grid_dir.join(format!("{}_icon.ico", shortcut_id))
     }
 
-    pub fn save_art(&self, shortcut_id: u32, art_type: &str, bytes: &[u8]) -> std::io::Result<PathBuf> {
+    pub fn save_art(
+        &self,
+        shortcut_id: u32,
+        art_type: &str,
+        bytes: &[u8],
+    ) -> std::io::Result<PathBuf> {
         fs::create_dir_all(&self.grid_dir)?;
         let target = match art_type {
             "cover" => self.cover_path(shortcut_id),
@@ -45,4 +50,3 @@ impl SteamGridManager {
         Ok(target)
     }
 }
-

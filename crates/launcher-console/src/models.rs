@@ -76,4 +76,3 @@ pub enum PowerAction {
     Restart,
     Shutdown,
 }
-

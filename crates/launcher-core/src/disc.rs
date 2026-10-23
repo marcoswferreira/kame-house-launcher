@@ -52,14 +52,22 @@ pub fn inspect_disc(path: &Path) -> Option<DiscInfo> {
         let content = String::from_utf8_lossy(&scan_buf[..bytes_read]);
 
         // Busca padrão: BOOT2 = cdrom0:\SLUS_200.62;1 ou BOOT = cdrom0:\SLES_123.45;1
-        let re_system_cnf = regex::Regex::new(r#"(?i)BOOT\d?\s*=\s*cdrom0?:\\?([A-Z]{4}[-_ ]?\d{3}\.?\d{2})"#).ok()?;
+        let re_system_cnf =
+            regex::Regex::new(r#"(?i)BOOT\d?\s*=\s*cdrom0?:\\?([A-Z]{4}[-_ ]?\d{3}\.?\d{2})"#)
+                .ok()?;
         if let Some(caps) = re_system_cnf.captures(&content) {
             let s = caps.get(1)?.as_str().replace(['-', '_', '.'], "");
             found_serial = Some(s);
-            platform = if content.contains("BOOT2") { "ps2" } else { "ps1" };
+            platform = if content.contains("BOOT2") {
+                "ps2"
+            } else {
+                "ps1"
+            };
         } else {
             // Busca por serials de PSP / PS3 / PS4 em PARAM.SFO
-            let re_ps = regex::Regex::new(r#"(?i)\b((?:UL|UC|NP|ND|BL|BC)[A-Z]{2}\d{5}|CUSA\d{5})\b"#).ok()?;
+            let re_ps =
+                regex::Regex::new(r#"(?i)\b((?:UL|UC|NP|ND|BL|BC)[A-Z]{2}\d{5}|CUSA\d{5})\b"#)
+                    .ok()?;
             if let Some(caps) = re_ps.captures(&content) {
                 let s = caps.get(1)?.as_str().to_string();
                 found_serial = Some(s.clone());
@@ -76,7 +84,11 @@ pub fn inspect_disc(path: &Path) -> Option<DiscInfo> {
 
     Some(DiscInfo {
         platform,
-        title: if !vol_id.is_empty() { Some(vol_id.clone()) } else { None },
+        title: if !vol_id.is_empty() {
+            Some(vol_id.clone())
+        } else {
+            None
+        },
         serial: found_serial,
         volume_id: vol_id,
     })

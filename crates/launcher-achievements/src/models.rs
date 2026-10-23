@@ -40,4 +40,3 @@ pub fn parse_rpcs3_trophy_log_line(line: &str) -> Option<(u32, String)> {
     let name = caps.get(2)?.as_str().to_string();
     Some((id, name))
 }
-

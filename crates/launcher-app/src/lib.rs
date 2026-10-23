@@ -14,7 +14,12 @@ mod tests {
         let dir = tempdir().unwrap();
         let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
 
-        let game1 = Game::new("Metroid Fusion", "/roms/fusion.gba", "gba", "Game Boy Advance");
+        let game1 = Game::new(
+            "Metroid Fusion",
+            "/roms/fusion.gba",
+            "gba",
+            "Game Boy Advance",
+        );
         svc.add_game(game1.clone());
 
         let games = svc.list_games();
@@ -22,7 +27,9 @@ mod tests {
         assert_eq!(games[0].title, "Metroid Fusion");
 
         // Testar prepare launch com o comportamento padrão (HideAndRestoreFullscreen)
-        let (launched, state_before) = svc.prepare_launch(&game1.id).expect("Jogo deve ser preparado");
+        let (launched, state_before) = svc
+            .prepare_launch(&game1.id)
+            .expect("Jogo deve ser preparado");
         assert_eq!(launched.title, "Metroid Fusion");
         assert_eq!(state_before, WindowState::MinimizedOrHidden);
 
@@ -39,8 +46,10 @@ mod tests {
         let dir = tempdir().unwrap();
         let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
 
-        let mut settings = ConsoleSettings::default();
-        settings.launch_behavior = LaunchBehavior::KeepOpen;
+        let settings = ConsoleSettings {
+            launch_behavior: LaunchBehavior::KeepOpen,
+            ..Default::default()
+        };
         svc.update_console_settings(settings);
 
         let game = Game::new("Sonic 2", "/roms/sonic2.md", "genesis", "Mega Drive");
@@ -72,14 +81,20 @@ mod tests {
         let dir = tempdir().unwrap();
         let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
 
-        let game = Game::new("Zelda Ocarina of Time", "/roms/oot.z64", "n64", "Nintendo 64");
+        let game = Game::new(
+            "Zelda Ocarina of Time",
+            "/roms/oot.z64",
+            "n64",
+            "Nintendo 64",
+        );
         svc.add_game(game);
 
         let apps_path = dir.path().join("apps.json");
-        let apps_count = svc.sync_sunshine_catalog(&apps_path, "/usr/bin/kame-house-launcher").unwrap();
+        let apps_count = svc
+            .sync_sunshine_catalog(&apps_path, "/usr/bin/kame-house-launcher")
+            .unwrap();
         // 1 app Big Picture + 1 jogo = 2
         assert_eq!(apps_count, 2);
         assert!(apps_path.exists());
     }
 }
-
