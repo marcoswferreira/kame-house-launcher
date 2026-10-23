@@ -443,6 +443,174 @@ pub fn map_input_to_ds4(input: &DualSenseInputState) -> Ds4Report {
 }
 
 #[cfg(target_os = "windows")]
+#[repr(C)]
+#[derive(Copy, Clone)]
+struct WinGuid {
+    data1: u32,
+    data2: u16,
+    data3: u16,
+    data4: [u8; 8],
+}
+
+// GUID_DEVINTERFACE_VIGEMBUS: {96E42B22-F5E9-42F8-B043-ED0F932F014F}
+#[cfg(target_os = "windows")]
+const VIGEM_GUID: WinGuid = WinGuid {
+    data1: 0x96E42B22,
+    data2: 0xF5E9,
+    data3: 0x42F8,
+    data4: [0xB0, 0x43, 0xED, 0x0F, 0x93, 0x2F, 0x01, 0x4F],
+};
+
+#[cfg(target_os = "windows")]
+#[repr(C)]
+struct SpDeviceInterfaceData {
+    cb_size: u32,
+    interface_class_guid: WinGuid,
+    flags: u32,
+    reserved: usize,
+}
+
+#[cfg(target_os = "windows")]
+#[link(name = "setupapi")]
+extern "system" {
+    fn SetupDiGetClassDevsW(
+        class_guid: *const WinGuid,
+        enumerator: *const u16,
+        hwnd_parent: isize,
+        flags: u32,
+    ) -> isize;
+
+    fn SetupDiEnumDeviceInterfaces(
+        device_info_set: isize,
+        device_info_data: *const std::ffi::c_void,
+        interface_class_guid: *const WinGuid,
+        member_index: u32,
+        device_interface_data: *mut SpDeviceInterfaceData,
+    ) -> i32;
+
+    fn SetupDiGetDeviceInterfaceDetailW(
+        device_info_set: isize,
+        device_info_data: *mut SpDeviceInterfaceData,
+        device_interface_detail_data: *mut u8,
+        device_interface_detail_data_size: u32,
+        required_size: *mut u32,
+        device_info_data_out: *mut std::ffi::c_void,
+    ) -> i32;
+
+    fn SetupDiDestroyDeviceInfoList(device_info_set: isize) -> i32;
+}
+
+#[cfg(target_os = "windows")]
+extern "system" {
+    fn GetLastError() -> u32;
+}
+
+#[cfg(target_os = "windows")]
+unsafe fn find_vigem_device_paths() -> Vec<Vec<u16>> {
+    const DIGCF_PRESENT: u32 = 0x00000002;
+    const DIGCF_DEVICEINTERFACE: u32 = 0x00000010;
+    const INVALID_HANDLE_VALUE: isize = -1;
+
+    let mut found_paths = Vec::new();
+
+    let h_dev_info = SetupDiGetClassDevsW(
+        &VIGEM_GUID,
+        std::ptr::null(),
+        0,
+        DIGCF_PRESENT | DIGCF_DEVICEINTERFACE,
+    );
+
+    if h_dev_info == INVALID_HANDLE_VALUE || h_dev_info == 0 {
+        let err = GetLastError();
+        debug!("SetupDiGetClassDevsW returned invalid handle (err={})", err);
+        return found_paths;
+    }
+
+    let mut if_data: SpDeviceInterfaceData = std::mem::zeroed();
+    if_data.cb_size = std::mem::size_of::<SpDeviceInterfaceData>() as u32;
+
+    for index in 0..16 {
+        if SetupDiEnumDeviceInterfaces(
+            h_dev_info,
+            std::ptr::null(),
+            &VIGEM_GUID,
+            index,
+            &mut if_data,
+        ) == 0
+        {
+            break;
+        }
+
+        let mut required_size = 0u32;
+        let _ = SetupDiGetDeviceInterfaceDetailW(
+            h_dev_info,
+            &mut if_data,
+            std::ptr::null_mut(),
+            0,
+            &mut required_size,
+            std::ptr::null_mut(),
+        );
+
+        if required_size == 0 {
+            continue;
+        }
+
+        let mut buf = vec![0u8; required_size as usize];
+
+        // Probe expected cbSize header values for x86_64 and x86
+        let cb_candidates: [u32; 5] = if cfg!(target_pointer_width = "64") {
+            [8, 4, 6, 5, 12]
+        } else {
+            [6, 5, 4, 8, 12]
+        };
+
+        let mut success = false;
+        for test_cb in cb_candidates {
+            buf[0..4].copy_from_slice(&test_cb.to_ne_bytes());
+            if SetupDiGetDeviceInterfaceDetailW(
+                h_dev_info,
+                &mut if_data,
+                buf.as_mut_ptr(),
+                required_size,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            ) != 0
+            {
+                success = true;
+                break;
+            }
+        }
+
+        if success {
+            // Locate string start: check offset 4 or offset 8 for '\\' (0x005C)
+            let offset = if buf.len() > 6 && buf[4] == b'\\' && buf[5] == 0 {
+                4
+            } else if buf.len() > 10 && buf[8] == b'\\' && buf[9] == 0 {
+                8
+            } else {
+                4
+            };
+
+            let u16_slice = std::slice::from_raw_parts(
+                buf.as_ptr().add(offset) as *const u16,
+                (required_size as usize - offset) / 2,
+            );
+
+            if let Some(pos) = u16_slice.iter().position(|&c| c == 0) {
+                let mut path = u16_slice[..pos].to_vec();
+                path.push(0);
+                let path_str = String::from_utf16_lossy(&path[..pos]);
+                info!("ViGEmBus: Discovered device interface path: {}", path_str);
+                found_paths.push(path);
+            }
+        }
+    }
+
+    SetupDiDestroyDeviceInfoList(h_dev_info);
+    found_paths
+}
+
+#[cfg(target_os = "windows")]
 unsafe fn open_vigem_handle() -> isize {
     const GENERIC_READ: u32 = 0x80000000;
     const GENERIC_WRITE: u32 = 0x40000000;
@@ -450,21 +618,52 @@ unsafe fn open_vigem_handle() -> isize {
     const FILE_SHARE_WRITE: u32 = 0x00000002;
     const OPEN_EXISTING: u32 = 3;
     const FILE_ATTRIBUTE_NORMAL: u32 = 0x00000080;
+    const INVALID_HANDLE_VALUE: isize = -1;
 
-    let path_wide: Vec<u16> = r"\\.\ViGEmBus"
-        .encode_utf16()
-        .chain(std::iter::once(0))
-        .collect();
+    // 1. Try SetupAPI device interface paths (standard ViGEmBus driver registration)
+    let paths = find_vigem_device_paths();
+    for p in paths {
+        let h = CreateFileW(
+            p.as_ptr(),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            std::ptr::null(),
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            0,
+        );
+        if h != INVALID_HANDLE_VALUE && h != 0 {
+            info!("ViGEmBus: Successfully opened communication handle");
+            return h;
+        } else {
+            let err = GetLastError();
+            warn!(
+                "ViGEmBus: CreateFileW on device path failed with error {}",
+                err
+            );
+        }
+    }
 
-    CreateFileW(
-        path_wide.as_ptr(),
-        GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        std::ptr::null(),
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        0,
-    )
+    // 2. Fallback to symbolic names
+    let fallbacks = [r"\\.\ViGEmBus", r"\\.\NefariusViGEmBus", r"\\.\ViGEmBus\0"];
+    for fb in fallbacks {
+        let wide: Vec<u16> = fb.encode_utf16().chain(std::iter::once(0)).collect();
+        let h = CreateFileW(
+            wide.as_ptr(),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            std::ptr::null(),
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            0,
+        );
+        if h != INVALID_HANDLE_VALUE && h != 0 {
+            info!("ViGEmBus: Opened handle via symbolic fallback: {}", fb);
+            return h;
+        }
+    }
+
+    INVALID_HANDLE_VALUE
 }
 
 #[cfg(target_os = "windows")]
