@@ -5,9 +5,11 @@ import { Language } from '../types/models';
 
 type Translations = typeof en;
 
+export type TranslationMap = Translations & ((key: keyof Translations) => string);
+
 interface I18nContextType {
   lang: Language;
-  t: Translations;
+  t: TranslationMap;
   toggleLang: () => void;
   setLang: (lang: Language) => void;
 }
@@ -34,7 +36,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLang(lang === 'en' ? 'pt' : 'en');
   };
 
-  const t = lang === 'pt' ? (pt as Translations) : en;
+  const activeDict = lang === 'pt' ? (pt as Translations) : en;
+  const fn = (key: keyof Translations) => activeDict[key] || (key as string);
+  const t = Object.assign(fn, activeDict) as TranslationMap;
 
   return (
     <I18nContext.Provider value={{ lang, t, toggleLang, setLang }}>

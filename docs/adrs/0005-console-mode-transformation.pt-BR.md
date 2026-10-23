@@ -71,7 +71,7 @@ flowchart TD
 - **Ocultação Automática do Cursor:** O cursor do mouse desaparece automaticamente assim que qualquer botão do gamepad é pressionado.
 - **Silenciamento de Notificações:** Ativação automática do modo "Não Perturbe" / "Focus Assist" durante o uso do launcher ou execução de jogos.
 - **Supervisor de Foco de Jogo:** Quando um jogo é iniciado, o launcher se esconde ou minimiza para economizar GPU; quando o processo do jogo termina, o launcher volta à tela cheia em primeiro plano com foco imediato no controle.
-- **Prevenção de Suspensão:** Bloqueio do descanso de tela e da suspensão de energia enquanto uma sessão de jogo ou streaming Sunshine estiver ativa (`SetThreadExecutionState` no Windows).
+- **Prevenção de Suspensão:** Bloqueio do descanso de tela e da suspensão de energia enquanto uma sessão de jogo estiver ativa (`SetThreadExecutionState` no Windows).
 
 ### 5. Menu de Energia e Acesso Remoto
 - **Menu de Energia via Gamepad:** Pressionando o botão Guide/PS ou selecionando o ícone de energia, o usuário pode:

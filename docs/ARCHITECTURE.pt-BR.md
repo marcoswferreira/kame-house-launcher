@@ -10,28 +10,28 @@ O Kame House Launcher adota uma arquitetura em camadas orientada a eventos e cra
 
 ```mermaid
 flowchart TD
-    subgraph UI["Camada de Interface (10-Foot UI)"]
-        Grid["Biblioteca de Jogos (Grid & Carrossel)"]
-        SunshineTab["Painel Sunshine (Pareamento PIN, Encoders)"]
-        ConsoleTab["Sessão Modo Console (TV, Áudio, Auto-Login)"]
+    subgraph UI["Camada de Interface (React 19 Steam Deck Theme)"]
+        Grid["Biblioteca de Jogos (Grid & Detalhes)"]
+        DualSenseTab["DualSense Studio (Gatilhos, RGB, Link UDP)"]
+        ConsoleTab["Sessão Modo Console (TV, HDR, Auto-Login, Energia)"]
     end
 
     subgraph Service["Camada de Coordenação (launcher-app)"]
         LauncherService["LauncherService (Gestão de Estado & Ciclo de Vida)"]
     end
 
-    subgraph CoreCrates["Crates Especializadas"]
+    subgraph CoreCrates["Crates Especializadas em Rust"]
         Core["launcher-core (Scanner, Headers, Discos, Plataformas)"]
         Steam["launcher-steam (VDF shortcuts, Grid artes, CDP WebSocket)"]
-        Achiev["launcher-achievements (Relay de Conquistas & SQLite logs)"]
-        Sun["launcher-sunshine (REST HTTPS Client & apps.json sync)"]
+        Achiev["launcher-achievements (Relay de Conquistas & Activity Journal)"]
+        DualSense["launcher-dualsense (Gatilhos Adaptáveis, RGB, UDP :6969, Emulação)"]
         Console["launcher-console (Display TV, Áudio, Shell Kiosk, Supervisor)"]
     end
 
     subgraph External["Subsistemas Externos"]
         SteamClient["Steam Client (shortcuts.vdf & CEF Port 8080)"]
-        SunshineDaemon["Sunshine Daemon C++ (HTTPS 47990 / RTSP)"]
-        MoonlightClient["Cliente Moonlight (TV / Steam Deck / Celular)"]
+        DualSenseHardware["Sony DualSense / Edge (USB / Bluetooth HID)"]
+        GameMods["Mods de Telemetria de Jogos (Link UDP :6969)"]
         OS["Sistema Operacional (Win32 APIs / Linux xrandr / ALSA)"]
     end
 
@@ -39,13 +39,13 @@ flowchart TD
     LauncherService --> Core
     LauncherService --> Steam
     LauncherService --> Achiev
-    LauncherService --> Sun
+    LauncherService --> DualSense
     LauncherService --> Console
 
     Steam <-->|"WebSocket CDP"| SteamClient
     Achiev -->|"Relay Notificação"| Steam
-    Sun <-->|"REST HTTPS /api/*"| SunshineDaemon
-    SunshineDaemon -->|"Video/Input"| MoonlightClient
+    DualSense <-->|"Raw HID 0x02/0x31"| DualSenseHardware
+    DualSense <-->|"UDP JSON :6969"| GameMods
     Console <-->|"APIs de Sistema"| OS
 ```
 
@@ -74,11 +74,13 @@ flowchart TD
 - **Histórico Persistente:** Gravação atômica em `activity.json`.
 - **Parsers de Log (`models.rs`):** Reconhecimento de eventos de desbloqueio em logs de emuladores (como RPCS3) e encaminhamento ao bridge da Steam.
 
-### `launcher-sunshine`
-- **Cliente REST HTTPS (`client.rs`):** Comunicação assíncrona com Sunshine em `https://127.0.0.1:47990` com tratamento de CSRF tokens e certificados autoassinados locais.
-- **Pareamento por PIN:** Implementação da rota `/api/pin` para pareamento direto de clientes Moonlight.
-- **Sincronizador de Aplicativos (`sync.rs`):** Mapeamento do catálogo do launcher para o formato `apps.json` do Sunshine.
-- **Rastreamento Upstream:** Sunshine mantido como submódulo Git no diretório `Sunshine/`.
+### `launcher-dualsense`
+- **Comunicação HID Direta em Rust Puro (`protocol.rs`):** Protocolo Sony DualSense e DualSense Edge via USB (Output Report 0x02) e Bluetooth (Output Report 0x31 com checksum CRC32 IEEE 802.3 calculado via `crc32fast`).
+- **Motor de Gatilhos Adaptáveis (`triggers.rs`):** Compilação de efeitos nos buffers de hardware oficiais de 11 bytes para L2 e R2: Resistência rígida contínua, Disparo mecânico de arma/semi-automático, Tensão de arco, Recuo de metralhadora, Galope, Pulsos de vibração e curvas customizadas de 10 zonas.
+- **Barra de Luz RGB & LEDs de Jogador (`lightbar.rs`):** Efeitos estáticos, pulsação suave, ciclo arco-íris e indicador dinâmico de nível de bateria, além de LEDs indicadores de Jogador 1 a 4 e LED de microfone.
+- **Servidor Link UDP DualSenseX (`udp_server.rs`):** Servidor assíncrono em `tokio::net::UdpSocket` na porta `6969`, decodificando pacotes JSON enviados por mods de jogos (Assetto Corsa, F1 23/24, Cyberpunk 2077, etc.).
+- **Emulação de Controles & Giroscópio (`emulation.rs`):** Perfis de controle virtual (DualSense Nativo, Xbox 360 XInput via ViGEmBus/uinput, DualShock 4) e mapeamento do giroscópio IMU de 6 eixos para mira precisa no analógico direito.
+- **Perfis de Jogos (`profiles.rs`):** Configurações pré-definidas para Simuladores de Corrida (pulso ABS no freio L2 e resistência de acelerador no R2), Jogadores Táticos de Tiro, Simuladores de Voo e Modo Clássico.
 
 ### `launcher-console`
 - **Supervisor de Janelas (`supervisor.rs`):** Gerencia os dois comportamentos de execução:
@@ -91,6 +93,6 @@ flowchart TD
 ### `launcher-app`
 - **Serviço Central (`service.rs`):** `LauncherService` agregando estado, persistência de catálogo, configurações e chamadas IPC.
 - **Mecanismo de Internacionalização (`i18n.rs`):** Dicionário bilíngue com padrão em inglês (`en`) e suporte integral a português (`pt-BR`).
-- **Comandos e Flags de CLI (`cli.rs`):** Parser de linha de comando com suporte a `--lang`, `--set-lang`, `status`, `scan`, `export-steam`, `sync-sunshine` e `set-mode`.
+- **Comandos e Flags de CLI (`cli.rs`):** Parser de linha de comando com suporte a `--lang`, `--set-lang`, `status`, `scan`, `export-steam` e `set-mode`.
 - **Binário Executável (`main.rs`):** Ponto de entrada com logging estruturado via `tracing-subscriber`.
 

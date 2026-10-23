@@ -1,24 +1,24 @@
 import { useTranslation } from '../i18n';
-import { BarChart3, Zap, Radio, Tv, Power } from 'lucide-react';
+import { BarChart3, Zap, Gamepad2, Tv, Power } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   onSelectTab: (tab: string) => void;
-  sunshineEnabled?: boolean;
+  dualsenseConnected?: boolean;
 }
 
-export function Sidebar({ activeTab, onSelectTab, sunshineEnabled }: SidebarProps) {
+export function Sidebar({ activeTab, onSelectTab, dualsenseConnected }: SidebarProps) {
   const { t } = useTranslation();
 
   const tabs = [
     { id: 'overview', label: t.tab_overview, icon: BarChart3 },
     { id: 'steam-bridge', label: t.tab_steam, icon: Zap },
     {
-      id: 'sunshine',
-      label: t.tab_sunshine,
-      icon: Radio,
-      badge: sunshineEnabled ? 'ONLINE' : 'OFF',
-      badgeActive: sunshineEnabled,
+      id: 'dualsense',
+      label: t.tab_dualsense,
+      icon: Gamepad2,
+      badge: dualsenseConnected ? 'READY' : 'STANDBY',
+      badgeActive: dualsenseConnected,
     },
     { id: 'display', label: t.tab_display, icon: Tv },
     { id: 'power', label: t.tab_power, icon: Power },

@@ -12,7 +12,7 @@ Os requisitos técnicos fundamentais são:
 1. Uma base de código sólida em **Rust**, com arquitetura modular, tipagem estrita, performance nativa e segurança de memória.
 2. Alta performance em operações de baixo nível: varredura e hashing multi-thread de milhares de ROMs/ISOs, parsing de binários proprietários (Valve VDF, ISO9660, PARAM.SFO, PE executáveis), inspeção de discos e chamadas ao sistema operacional com footprint de memória residual ínfimo (<60MB de RAM).
 3. Uma interface de usuário de 10 pés ("10-foot UI") fluida a 60/120fps, com navegação total via gamepad/controle, feedback sonoro e renderização de artes visuais em alta resolução.
-4. Fácil integração e incorporação do plano de controle do Sunshine e da sessão de configuração "Console Mode".
+4. Fácil integração e incorporação do estúdio DualSense e da sessão de configuração "Console Mode".
 
 ## Opções Consideradas
 
@@ -25,7 +25,7 @@ Os requisitos técnicos fundamentais são:
 2. **Opção 2: Pure Rust GUI (Slint ou Iced)**
    - Renderização gráfica nativa direta via Skia ou wgpu.
    - Excelente consumo de memória (<30MB) e tempo de compilação compacto.
-   - *Desvantagens:* Menor flexibilidade para renderizar componentes dinâmicos de streaming de vídeo/estatísticas do Sunshine, maior esforço para layouts complexos de carrossel de jogos, animações e integração com o ecossistema do Sunshine.
+   - *Desvantagens:* Menor flexibilidade para renderizar componentes dinâmicos de telemetria e calibração de controles, maior esforço para layouts complexos de carrossel de jogos, animações e integração com o ecossistema.
 
 ## Decisão
 
@@ -40,7 +40,7 @@ my-console-pc/
 │   ├── launcher-core/         # Tipos centrais, biblioteca de jogos, scanner, identificação de ROMs/PE, VDF
 │   ├── launcher-steam/        # Injeção em shortcuts.vdf, grid de artes e bridge CDP WebSocket para Steam CEF
 │   ├── launcher-achievements/ # Monitor de conquistas (RetroAchievements, RPCS3, Vita3K, Stores) e relay
-│   ├── launcher-sunshine/     # Cliente REST API Sunshine, gestor de processo headless e sincronizador
+│   ├── launcher-dualsense/    # Protocolo DualSense HID, gatilhos adaptáveis, RGB e UDP :6969
 │   ├── launcher-console/      # Módulo Console Mode: auto-login, autostart, switch de resolução/áudio, kiosk
 │   └── launcher-app/          # Executável Tauri v2, comandos IPC e frontend 10-foot gamepad-first
 └── ui/                        # Frontend UI (TypeScript, Tailwind, gamepad navigation, console layout)

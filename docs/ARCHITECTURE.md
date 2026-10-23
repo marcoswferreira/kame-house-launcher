@@ -14,10 +14,10 @@ Kame House Launcher is built as an event-driven, modular Rust application organi
 
 ```mermaid
 flowchart TD
-    subgraph UI["Presentation Layer (10-Foot UI)"]
-        Grid["Game Library (Grid & Carousel)"]
-        SunshineTab["Sunshine Panel (PIN Pairing, Encoders)"]
-        ConsoleTab["Console Mode (TV, Audio, Auto-Login)"]
+    subgraph UI["Presentation Layer (React 19 Steam Deck Theme)"]
+        Grid["Game Library (Grid & Details)"]
+        DualSenseTab["DualSense Studio (Triggers, RGB, UDP Link)"]
+        ConsoleTab["Console Mode (TV, HDR, Auto-Login, Power)"]
     end
 
     subgraph Service["Coordination Layer (launcher-app)"]
@@ -28,14 +28,14 @@ flowchart TD
         Core["launcher-core (Scanner, Headers, Discs, Platforms)"]
         Steam["launcher-steam (VDF shortcuts, Grid art, CDP WebSocket)"]
         Achiev["launcher-achievements (Achievement Relay & Journal)"]
-        Sun["launcher-sunshine (REST HTTPS Client & apps.json sync)"]
+        DualSense["launcher-dualsense (Adaptive Triggers, RGB, UDP :6969, Emulation)"]
         Console["launcher-console (TV Display, Audio, Shell Kiosk, Supervisor)"]
     end
 
     subgraph External["External Subsystems"]
         SteamClient["Steam Client (shortcuts.vdf & CEF Port 8080)"]
-        SunshineDaemon["Sunshine C++ Daemon (HTTPS 47990 / RTSP)"]
-        MoonlightClient["Moonlight Client (TV / Steam Deck / Mobile)"]
+        DualSenseHardware["Sony DualSense / Edge (USB / Bluetooth HID)"]
+        GameMods["Game Telemetry Mods (DualSenseX Link UDP :6969)"]
         OS["Operating System (Win32 APIs / Linux xrandr / ALSA)"]
     end
 
@@ -43,13 +43,13 @@ flowchart TD
     LauncherService --> Core
     LauncherService --> Steam
     LauncherService --> Achiev
-    LauncherService --> Sun
+    LauncherService --> DualSense
     LauncherService --> Console
 
     Steam <-->|"WebSocket CDP"| SteamClient
     Achiev -->|"Notification Relay"| Steam
-    Sun <-->|"REST HTTPS /api/*"| SunshineDaemon
-    SunshineDaemon -->|"Video/Input"| MoonlightClient
+    DualSense <-->|"Raw HID 0x02/0x31"| DualSenseHardware
+    DualSense <-->|"UDP JSON :6969"| GameMods
     Console <-->|"System APIs"| OS
 ```
 
@@ -77,11 +77,13 @@ flowchart TD
 - **Unified Tracker (`manager.rs`):** Data models for achievements, unlock events, and persistent activity journal (`activity.json`).
 - **Log Parsers (`models.rs`):** Detects achievement unlocks from emulator logs (such as RPCS3) and relays them to the Steam bridge.
 
-### `launcher-sunshine`
-- **REST HTTPS Client (`client.rs`):** Communicates with Sunshine on `https://127.0.0.1:47990`, handling CSRF tokens and self-signed local certificates.
-- **PIN Pairing Flow:** Consumes `/api/pin` to handle Moonlight pairing prompts directly on-screen.
-- **Catalog Synchronizer (`sync.rs`):** Maps scanned game titles and the full launcher into Sunshine's `apps.json`.
-- **Upstream Tracking:** Sunshine maintained as an unmodified Git submodule in `Sunshine/`.
+### `launcher-dualsense`
+- **Pure Rust HID Communication (`protocol.rs`):** Low-level communication with Sony DualSense and DualSense Edge over USB (Output Report ID 0x02) and Bluetooth (Output Report ID 0x31 with IEEE 802.3 CRC32 checksum trailer calculated via `crc32fast`).
+- **Adaptive Trigger Engine (`triggers.rs`):** Compiles trigger effects into official Sony 11-byte payloads for L2 and R2: Feedback, Semi-Auto Weapon snap, Bow draw & snap, Machine Gun kick, Galloping rhythm, Vibration pulse, and Custom 10-zone curves.
+- **RGB Lightbar & Player LEDs (`lightbar.rs`):** Lighting engine supporting Static, Breathing glow, Rainbow cycle, and real-time battery status coloring, plus Player 1-4 LEDs.
+- **DualSenseX Link UDP Server (`udp_server.rs`):** Async UDP server listening on port `6969`, accepting incoming JSON instructions from existing community game mods (Assetto Corsa, F1 23, Cyberpunk 2077, etc.).
+- **Controller Emulation & Gyro (`emulation.rs`):** Virtual controller profiles (Native DualSense, Xbox 360 XInput, DualShock 4) and 6-axis IMU gyro-to-stick camera mapping.
+- **Curated Profiles (`profiles.rs`):** Built-in trigger presets for Racing (ABS pulse + throttle resistance), Tactical FPS shooters, Flight simulators, and PlayStation classic.
 
 ### `launcher-console`
 - **Launch Supervisor (`supervisor.rs`):** Manages both execution behaviors:
@@ -94,5 +96,5 @@ flowchart TD
 ### `launcher-app`
 - **Central Coordinator (`service.rs`):** `LauncherService` aggregating state, game catalog persistence, settings, and IPC calls.
 - **Internationalization Engine (`i18n.rs`):** Bilingual dictionary with English default (`en`) and complete Portuguese (`pt-BR`) support.
-- **CLI Commands & Flags (`cli.rs`):** Command-line parser supporting `--lang`, `--set-lang`, `status`, `scan`, `export-steam`, `sync-sunshine`, and `set-mode`.
+- **CLI Commands & Flags (`cli.rs`):** Command-line parser supporting `--lang`, `--set-lang`, `status`, `scan`, `export-steam`, and `set-mode`.
 - **Application Binary (`main.rs`):** CLI entrypoint with structured logging via `tracing-subscriber`.

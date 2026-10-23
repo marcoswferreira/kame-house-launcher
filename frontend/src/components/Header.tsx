@@ -21,8 +21,6 @@ export function Header({ status, isGamepadActive }: HeaderProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const isSunshineActive = status?.sunshine_enabled;
-
   return (
     <header className="deck-header">
       <div className="header-branding">
@@ -34,11 +32,17 @@ export function Header({ status, isGamepadActive }: HeaderProps) {
       </div>
 
       <div className="header-hud">
-        {/* Sunshine status chip */}
-        <div className="hud-chip" title="Sunshine Streaming Server">
-          <span className={`chip-dot ${isSunshineActive ? '' : 'off'}`} />
-          <span className="chip-label">SUNSHINE</span>
-          <span className="chip-val">{isSunshineActive ? ':47990' : 'DISABLED'}</span>
+        {/* DualSense status chip */}
+        <div className="hud-chip" title="DualSense Controller & UDP Link">
+          <span className={`chip-dot ${status?.dualsense_connected ? '' : 'off'}`} />
+          <span className="chip-label">DUALSENSE</span>
+          <span className="chip-val">
+            {status?.dualsense_connected
+              ? status?.dualsense_udp_enabled
+                ? ':6969'
+                : 'READY'
+              : 'STANDBY'}
+          </span>
         </div>
 
         {/* Steam VDF status chip */}

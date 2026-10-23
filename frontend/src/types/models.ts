@@ -5,9 +5,8 @@ export interface StatusResponse {
   language: string;
   games_count: number;
   launch_behavior: string;
-  sunshine_url: string;
-  sunshine_enabled?: boolean;
-  sunshine_running?: boolean;
+  dualsense_connected: boolean;
+  dualsense_udp_enabled: boolean;
   scan_directories?: string[];
 }
 
@@ -27,92 +26,102 @@ export interface Game {
   };
 }
 
-export interface SunshineAppPrepCommand {
-  do?: string;
-  undo?: string;
-  elevated?: boolean;
+// ==========================================
+// DUALSENSE & ADAPTIVE TRIGGERS TYPES
+// ==========================================
+
+export type TriggerMode =
+  | 'off'
+  | 'feedback'
+  | 'weapon'
+  | 'bow'
+  | 'galloping'
+  | 'machine_gun'
+  | 'vibration'
+  | 'custom_zone';
+
+export type TriggerEffect =
+  | { mode: 'off' }
+  | { mode: 'feedback'; start_position: number; force: number }
+  | { mode: 'weapon'; start_position: number; end_position: number; force: number }
+  | { mode: 'bow'; start_position: number; end_position: number; force: number; snap_force: number }
+  | { mode: 'galloping'; start_position: number; end_position: number; first_foot: number; second_foot: number; frequency: number }
+  | { mode: 'machine_gun'; start_position: number; end_position: number; strength: number; frequency: number }
+  | { mode: 'vibration'; position: number; amplitude: number; frequency: number }
+  | { mode: 'custom_zone'; zones: number[] };
+
+export interface DualTriggerConfig {
+  left: TriggerEffect;
+  right: TriggerEffect;
 }
 
-export interface SunshineApp {
-  name: string;
-  output?: string;
-  cmd?: string;
-  index?: number;
-  image_path?: string;
-  auto_detach?: string;
-  wait_all?: string;
-  exit_timeout?: string;
-  prep_cmd?: SunshineAppPrepCommand[];
-  working_dir?: string;
-  exclude_global_prep_cmd?: string;
-  elevated?: string;
+export interface RgbColor {
+  r: number;
+  g: number;
+  b: number;
 }
 
-export interface SunshineClientDevice {
-  uuid: string;
-  name: string;
+export type PlayerLed = 'off' | 'player1' | 'player2' | 'player3' | 'player4' | 'all';
+export type MicLed = 'off' | 'solid' | 'pulse';
+
+export type LightbarMode =
+  | { mode: 'off' }
+  | { mode: 'static'; color: RgbColor }
+  | { mode: 'breathing'; color: RgbColor; speed: number }
+  | { mode: 'rainbow'; speed: number }
+  | { mode: 'battery_level' };
+
+export interface LightingConfig {
+  lightbar: LightbarMode;
+  player_led: PlayerLed;
+  mic_led: MicLed;
+}
+
+export type EmulationMode = 'native' | 'xbox360' | 'dualshock4';
+
+export interface GyroSettings {
   enabled: boolean;
-  ip?: string;
-  last_seen?: string;
+  sensitivity: number;
+  deadzone: number;
+  invert_x: boolean;
+  invert_y: boolean;
 }
 
-export interface SunshineConfig {
-  sunshine_name?: string;
-  min_log_level?: number;
-  system_tray?: string;
-
-  // Input
-  controller?: string;
-  gamepad_driver?: string;
-  gamepad?: string;
-  ds4_back_as_touchpad_click?: string;
-  motion_as_ds4?: string;
-  mouse?: string;
-  keyboard?: string;
-
-  // AV
-  audio_sink?: string;
-  virtual_sink?: string;
-  stream_audio?: string;
-  adapter_name?: string;
-  output_name?: string;
-  dd_resolution_option?: string;
-  dd_refresh_rate_option?: string;
-  dd_hdr_option?: string;
-  max_bitrate?: number;
-  minimum_fps_target?: number;
-
-  // Network
-  port?: number;
-  upnp?: string;
-  address_family?: string;
-  bind_address?: string;
-  lan_encryption_mode?: number;
-
-  // Advanced & Encoders
-  fec_percentage?: number;
-  qp?: number;
-  min_threads?: number;
-  hevc_mode?: number;
-  av1_mode?: number;
-  encoder?: string;
-
-  // NVENC
-  nvenc_preset?: number;
-  nvenc_twopass?: string;
-  nvenc_spatial_aq?: string;
-  nvenc_realtime_hags?: string;
-  nvenc_latency_over_power?: string;
-
-  // AMD
-  amd_usage?: string;
-  amd_rc?: string;
-  amd_quality?: string;
-  amd_vbaq?: string;
-
-  // Intel
-  qsv_preset?: string;
-  qsv_coder?: string;
-  qsv_slow_hevc?: string;
+export interface EmulationConfig {
+  mode: EmulationMode;
+  gyro: GyroSettings;
 }
 
+export interface TriggerProfile {
+  id: string;
+  name: string;
+  description: string;
+  triggers: DualTriggerConfig;
+  lightbar: RgbColor;
+}
+
+export interface BatteryState {
+  percentage: number;
+  is_charging: boolean;
+  is_full: boolean;
+}
+
+export interface UdpServerStats {
+  running: boolean;
+  port: number;
+  packets_received: number;
+  last_packet_time: number | null;
+  last_sender: string | null;
+}
+
+export interface DualSenseStatus {
+  connected: boolean;
+  name: string;
+  connection_type: 'usb' | 'bluetooth';
+  battery: BatteryState;
+  triggers: DualTriggerConfig;
+  lighting: LightingConfig;
+  emulation: EmulationConfig;
+  udp_stats: UdpServerStats;
+  profiles: TriggerProfile[];
+}

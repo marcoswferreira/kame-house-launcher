@@ -39,8 +39,8 @@ mod tests {
             .contains("Starting Kame House Launcher"));
         assert!(i18n_en.games_loaded(5).contains("5 games"));
         assert!(i18n_en
-            .sunshine_and_console_ready()
-            .contains("Sunshine control plane"));
+            .dualsense_and_console_ready()
+            .contains("DualSense control plane"));
         assert!(i18n_en.active_language_msg().contains("English [en]"));
         assert!(i18n_en
             .launch_behavior_desc(LaunchBehavior::HideAndRestoreFullscreen)
@@ -57,8 +57,8 @@ mod tests {
             .contains("Iniciando Kame House Launcher"));
         assert!(i18n_pt.games_loaded(5).contains("5 jogos"));
         assert!(i18n_pt
-            .sunshine_and_console_ready()
-            .contains("Plano de controle Sunshine"));
+            .dualsense_and_console_ready()
+            .contains("Plano de controle DualSense"));
         assert!(i18n_pt.active_language_msg().contains("Português"));
         assert!(i18n_pt
             .launch_behavior_desc(LaunchBehavior::HideAndRestoreFullscreen)
@@ -121,10 +121,7 @@ mod tests {
     #[tokio::test]
     async fn test_cli_execution_and_language_switching() {
         let dir = tempdir().unwrap();
-        let svc = Arc::new(LauncherService::new(
-            dir.path().to_path_buf(),
-            "https://127.0.0.1:47990",
-        ));
+        let svc = Arc::new(LauncherService::new(dir.path().to_path_buf()));
 
         // Por padrão o idioma é Inglês
         assert_eq!(svc.language(), Language::En);
@@ -181,10 +178,7 @@ mod tests {
     #[tokio::test]
     async fn test_server_static_and_status_routes() {
         let dir = tempdir().unwrap();
-        let svc = Arc::new(LauncherService::new(
-            dir.path().to_path_buf(),
-            "https://127.0.0.1:47990",
-        ));
+        let svc = Arc::new(LauncherService::new(dir.path().to_path_buf()));
 
         // 1. Test static HTML response
         let (client, server) = tokio::io::duplex(4096);
@@ -268,7 +262,7 @@ mod tests {
     #[test]
     fn test_launcher_service_flow() {
         let dir = tempdir().unwrap();
-        let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
+        let svc = LauncherService::new(dir.path().to_path_buf());
 
         let game1 = Game::new(
             "Metroid Fusion",
@@ -300,7 +294,7 @@ mod tests {
     #[test]
     fn test_launcher_service_keep_open_mode() {
         let dir = tempdir().unwrap();
-        let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
+        let svc = LauncherService::new(dir.path().to_path_buf());
 
         let settings = ConsoleSettings {
             launch_behavior: LaunchBehavior::KeepOpen,
@@ -321,7 +315,7 @@ mod tests {
     #[test]
     fn test_steam_export_from_service() {
         let dir = tempdir().unwrap();
-        let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
+        let svc = LauncherService::new(dir.path().to_path_buf());
 
         let game = Game::new("God of War Ghost of Sparta", "/roms/gow.cso", "psp", "PSP");
         svc.add_game(game);
@@ -332,25 +326,24 @@ mod tests {
         assert!(vdf_path.exists());
     }
 
-    #[test]
-    fn test_sunshine_sync_from_service() {
+    #[tokio::test]
+    async fn test_dualsense_integration_from_service() {
         let dir = tempdir().unwrap();
-        let svc = LauncherService::new(dir.path().to_path_buf(), "https://127.0.0.1:47990");
+        let svc = LauncherService::new(dir.path().to_path_buf());
 
-        let game = Game::new(
-            "Zelda Ocarina of Time",
-            "/roms/oot.z64",
-            "n64",
-            "Nintendo 64",
+        let status = svc.dualsense.get_status().await;
+        assert!(status.connected);
+        assert!(!status.profiles.is_empty());
+
+        let applied = svc.dualsense.apply_profile("racing_abs");
+        assert!(applied);
+
+        let updated = svc.dualsense.get_status().await;
+        assert_eq!(
+            updated.lighting.lightbar,
+            launcher_dualsense::LightbarMode::Static {
+                color: launcher_dualsense::RgbColor::RED
+            }
         );
-        svc.add_game(game);
-
-        let apps_path = dir.path().join("apps.json");
-        let apps_count = svc
-            .sync_sunshine_catalog(&apps_path, "/usr/bin/kame-house-launcher")
-            .unwrap();
-        // 1 app Big Picture + 1 jogo = 2
-        assert_eq!(apps_count, 2);
-        assert!(apps_path.exists());
     }
 }

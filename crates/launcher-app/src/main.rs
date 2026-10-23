@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
             fallback
         });
 
-    let service = std::sync::Arc::new(LauncherService::new(data_dir, "https://127.0.0.1:47990"));
+    let service = std::sync::Arc::new(LauncherService::new(data_dir));
 
     execute_cli(service, args).await?;
 

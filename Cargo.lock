@@ -647,8 +647,8 @@ dependencies = [
  "launcher-achievements",
  "launcher-console",
  "launcher-core",
+ "launcher-dualsense",
  "launcher-steam",
- "launcher-sunshine",
  "parking_lot",
  "serde",
  "serde_json",
@@ -696,6 +696,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "launcher-dualsense"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "chrono",
+ "crc32fast",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "launcher-steam"
 version = "0.1.0"
 dependencies = [
@@ -712,22 +728,6 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tokio-tungstenite",
- "tracing",
-]
-
-[[package]]
-name = "launcher-sunshine"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dirs",
- "launcher-core",
- "reqwest",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
  "tracing",
 ]
 

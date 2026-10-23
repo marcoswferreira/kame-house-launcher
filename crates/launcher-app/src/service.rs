@@ -2,8 +2,8 @@ use launcher_achievements::AchievementManager;
 use launcher_console::{ConsoleSettings, LaunchSupervisor, WindowState};
 use launcher_core::models::{Game, Language};
 use launcher_core::scanner::scan_roots_parallel;
+use launcher_dualsense::DualSenseManager;
 use launcher_steam::vdf::{encode_binary_vdf, parse_binary_vdf, upsert_shortcut, SteamShortcut};
-use launcher_sunshine::{sync_games_to_apps_json, SunshineClient};
 use parking_lot::RwLock;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -14,11 +14,11 @@ pub struct LauncherService {
     pub games: Arc<RwLock<Vec<Game>>>,
     pub settings: Arc<RwLock<ConsoleSettings>>,
     pub achievements: Arc<RwLock<AchievementManager>>,
-    pub sunshine: SunshineClient,
+    pub dualsense: Arc<DualSenseManager>,
 }
 
 impl LauncherService {
-    pub fn new(data_dir: PathBuf, sunshine_url: &str) -> Self {
+    pub fn new(data_dir: PathBuf) -> Self {
         fs::create_dir_all(&data_dir).ok();
         let ach_dir = data_dir.join("achievements");
         let achievements = Arc::new(RwLock::new(AchievementManager::new(ach_dir)));
@@ -28,7 +28,7 @@ impl LauncherService {
             games: Arc::new(RwLock::new(Vec::new())),
             settings: Arc::new(RwLock::new(ConsoleSettings::default())),
             achievements,
-            sunshine: SunshineClient::new(sunshine_url),
+            dualsense: Arc::new(DualSenseManager::new()),
         };
         svc.load_state();
         svc
@@ -183,15 +183,5 @@ impl LauncherService {
         let encoded = encode_binary_vdf(&root_nodes)?;
         fs::write(steam_shortcuts_vdf_path, encoded)?;
         Ok(exported)
-    }
-
-    pub fn sync_sunshine_catalog(
-        &self,
-        apps_json_path: &Path,
-        launcher_bin: &str,
-    ) -> std::io::Result<usize> {
-        let games = self.games.read().clone();
-        let list = sync_games_to_apps_json(apps_json_path, &games, launcher_bin)?;
-        Ok(list.apps.len())
     }
 }

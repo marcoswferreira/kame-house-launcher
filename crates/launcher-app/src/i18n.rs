@@ -41,10 +41,10 @@ impl I18n {
         }
     }
 
-    pub fn sunshine_and_console_ready(&self) -> &'static str {
+    pub fn dualsense_and_console_ready(&self) -> &'static str {
         match self.language {
-            Language::En => "Sunshine control plane and Console Mode Session ready.",
-            Language::PtBr => "Plano de controle Sunshine e Sessão Modo Console prontos.",
+            Language::En => "DualSense control plane and Console Mode Session ready.",
+            Language::PtBr => "Plano de controle DualSense e Sessão Modo Console prontos.",
         }
     }
 
@@ -133,7 +133,6 @@ impl I18n {
                 "    status                       Show launcher status, catalog, and configuration",
                 "    scan [PATH...]               Scan directories for games and update catalog",
                 "    export-steam [PATH]          Export shortcuts into Valve binary shortcuts.vdf",
-                "    sync-sunshine [PATH]         Synchronize game catalog into Sunshine apps.json",
                 "    set-mode <hide|keep-open>    Set game launch behavior (hide & restore vs keep open)",
                 "",
                 "ENVIRONMENT:",
@@ -156,7 +155,6 @@ impl I18n {
                 "    status                       Exibe status do launcher, catálogo e configurações",
                 "    scan [DIRETÓRIO...]          Varre diretórios procurando jogos e atualiza catálogo",
                 "    export-steam [CAMINHO]       Exporta atalhos para o shortcuts.vdf binário da Steam",
-                "    sync-sunshine [CAMINHO]      Sincroniza o catálogo de jogos no apps.json do Sunshine",
                 "    set-mode <hide|keep-open>    Define o comportamento de lançamento (ocultar vs manter aberto)",
                 "",
                 "VARIÁVEIS DE AMBIENTE:",
@@ -189,16 +187,10 @@ impl I18n {
         }
     }
 
-    pub fn sync_sunshine_completed(&self, count: usize, path: &str) -> String {
+    pub fn dualsense_profile_applied(&self, name: &str) -> String {
         match self.language {
-            Language::En => format!(
-                "Successfully synchronized {} app(s) to Sunshine apps.json: {}",
-                count, path
-            ),
-            Language::PtBr => format!(
-                "{} aplicativo(s) sincronizado(s) com sucesso no apps.json do Sunshine: {}",
-                count, path
-            ),
+            Language::En => format!("Applied DualSense trigger profile: {}", name),
+            Language::PtBr => format!("Perfil de gatilhos DualSense aplicado: {}", name),
         }
     }
 
@@ -256,10 +248,10 @@ impl I18n {
         }
     }
 
-    pub fn status_sunshine_label(&self) -> &'static str {
+    pub fn status_dualsense_label(&self) -> &'static str {
         match self.language {
-            Language::En => "Sunshine Endpoint",
-            Language::PtBr => "Ponto de Acesso Sunshine",
+            Language::En => "DualSense Control Plane",
+            Language::PtBr => "Plano de Controle DualSense",
         }
     }
 

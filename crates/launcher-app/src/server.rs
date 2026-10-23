@@ -2,6 +2,7 @@ use crate::LauncherService;
 use launcher_console::power::get_power_command;
 use launcher_console::PowerAction;
 use launcher_core::models::{Language, LaunchBehavior};
+use launcher_dualsense::{DualTriggerConfig, EmulationConfig, LightingConfig};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::net::SocketAddr;
@@ -25,8 +26,8 @@ struct StatusResponse {
     language: String,
     games_count: usize,
     launch_behavior: String,
-    sunshine_url: String,
-    sunshine_enabled: bool,
+    dualsense_connected: bool,
+    dualsense_udp_enabled: bool,
     scan_directories: Vec<String>,
 }
 
@@ -41,18 +42,13 @@ struct ScanRequest {
 }
 
 #[derive(Deserialize)]
-struct PinRequest {
-    pin: String,
+struct TriggerProfileRequest {
+    id: String,
 }
 
 #[derive(Deserialize)]
-struct ToggleSunshineRequest {
+struct ToggleUdpRequest {
     enabled: bool,
-}
-
-#[derive(Deserialize)]
-struct UnpairRequest {
-    uuid: String,
 }
 
 #[derive(Deserialize)]
@@ -142,13 +138,14 @@ where
                 LaunchBehavior::HideAndRestoreFullscreen => "hide_and_restore_fullscreen",
                 LaunchBehavior::KeepOpen => "keep_open",
             };
+            let ds_status = service.dualsense.get_status().await;
             let resp = StatusResponse {
                 version: env!("CARGO_PKG_VERSION"),
                 language: settings.language.code().to_string(),
                 games_count: games.len(),
                 launch_behavior: behavior_str.to_string(),
-                sunshine_url: service.sunshine.base_url.clone(),
-                sunshine_enabled: settings.sunshine_enabled,
+                dualsense_connected: ds_status.connected,
+                dualsense_udp_enabled: settings.dualsense_udp_enabled,
                 scan_directories: settings.scan_directories.clone(),
             };
             let json = serde_json::to_vec(&resp).unwrap_or_default();
@@ -217,172 +214,108 @@ where
                 )
             }
         }
-        ("POST", "/api/sunshine/toggle") => {
+        ("GET", "/api/dualsense/status") => {
+            let status = service.dualsense.get_status().await;
+            let json = serde_json::to_vec(&status).unwrap_or_default();
+            ("200 OK", "application/json", json)
+        }
+        ("POST", "/api/dualsense/trigger") => {
             let body_str = extract_body(&request_str);
-            if let Ok(req) = serde_json::from_str::<ToggleSunshineRequest>(&body_str) {
-                let mut settings = service.settings.read().clone();
-                settings.sunshine_enabled = req.enabled;
-                service.update_console_settings(settings);
+            if let Ok(triggers) = serde_json::from_str::<DualTriggerConfig>(&body_str) {
+                service.dualsense.set_triggers(triggers);
                 (
                     "200 OK",
                     "application/json",
-                    format!("{{\"sunshine_enabled\":{}}}", req.enabled).into_bytes(),
+                    b"{\"status\":\"applied\"}".to_vec(),
                 )
             } else {
                 (
                     "400 Bad Request",
                     "application/json",
-                    b"{\"error\":\"invalid json\"}".to_vec(),
+                    b"{\"error\":\"invalid trigger config\"}".to_vec(),
                 )
             }
         }
-        ("GET", "/api/sunshine/config") => match service.sunshine.get_config().await {
-            Ok(cfg) => (
-                "200 OK",
-                "application/json",
-                serde_json::to_vec(&cfg).unwrap_or_default(),
-            ),
-            Err(_) => (
-                "200 OK",
-                "application/json",
-                b"{\"sunshine_name\":\"Kame House\",\"min_log_level\":2,\"port\":47989}".to_vec(),
-            ),
-        },
-        ("POST", "/api/sunshine/config") => {
+        ("POST", "/api/dualsense/lightbar") => {
             let body_str = extract_body(&request_str);
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&body_str) {
-                let _ = service.sunshine.update_config(val).await;
+            if let Ok(lighting) = serde_json::from_str::<LightingConfig>(&body_str) {
+                service.dualsense.set_lighting(lighting);
                 (
                     "200 OK",
                     "application/json",
-                    b"{\"status\":\"updated\"}".to_vec(),
+                    b"{\"status\":\"applied\"}".to_vec(),
                 )
             } else {
                 (
                     "400 Bad Request",
                     "application/json",
-                    b"{\"error\":\"invalid json\"}".to_vec(),
+                    b"{\"error\":\"invalid lighting config\"}".to_vec(),
                 )
             }
         }
-        ("GET", "/api/sunshine/clients") => match service.sunshine.get_clients().await {
-            Ok(clients) => (
-                "200 OK",
-                "application/json",
-                serde_json::to_vec(&clients).unwrap_or_default(),
-            ),
-            Err(_) => ("200 OK", "application/json", b"[]".to_vec()),
-        },
-        ("POST", "/api/sunshine/clients/unpair") => {
+        ("POST", "/api/dualsense/emulation") => {
             let body_str = extract_body(&request_str);
-            if let Ok(req) = serde_json::from_str::<UnpairRequest>(&body_str) {
-                let _ = service.sunshine.unpair_client(&req.uuid).await;
+            if let Ok(cfg) = serde_json::from_str::<EmulationConfig>(&body_str) {
+                service.dualsense.set_emulation(cfg);
                 (
                     "200 OK",
                     "application/json",
-                    b"{\"status\":\"unpaired\"}".to_vec(),
+                    b"{\"status\":\"applied\"}".to_vec(),
                 )
             } else {
                 (
                     "400 Bad Request",
                     "application/json",
-                    b"{\"error\":\"invalid uuid\"}".to_vec(),
+                    b"{\"error\":\"invalid emulation config\"}".to_vec(),
                 )
             }
         }
-        ("POST", "/api/sunshine/clients/unpair-all") => {
-            let _ = service.sunshine.unpair_all_clients().await;
-            (
-                "200 OK",
-                "application/json",
-                b"{\"status\":\"unpaired_all\"}".to_vec(),
-            )
-        }
-        ("GET", "/api/sunshine/apps") => {
-            match service.sunshine.get_apps().await {
-                Ok(apps) => (
-                    "200 OK",
-                    "application/json",
-                    serde_json::to_vec(&apps).unwrap_or_default(),
-                ),
-                Err(_) => {
-                    // Fallback to local apps.json if available
-                    let path = PathBuf::from("./apps.json");
-                    if path.is_file() {
-                        let bytes = std::fs::read(path).unwrap_or_default();
-                        ("200 OK", "application/json", bytes)
-                    } else {
-                        ("200 OK", "application/json", b"{\"apps\":[]}".to_vec())
-                    }
-                }
-            }
-        }
-        ("POST", "/api/sunshine/apps") => (
-            "200 OK",
-            "application/json",
-            b"{\"status\":\"saved\"}".to_vec(),
-        ),
-        ("GET", "/api/sunshine/logs") => match service.sunshine.get_logs().await {
-            Ok(logs) => ("200 OK", "text/plain; charset=utf-8", logs.into_bytes()),
-            Err(_) => (
-                "200 OK",
-                "text/plain; charset=utf-8",
-                b"[KAME-HOUSE] Sunshine daemon standby (waiting for client connection)".to_vec(),
-            ),
-        },
-        ("POST", "/api/sunshine/restart") => {
-            let _ = service.sunshine.restart_service().await;
-            (
-                "200 OK",
-                "application/json",
-                b"{\"status\":\"restarting\"}".to_vec(),
-            )
-        }
-        ("POST", "/api/sunshine/reset-display-device-persistence") => {
-            let _ = service.sunshine.reset_display_persistence().await;
-            (
-                "200 OK",
-                "application/json",
-                b"{\"status\":\"reset\"}".to_vec(),
-            )
-        }
-        ("POST", "/api/sunshine/pin") => {
+        ("POST", "/api/dualsense/profile") => {
             let body_str = extract_body(&request_str);
-            if let Ok(req) = serde_json::from_str::<PinRequest>(&body_str) {
-                match service.sunshine.pair_pin(&req.pin, None).await {
-                    Ok(_) => (
+            if let Ok(req) = serde_json::from_str::<TriggerProfileRequest>(&body_str) {
+                if service.dualsense.apply_profile(&req.id) {
+                    (
                         "200 OK",
                         "application/json",
-                        b"{\"status\":\"paired\"}".to_vec(),
-                    ),
-                    Err(_) => (
-                        "502 Bad Gateway",
+                        b"{\"status\":\"profile_applied\"}".to_vec(),
+                    )
+                } else {
+                    (
+                        "404 Not Found",
                         "application/json",
-                        b"{\"error\":\"sunshine unreachable or invalid pin\"}".to_vec(),
-                    ),
+                        b"{\"error\":\"unknown profile id\"}".to_vec(),
+                    )
                 }
             } else {
                 (
                     "400 Bad Request",
                     "application/json",
-                    b"{\"error\":\"invalid pin\"}".to_vec(),
+                    b"{\"error\":\"invalid profile request\"}".to_vec(),
                 )
             }
         }
-        ("POST", "/api/sunshine/sync") => {
-            let path = PathBuf::from("./apps.json");
-            let exe = env::current_exe()
-                .map(|p| p.to_string_lossy().to_string())
-                .unwrap_or_else(|_| "kame-house-launcher".to_string());
-            match service.sync_sunshine_catalog(&path, &exe) {
-                Ok(count) => {
-                    let resp = format!("{{\"status\":\"synchronized\",\"count\":{}}}", count);
-                    ("200 OK", "application/json", resp.into_bytes())
+        ("POST", "/api/dualsense/udp/toggle") => {
+            let body_str = extract_body(&request_str);
+            if let Ok(req) = serde_json::from_str::<ToggleUdpRequest>(&body_str) {
+                let mut settings = service.settings.read().clone();
+                settings.dualsense_udp_enabled = req.enabled;
+                service.update_console_settings(settings);
+                if req.enabled {
+                    let _ = service.dualsense.start_udp().await;
+                } else {
+                    service.dualsense.stop_udp().await;
                 }
-                Err(e) => {
-                    let resp = format!("{{\"error\":\"{}\"}}", e);
-                    ("500 Internal Error", "application/json", resp.into_bytes())
-                }
+                (
+                    "200 OK",
+                    "application/json",
+                    format!("{{\"udp_enabled\":{}}}", req.enabled).into_bytes(),
+                )
+            } else {
+                (
+                    "400 Bad Request",
+                    "application/json",
+                    b"{\"error\":\"invalid toggle request\"}".to_vec(),
+                )
             }
         }
         ("POST", "/api/steam/sync") => {

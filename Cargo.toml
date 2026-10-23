@@ -3,7 +3,7 @@ members = [
     "crates/launcher-core",
     "crates/launcher-steam",
     "crates/launcher-achievements",
-    "crates/launcher-sunshine",
+    "crates/launcher-dualsense",
     "crates/launcher-console",
     "crates/launcher-app",
 ]

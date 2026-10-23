@@ -1,7 +1,7 @@
 # Kame House Launcher 🐢🎮
 
 > **Transform your PC into the ultimate living-room console experience.**  
-> A high-performance game launcher built from scratch in **Rust**, featuring native **Sunshine** headless integration for frictionless game streaming and a dedicated **Console Mode** transformation suite.
+> A high-performance game launcher built from scratch in **Rust**, featuring native **DualSenseX** adaptive trigger integration, Steam ecosystem bridges, and a dedicated **Console Mode** transformation suite.
 
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
@@ -19,7 +19,7 @@
 - [Workspace Architecture](#-workspace-architecture)
 - [Core Features](#-core-features)
   - [1. Content-Based Scanning & Header Inspection](#1-content-based-scanning--header-inspection)
-  - [2. Headless Sunshine Streaming Integration](#2-headless-sunshine-streaming-integration)
+  - [2. DualSense Adaptive Trigger Engine & DualSenseX UDP Server](#2-dualsense-adaptive-trigger-engine--dualsensex-udp-server)
   - [3. Dedicated Console Mode (Living Room PC)](#3-dedicated-console-mode-living-room-pc)
   - [4. Steam Ecosystem Interoperability](#4-steam-ecosystem-interoperability)
   - [5. Native Steam Achievement Relay](#5-native-steam-achievement-relay)
@@ -40,7 +40,7 @@
 - 🔄 **Configurable Launch Behaviors:** Choose between:
   1. **Hide/minimize on launch and return in fullscreen with immediate gamepad focus on exit** (Console Standard); OR
   2. **Keep the launcher running in the background**.
-- 📡 **Integrated Sunshine Control Plane (No Browser Popups):** Autonomous headless management of the Sunshine streaming daemon directly inside the launcher, with on-screen 4-digit PIN pairing dialogs for Moonlight clients and auto-synchronization of game libraries into `apps.json`.
+- 🎮 **Native DualSenseX Studio (100% Pure Rust):** Direct hardware control over Sony DualSense & Edge controllers. Adaptive triggers (Rigid Resistance, Weapon snap, Bow, Machine Gun, Galloping, Pulse vibration), RGB lightbar, player LEDs, and an async UDP server on port `6969` compatible with existing DualSenseX game mods (Assetto Corsa, F1, Cyberpunk 2077).
 - 🏆 **Steam Achievement Relays:** Native toast notifications with official audio cues dispatched through the Steam CEF Chrome DevTools Protocol (CDP) for emulator and PC games.
 
 ---
@@ -57,14 +57,11 @@ kame-house-launcher/
 ├── README.md                       # English documentation (default)
 ├── README.pt-BR.md                 # Portuguese documentation
 ├── CONTRIBUTING.md                 # Contribution and commit guidelines
-├── Sunshine/                       # Official upstream Sunshine Git submodule (LizardByte)
 ├── docs/                           # Technical documentation and guides
 │   ├── ARCHITECTURE.md             # System design and data flow diagrams
 │   ├── CONSOLE_MODE.md             # Living room console transformation guide
-│   ├── SUNSHINE_INTEGRATION.md     # Headless Sunshine extension guide
 │   └── adrs/                       # Architectural Decision Records
 │       ├── 0001-rust-tauri-architecture.md
-│       ├── 0002-sunshine-integration-and-upstream-tracking.md
 │       ├── 0003-game-scanner-and-rom-identification.md
 │       ├── 0004-steam-injection-and-native-notifications.md
 │       └── 0005-console-mode-transformation.md
@@ -72,9 +69,9 @@ kame-house-launcher/
     ├── launcher-core/              # Scanner, cartridge headers, disc parser, platforms
     ├── launcher-steam/             # Binary VDF shortcuts, grid artwork, CDP WebSocket bridge
     ├── launcher-achievements/      # Unified achievement tracker and emulator log parsers
-    ├── launcher-sunshine/          # REST HTTPS client, PIN pairing, apps.json sync
+    ├── launcher-dualsense/         # Pure Rust DualSense HID protocol, adaptive triggers, RGB, UDP 6969
     ├── launcher-console/           # TV display presets, audio routing, auto-login, launch supervisor
-    └── launcher-app/               # Central coordinator service and kame-house-launcher CLI
+    └── launcher-app/               # Central coordinator service, React 19 UI, and kame-house-launcher CLI
 ```
 
 ---
@@ -88,10 +85,12 @@ Rather than relying on volatile or arbitrary filenames (like `game_final_v2.iso`
 - **PC Games & Stores:** Portable Executable (PE) metadata inspection (`ProductName`, `FileDescription`) and local Steam AppID discovery (`steam_appid.txt`, `steam_emu.ini`, Goldberg emulators, installation manifests).
 - **Parallel Multi-Threading:** High-speed multi-disk traversal powered by `rayon` and `walkdir`.
 
-### 2. Headless Sunshine Streaming Integration
-- **Pure Extension Without Appropriation:** All core video capture, hardware encoding (NVENC, AMD AMF, Intel QuickSync, VAAPI), RTSP streaming, and input virtual devices remain 100% under Sunshine's upstream C++ engine. Sunshine is tracked cleanly as an official Git submodule.
-- **Integrated Controller-Friendly Frontend:** Eliminates the need to open web browsers or accept self-signed SSL certificate warnings. When Moonlight on a TV or handheld requests pairing, an on-screen dialog accepts the 4-digit PIN directly.
-- **Library Synchronization:** Automatically updates Sunshine's `apps.json` with the launcher's scanned titles and adds an entry to stream the full Kame House Launcher in Big Picture mode.
+### 2. DualSense Adaptive Trigger Engine & DualSenseX UDP Server
+- **100% Pure Rust Implementation:** Re-architects DualSenseX capabilities natively in Rust. Zero C# or external runtime dependencies.
+- **Full Adaptive Trigger Engine:** Low-level Sony HID reports (USB `0x02` and Bluetooth `0x31` with IEEE 802.3 CRC32 calculation) for Feedback, Semi-Auto Weapon breaks, Bow draw tension, Machine Gun kick, Galloping rhythm, and 10-zone custom resistance curves.
+- **DualSenseX Link UDP Server (:6969):** Async UDP socket server accepting JSON instructions from existing telemetry mods (Assetto Corsa, F1 23/24, Cyberpunk 2077) without needing any extra software.
+- **RGB Lightbar & Player LEDs:** Real-time halo lighting (Static, Breathing, Rainbow, Battery status) and Player 1-4 indicator dots.
+- **Controller Emulation & Gyro Aiming:** Seamless XInput (Xbox 360) and DualShock 4 emulation via ViGEmBus/uinput, plus 6-axis IMU gyro-to-stick camera deflection.
 
 ### 3. Dedicated Console Mode (Living Room PC)
 Engineered to remove desktop operating system friction:
@@ -130,15 +129,10 @@ Engineered to remove desktop operating system friction:
 
 ## 🚀 Building & Running
 
-### 1. Clone Repository With Submodules
+### 1. Clone Repository
 ```bash
-git clone --recurse-submodules https://github.com/marcoswferreira/kame-house-launcher.git
+git clone https://github.com/marcoswferreira/kame-house-launcher.git
 cd kame-house-launcher
-```
-
-If already cloned without submodules:
-```bash
-git submodule update --init --recursive
 ```
 
 ### 2. Build in Debug Mode
@@ -218,7 +212,6 @@ cargo llvm-cov --workspace --summary-only
 
 To understand the context and tradeoffs behind our architectural decisions, consult [`docs/adrs/`](docs/adrs/):
 - [ADR 0001: Rust and Tauri v2 Architecture](docs/adrs/0001-rust-tauri-architecture.md)
-- [ADR 0002: Sunshine Headless Integration and Upstream Tracking](docs/adrs/0002-sunshine-integration-and-upstream-tracking.md)
 - [ADR 0003: Content-Based Game Scanner and Metadata Engine](docs/adrs/0003-game-scanner-and-rom-identification.md)
 - [ADR 0004: Steam Interoperability and Native Notifications](docs/adrs/0004-steam-injection-and-native-notifications.md)
 - [ADR 0005: Living Room Console Mode Transformation](docs/adrs/0005-console-mode-transformation.md)
@@ -233,7 +226,7 @@ Contributions are welcomed! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for 
 
 ## 💖 Credits & Attributions
 
-- **Sunshine:** High-performance game stream host developed by the [LizardByte & Sunshine Contributors](https://github.com/LizardByte/Sunshine) under the GPL-3.0 license. Kame House Launcher extends Sunshine headless infrastructure and gives full credit to the original creators.
+- **DualSenseX:** Pioneering open-source PlayStation DualSense controller customization and UDP link protocol created by [Paliverse](https://github.com/Paliverse/DualSenseX). Kame House Launcher implements this architecture in 100% native Rust.
 - **Rust Ecosystem:** Sincere gratitude to the maintainers of `tokio`, `rayon`, `reqwest`, `serde`, `byteorder`, `walkdir`, and `crc32fast`.
 
 ---

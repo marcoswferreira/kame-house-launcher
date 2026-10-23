@@ -9,7 +9,7 @@ Obrigado pelo seu interesse em contribuir para o **Kame House Launcher**! Este d
 1. **Rust Idiomático e Seguro:** Priorize segurança de tipos, controle estrito de erros com `anyhow`/`thiserror` e zero alocações desnecessárias.
 2. **Alta Performance:** O launcher é voltado para salas de estar e deve manter uso residual de memória (~40MB de RAM) para não competir com jogos e streaming.
 3. **Cobertura de Código Obrigatória (≥ 70%):** Todo novo recurso, parser ou módulo deve ser acompanhado de testes unitários ou de integração, mantendo a cobertura do workspace em ou acima de 70%.
-4. **Respeito aos Projetos Upstream:** Qualquer extensão de serviços como o Sunshine deve manter créditos claros e preservar o código upstream intocado via submódulo Git.
+4. **Respeito aos Projetos Upstream:** Qualquer extensão de serviços e protocolos da comunidade (como o DualSenseX) deve manter créditos claros e respeitar licenças upstream.
 
 ---
 
@@ -82,7 +82,7 @@ Todos os commits devem seguir a especificação [Conventional Commits v1.0.0](ht
 ### Exemplos de Boas Mensagens de Commit
 - `feat(core): add rom header detection for sega saturn disc images`
 - `fix(steam): correct vdf binary endianness when writing 64-bit integers`
-- `docs: update sunshine pairing instructions in readme`
+- `docs: update dualsense pairing instructions in readme`
 - `test(console): add unit tests for display resolution presets`
 
 ---

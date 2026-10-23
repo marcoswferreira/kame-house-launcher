@@ -11,7 +11,6 @@ pub enum CliCommand {
     Status,
     Scan { paths: Vec<PathBuf> },
     ExportSteam { path: Option<PathBuf> },
-    SyncSunshine { path: Option<PathBuf> },
     SetLanguage { lang: Language },
     SetLaunchMode { behavior: LaunchBehavior },
     PrintHelp,
@@ -122,15 +121,6 @@ impl CliArgs {
                     };
                     command = CliCommand::ExportSteam { path };
                 }
-                "sync-sunshine" => {
-                    i += 1;
-                    let path = if i < items.len() && !items[i].starts_with('-') {
-                        Some(PathBuf::from(&items[i]))
-                    } else {
-                        None
-                    };
-                    command = CliCommand::SyncSunshine { path };
-                }
                 "set-mode" => {
                     i += 1;
                     if i >= items.len() {
@@ -204,11 +194,7 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
                 i18n.status_launch_behavior_label(),
                 i18n.launch_behavior_desc(settings.launch_behavior)
             );
-            println!(
-                "{}: {}",
-                i18n.status_sunshine_label(),
-                service.sunshine.base_url
-            );
+            println!("{}: UDP Link :6969 [Active]", i18n.status_dualsense_label());
             println!("Big Picture UI: http://127.0.0.1:48080");
         }
         CliCommand::Scan { paths } => {
@@ -234,17 +220,6 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
                 i18n.export_steam_completed(count, &target.display().to_string())
             );
         }
-        CliCommand::SyncSunshine { path } => {
-            let target = path.unwrap_or_else(|| PathBuf::from("./apps.json"));
-            let exe_path = env::current_exe()
-                .map(|p| p.to_string_lossy().to_string())
-                .unwrap_or_else(|_| "kame-house-launcher".to_string());
-            let count = service.sync_sunshine_catalog(&target, &exe_path)?;
-            println!(
-                "{}",
-                i18n.sync_sunshine_completed(count, &target.display().to_string())
-            );
-        }
         CliCommand::SetLanguage { lang } => {
             service.set_language(lang);
             let updated_i18n = I18n::new(lang);
@@ -264,13 +239,23 @@ pub async fn execute_cli(service: Arc<LauncherService>, args: CliArgs) -> anyhow
             tracing::info!("{}", i18n.starting_banner(env!("CARGO_PKG_VERSION")));
             let games = service.list_games();
             tracing::info!("{}", i18n.games_loaded(games.len()));
-            tracing::info!("{}", i18n.sunshine_and_console_ready());
+            tracing::info!("{}", i18n.dualsense_and_console_ready());
             tracing::info!("{}", i18n.active_language_msg());
             let settings = service.settings.read().clone();
             tracing::info!(
                 "{}",
                 i18n.launch_behavior_configured(settings.launch_behavior)
             );
+
+            // Start DualSense UDP Link Server if enabled
+            if settings.dualsense_udp_enabled {
+                let ds = Arc::clone(&service.dualsense);
+                tokio::spawn(async move {
+                    if let Err(e) = ds.start_udp().await {
+                        tracing::warn!("Could not start DualSense UDP server: {}", e);
+                    }
+                });
+            }
 
             // Spawn HTTP & Big Picture Server
             let server_svc = Arc::clone(&service);

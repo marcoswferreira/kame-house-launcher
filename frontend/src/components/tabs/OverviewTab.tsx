@@ -1,13 +1,12 @@
 import { useTranslation } from '../../i18n';
 import { StatusResponse } from '../../types/models';
-import { Zap, KeyRound, Search, UploadCloud, Info } from 'lucide-react';
+import { Zap, Gamepad2, Search, Sliders, Info } from 'lucide-react';
 
 interface OverviewTabProps {
   status: StatusResponse | null;
   onNavigateTab: (tab: string) => void;
   onSyncSteam: () => void;
   onScanGames: () => void;
-  onSyncSunshine: () => void;
 }
 
 export function OverviewTab({
@@ -15,11 +14,10 @@ export function OverviewTab({
   onNavigateTab,
   onSyncSteam,
   onScanGames,
-  onSyncSunshine,
 }: OverviewTabProps) {
   const { t, lang } = useTranslation();
 
-  const isSunshineActive = status?.sunshine_enabled;
+  const isDualSenseConnected = status?.dualsense_connected;
 
   return (
     <section className="tab-panel">
@@ -37,12 +35,12 @@ export function OverviewTab({
         </div>
 
         <div className="metric-card">
-          <div className="metric-label">{t.metric_sunshine_status}</div>
-          <div className={`metric-value ${isSunshineActive ? 'text-green' : ''}`}>
-            {isSunshineActive ? 'Online' : 'Disabled'}
+          <div className="metric-label">{t.metric_dualsense_status}</div>
+          <div className={`metric-value ${isDualSenseConnected ? 'text-green' : ''}`}>
+            {isDualSenseConnected ? 'Ready' : 'Standby'}
           </div>
           <div className="metric-sub">
-            {isSunshineActive ? 'Port 47990 • HTTPS Ready' : 'Opt-In Standby'}
+            {status?.dualsense_udp_enabled ? 'Port 6969 • Link Active' : 'Native HID Mode'}
           </div>
         </div>
 
@@ -75,19 +73,15 @@ export function OverviewTab({
         </button>
         <button
           className="deck-btn focusable"
-          onClick={() => onNavigateTab('sunshine')}
+          onClick={() => onNavigateTab('dualsense')}
           tabIndex={11}
         >
-          <KeyRound size={15} />
-          <span>{t.btn_quick_pair_pin}</span>
+          <Gamepad2 size={15} />
+          <span>{t.tab_dualsense}</span>
         </button>
         <button className="deck-btn focusable" onClick={onScanGames} tabIndex={12}>
           <Search size={15} />
           <span>{t.btn_quick_rescan}</span>
-        </button>
-        <button className="deck-btn focusable" onClick={onSyncSunshine} tabIndex={13}>
-          <UploadCloud size={15} />
-          <span>{t.btn_quick_sync_sunshine}</span>
         </button>
       </div>
 
